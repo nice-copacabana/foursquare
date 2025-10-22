@@ -23,18 +23,21 @@ import 'package:foursquare/models/move.dart';
 import 'package:foursquare/engine/game_engine.dart';
 import 'package:foursquare/engine/move_validator.dart';
 import 'package:foursquare/services/audio_service.dart';
+import 'package:foursquare/services/music_service.dart';
 import 'package:foursquare/services/storage_service.dart';
 
 // Mock classes
 class MockGameEngine extends Mock implements GameEngine {}
 class MockMoveValidator extends Mock implements MoveValidator {}
 class MockAudioService extends Mock implements AudioService {}
+class MockMusicService extends Mock implements MusicService {}
 class MockStorageService extends Mock implements StorageService {}
 
 void main() {
   // 注册fallback值以支持mocktail的any()匹配器
   setUpAll(() {
     registerFallbackValue(SoundType.move);
+    registerFallbackValue(MusicTheme.main);
     registerFallbackValue(BoardState.initial());
     registerFallbackValue(const Position(0, 0));
   });
@@ -43,17 +46,22 @@ void main() {
     late GameEngine gameEngine;
     late MoveValidator moveValidator;
     late AudioService audioService;
+    late MusicService musicService;
     late StorageService storageService;
 
     setUp(() {
       gameEngine = MockGameEngine();
       moveValidator = MockMoveValidator();
       audioService = MockAudioService();
+      musicService = MockMusicService();
       storageService = MockStorageService();
 
       // 设置默认的mock行为
       when(() => audioService.playSound(any())).thenReturn(null);
       when(() => audioService.setEnabled(any())).thenReturn(null);
+      when(() => musicService.playMusic(any())).thenAnswer((_) async {});
+      when(() => musicService.switchTheme(any())).thenAnswer((_) async {});
+      when(() => musicService.setVolume(any())).thenAnswer((_) async {});
     });
 
     test('初始状态应该是 GameInitial', () {
@@ -61,6 +69,7 @@ void main() {
         gameEngine: gameEngine,
         moveValidator: moveValidator,
         audioService: audioService,
+        musicService: musicService,
         storageService: storageService,
       );
 
@@ -75,6 +84,7 @@ void main() {
         gameEngine: gameEngine,
         moveValidator: moveValidator,
         audioService: audioService,
+        musicService: musicService,
         storageService: storageService,
       ),
       act: (bloc) => bloc.add(const NewGameEvent(mode: GameMode.pvp)),
@@ -95,6 +105,7 @@ void main() {
         gameEngine: gameEngine,
         moveValidator: moveValidator,
         audioService: audioService,
+        musicService: musicService,
         storageService: storageService,
       ),
       seed: () => GamePlaying(
@@ -136,6 +147,7 @@ void main() {
           gameEngine: gameEngine,
           moveValidator: moveValidator,
           audioService: audioService,
+          musicService: musicService,
           storageService: storageService,
         );
       },
@@ -162,6 +174,7 @@ void main() {
         gameEngine: gameEngine,
         moveValidator: moveValidator,
         audioService: audioService,
+        musicService: musicService,
         storageService: storageService,
       ),
       seed: () => GamePlaying(
@@ -179,6 +192,7 @@ void main() {
         gameEngine: gameEngine,
         moveValidator: moveValidator,
         audioService: audioService,
+        musicService: musicService,
         storageService: storageService,
       ),
       seed: () => GamePlaying(
@@ -222,6 +236,7 @@ void main() {
           gameEngine: gameEngine,
           moveValidator: moveValidator,
           audioService: audioService,
+          musicService: musicService,
           storageService: storageService,
         );
       },
@@ -262,6 +277,7 @@ void main() {
           gameEngine: gameEngine,
           moveValidator: moveValidator,
           audioService: audioService,
+          musicService: musicService,
           storageService: storageService,
         );
       },
@@ -308,6 +324,7 @@ void main() {
           gameEngine: gameEngine,
           moveValidator: moveValidator,
           audioService: audioService,
+          musicService: musicService,
           storageService: storageService,
         );
       },
@@ -355,6 +372,7 @@ void main() {
           gameEngine: gameEngine,
           moveValidator: moveValidator,
           audioService: audioService,
+          musicService: musicService,
           storageService: storageService,
         );
       },
@@ -393,6 +411,7 @@ void main() {
         gameEngine: gameEngine,
         moveValidator: moveValidator,
         audioService: audioService,
+        musicService: musicService,
         storageService: storageService,
       ),
       act: (bloc) => bloc.add(

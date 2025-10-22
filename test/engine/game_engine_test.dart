@@ -323,6 +323,9 @@ void main() {
           const Position(0, 2),
         );
 
+        expect(result.success, true);
+        expect(result.newBoard, isNotNull);
+        
         var currentBoard = result.newBoard!;
         
         // 再设置吃子吃掉最后一个黑方棋子
@@ -338,6 +341,9 @@ void main() {
           const Position(1, 3),
         );
 
+        expect(finalResult.success, true);
+        expect(finalResult.newBoard, isNotNull);
+        
         // 检查是否结束（黑方只剩1个棋子）
         final gameResult = engine.checkGameOver(finalResult.newBoard!);
         if (gameResult != null) {
