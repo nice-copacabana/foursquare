@@ -13,7 +13,7 @@ import '../../bloc/game_bloc.dart';
 import '../../bloc/game_event.dart';
 import '../../bloc/game_state.dart';
 import '../../models/position.dart';
-import '../widgets/board_widget.dart';
+import '../widgets/animated_board_widget.dart';
 import '../widgets/game_info_panel.dart';
 import '../widgets/game_over_dialog.dart';
 import 'game_replay_page.dart'; // 导入回放页面
@@ -152,12 +152,13 @@ class _GamePageContent extends StatelessWidget {
   }
 
   Widget _buildBoard(BuildContext context, GameState state) {
-    return BoardWidget(
+    return AnimatedBoardWidget(
       boardState: state.boardState,
       selectedPiece: state.selectedPiece,
       validMoves: state.validMoves,
       lastMoveFrom: state.lastMove?.from,
       lastMoveTo: state.lastMove?.to,
+      capturedPiecePosition: state.lastCapturedPosition,
       onPositionTapped: (position) => _handlePositionTapped(context, state, position),
     );
   }

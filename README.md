@@ -265,6 +265,13 @@ Engine层 (GameEngine)
 Model层 (Models)
 ```
 
+### 文档导航
+
+- [📚 项目文档导航](docs/项目文档导航.md) - 所有文档的总入口
+- [📄 历史报告](docs/reports/README.md) - 项目开发历史报告
+- [📝 实施计划](IMPLEMENTATION_PLAN.md) - 当前开发计划
+- [📑 变更日志](CHANGELOG.md) - 项目版本变更记录
+
 ### 核心模块
 
 #### GameEngine (游戏引擎)

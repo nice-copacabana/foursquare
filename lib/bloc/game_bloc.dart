@@ -194,6 +194,8 @@ class GameBloc extends Bloc<GameEvent, GameState> {
       validMoves: const [],
       moveHistory: newMoveHistory,
       lastMove: move,
+      lastCapturedPosition: result.captured,
+      clearLastCapturedPosition: result.captured == null,
     ));
 
     // 如果是AI模式且轮到AI，触发AI移动

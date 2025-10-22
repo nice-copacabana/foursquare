@@ -39,6 +39,9 @@ abstract class GameState extends Equatable {
   /// 上一步移动
   final Move? lastMove;
 
+  /// 最后被吃掉的棋子位置(用于动画效果)
+  final Position? lastCapturedPosition;
+
   /// 游戏是否结束
   final bool isGameOver;
 
@@ -58,6 +61,7 @@ abstract class GameState extends Equatable {
     this.validMoves = const [],
     this.moveHistory = const [],
     this.lastMove,
+    this.lastCapturedPosition,
     this.isGameOver = false,
     this.gameResult,
     this.aiDifficulty,
@@ -90,6 +94,7 @@ abstract class GameState extends Equatable {
         validMoves,
         moveHistory,
         lastMove,
+        lastCapturedPosition,
         isGameOver,
         gameResult,
         aiDifficulty,
@@ -118,6 +123,7 @@ class GamePlaying extends GameState {
     super.validMoves,
     super.moveHistory,
     super.lastMove,
+    super.lastCapturedPosition,
     super.aiDifficulty,
     super.isAIThinking,
   }) : super(
@@ -135,6 +141,8 @@ class GamePlaying extends GameState {
     List<Move>? moveHistory,
     Move? lastMove,
     bool clearLastMove = false,
+    Position? lastCapturedPosition,
+    bool clearLastCapturedPosition = false,
     String? aiDifficulty,
     bool? isAIThinking,
   }) {
@@ -145,6 +153,7 @@ class GamePlaying extends GameState {
       validMoves: validMoves ?? this.validMoves,
       moveHistory: moveHistory ?? this.moveHistory,
       lastMove: clearLastMove ? null : (lastMove ?? this.lastMove),
+      lastCapturedPosition: clearLastCapturedPosition ? null : (lastCapturedPosition ?? this.lastCapturedPosition),
       aiDifficulty: aiDifficulty ?? this.aiDifficulty,
       isAIThinking: isAIThinking ?? this.isAIThinking,
     );
@@ -164,6 +173,7 @@ class GameOver extends GameState {
     required GameResult gameResult,
     super.moveHistory,
     super.lastMove,
+    super.lastCapturedPosition,
     super.aiDifficulty,
   }) : super(
           isGameOver: true,
@@ -181,6 +191,7 @@ class GameOver extends GameState {
       gameResult: gameResult,
       moveHistory: playing.moveHistory,
       lastMove: playing.lastMove,
+      lastCapturedPosition: playing.lastCapturedPosition,
       aiDifficulty: playing.aiDifficulty,
     );
   }

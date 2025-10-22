@@ -29,6 +29,11 @@ class CaptureDetector {
   /// - player: 移动方
   /// 
   /// 返回：被吃棋子的位置，如果没有吃子则返回null
+  /// 
+  /// 吃子规则：
+  /// 1. 必须形成"己-己-敌"的连续三子
+  /// 2. 移动的棋子必须是前两个"己"之一  
+  /// 3. 不能形成"敌-己-己"模式(敌方在己方之前)
   Position? detectCapture(
     BoardState board,
     Position movedPiece,
@@ -48,6 +53,20 @@ class CaptureDetector {
       final pos3 = Position(pos2.x + direction.x, pos2.y + direction.y);
 
       if (_isValidCapture(board, pos1, pos2, pos3, player, enemy)) {
+        // 检查是否形成了"敌-己-己"模式(不允许)
+        final posBeforeEnemy = Position(pos3.x + direction.x, pos3.y + direction.y);
+        if (posBeforeEnemy.isValid() && board.getPiece(posBeforeEnemy) == enemy) {
+          // 形成了"己-己-敌-敌"模式,不应吃子  
+          continue;
+        }
+        
+        // 检查反方向是否有敌方棋子
+        final posBack = Position(pos1.x - direction.x, pos1.y - direction.y);
+        if (posBack.isValid() && board.getPiece(posBack) == enemy) {
+          // 形成了"敌-己-己-敌"模式,不应吃子
+          continue;
+        }
+        
         return pos3;
       }
 
