@@ -3,10 +3,13 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'ui/screens/home_page.dart';
+import 'ui/screens/onboarding_page.dart';
 import 'services/storage_service.dart';
 import 'theme/theme_manager.dart';
 import 'l10n/app_localizations.dart';
+import 'constants/storage_constants.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -29,11 +32,17 @@ class _FourSquareGameAppState extends State<FourSquareGameApp> {
   final StorageService _storageService = StorageService();
   GameTheme _currentTheme = ThemeManager.defaultTheme;
   bool _isLoading = true;
+  bool _isFirstLaunch = true;
 
   @override
   void initState() {
     super.initState();
-    _loadTheme();
+    _initialize();
+  }
+
+  Future<void> _initialize() async {
+    await _loadTheme();
+    await _checkFirstLaunch();
   }
 
   Future<void> _loadTheme() async {
@@ -42,6 +51,14 @@ class _FourSquareGameAppState extends State<FourSquareGameApp> {
     setState(() {
       _currentTheme = ThemeManager.getTheme(themeType);
       _isLoading = false;
+    });
+  }
+
+  Future<void> _checkFirstLaunch() async {
+    final prefs = await SharedPreferences.getInstance();
+    final isFirstLaunch = prefs.getBool(StorageConstants.keyFirstLaunch) ?? true;
+    setState(() {
+      _isFirstLaunch = isFirstLaunch;
     });
   }
 
@@ -61,7 +78,11 @@ class _FourSquareGameAppState extends State<FourSquareGameApp> {
     return MaterialApp(
       title: '四子游戏',
       theme: _currentTheme.materialTheme,
-      home: const HomePage(),
+      home: _isFirstLaunch ? const OnboardingPage() : const HomePage(),
+      routes: {
+        '/home': (context) => const HomePage(),
+        '/onboarding': (context) => const OnboardingPage(),
+      },
       debugShowCheckedModeBanner: false,
       // 国际化配置
       localizationsDelegates: const [

@@ -15,6 +15,7 @@ import '../models/board_state.dart';
 import '../models/piece_type.dart';
 import '../models/position.dart';
 import '../engine/game_engine.dart';
+import '../constants/game_constants.dart';
 import 'ai_player.dart';
 import 'evaluation.dart';
 
@@ -58,6 +59,18 @@ class MinimaxAI extends AIPlayer {
         return 3;
       case AIDifficulty.hard:
         return 4;
+    }
+  }
+  
+  /// 获取难度对应的时间限制（毫秒）
+  static int _getTimeLimitForDifficulty(AIDifficulty difficulty) {
+    switch (difficulty) {
+      case AIDifficulty.easy:
+        return 500;   // 0.5秒
+      case AIDifficulty.medium:
+        return 2000;  // 2秒
+      case AIDifficulty.hard:
+        return 5000;  // 5秒
     }
   }
   
@@ -175,6 +188,7 @@ class MinimaxAI extends AIPlayer {
     
     // 动态调整深度
     final maxDepth = _getDynamicDepth(board);
+    final timeLimit = _getTimeLimitForDifficulty(difficulty);
     
     Position? bestFrom;
     Position? bestTo;
@@ -185,9 +199,9 @@ class MinimaxAI extends AIPlayer {
     
     // 迭代加深搜索（从深度1开始，逐步增加）
     for (int depth = 1; depth <= maxDepth; depth++) {
-      // 检查是否超时（困难模式最多1秒）
+      // 检查是否超时
       final elapsed = DateTime.now().difference(startTime);
-      if (elapsed.inMilliseconds > 1000 && difficulty == AIDifficulty.hard) {
+      if (elapsed.inMilliseconds > timeLimit) {
         break;
       }
       

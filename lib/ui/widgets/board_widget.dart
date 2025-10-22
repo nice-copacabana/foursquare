@@ -4,6 +4,8 @@
 import 'package:flutter/material.dart';
 import '../../models/board_state.dart';
 import '../../models/position.dart';
+import '../../constants/ui_constants.dart';
+import '../../constants/game_constants.dart';
 import 'board_painter.dart';
 
 /// 棋盘Widget
@@ -40,13 +42,7 @@ class BoardWidget extends StatelessWidget {
           width: boardSize,
           height: boardSize,
           decoration: BoxDecoration(
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.3),
-                blurRadius: 10,
-                offset: const Offset(0, 5),
-              ),
-            ],
+            boxShadow: [UIConstants.boardShadow],
           ),
           child: GestureDetector(
             onTapUp: (details) => _handleTap(details, boardSize),
@@ -73,13 +69,16 @@ class BoardWidget extends StatelessWidget {
         ? screenSize.width
         : screenSize.height;
 
-    // 留出边距，取屏幕最小边的80%
-    return (maxSize * 0.8).clamp(200.0, 600.0);
+    // 留出边距，取屏幕最小边的指定比例
+    return (maxSize * UIConstants.boardScreenRatio).clamp(
+      UIConstants.boardMinSize,
+      UIConstants.boardMaxSize,
+    );
   }
 
   /// 处理点击事件
   void _handleTap(TapUpDetails details, double boardSize) {
-    final cellSize = boardSize / 4;
+    final cellSize = boardSize / GameConstants.boardSize;
     final localPos = details.localPosition;
 
     // 将屏幕坐标转换为棋盘坐标
@@ -87,7 +86,7 @@ class BoardWidget extends StatelessWidget {
     final y = (localPos.dy / cellSize).floor();
 
     // 检查坐标是否在棋盘范围内
-    if (x >= 0 && x < 4 && y >= 0 && y < 4) {
+    if (x >= 0 && x < GameConstants.boardSize && y >= 0 && y < GameConstants.boardSize) {
       final position = Position(x, y);
       onPositionTapped(position);
     }

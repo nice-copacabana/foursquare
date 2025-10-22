@@ -7,6 +7,7 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 import '../models/websocket_message.dart';
 import '../models/message_type.dart';
 import '../models/move.dart';
+import '../constants/network_constants.dart';
 
 /// WebSocket连接状态
 enum ConnectionState {
@@ -49,9 +50,6 @@ class WebSocketService {
   
   String? _serverUrl;
   int _reconnectAttempts = 0;
-  static const int _maxReconnectAttempts = 5;
-  static const Duration _heartbeatInterval = Duration(seconds: 30);
-  static const Duration _reconnectDelay = Duration(seconds: 3);
 
   /// 获取消息流
   Stream<WebSocketMessage> get messageStream => _messageController.stream;
@@ -209,7 +207,7 @@ class WebSocketService {
 
   /// 尝试重连
   void _attemptReconnect() {
-    if (_reconnectAttempts >= _maxReconnectAttempts) {
+    if (_reconnectAttempts >= NetworkConstants.maxReconnectAttempts) {
       print('达到最大重连次数，停止重连');
       _updateState(ConnectionState.disconnected);
       return;
@@ -223,9 +221,9 @@ class WebSocketService {
     _reconnectAttempts++;
     _updateState(ConnectionState.reconnecting);
     
-    print('尝试重连 ($_reconnectAttempts/$_maxReconnectAttempts)...');
+    print('尝试重连 ($_reconnectAttempts/${NetworkConstants.maxReconnectAttempts})...');
     
-    _reconnectTimer = Timer(_reconnectDelay, () async {
+    _reconnectTimer = Timer(NetworkConstants.reconnectDelay, () async {
       await connect(_serverUrl!);
     });
   }
@@ -234,7 +232,7 @@ class WebSocketService {
   void _startHeartbeat() {
     _stopHeartbeat();
     
-    _heartbeatTimer = Timer.periodic(_heartbeatInterval, (timer) {
+    _heartbeatTimer = Timer.periodic(NetworkConstants.heartbeatInterval, (timer) {
       if (isConnected) {
         final message = WebSocketMessage.heartbeat();
         sendMessage(message);

@@ -18,7 +18,9 @@ class GameInfoPanel extends StatelessWidget {
   final int whitePieceCount;
   final List<Move> moveHistory;
   final bool canUndo;
+  final bool canRedo;
   final VoidCallback? onUndo;
+  final VoidCallback? onRedo;
   final VoidCallback? onRestart;
   final bool isAIThinking;
   final double aiThinkingProgress;
@@ -31,7 +33,9 @@ class GameInfoPanel extends StatelessWidget {
     required this.whitePieceCount,
     required this.moveHistory,
     required this.canUndo,
+    required this.canRedo,
     this.onUndo,
+    this.onRedo,
     this.onRestart,
     this.isAIThinking = false,
     this.aiThinkingProgress = 0.0,
@@ -88,7 +92,9 @@ class GameInfoPanel extends StatelessWidget {
           // 操作按钮
           _ActionButtons(
             canUndo: canUndo,
+            canRedo: canRedo,
             onUndo: onUndo,
+            onRedo: onRedo,
             onRestart: onRestart,
           ),
         ],
@@ -441,37 +447,65 @@ class _AIThinkingIndicator extends StatelessWidget {
 /// 操作按钮区域
 class _ActionButtons extends StatelessWidget {
   final bool canUndo;
+  final bool canRedo;
   final VoidCallback? onUndo;
+  final VoidCallback? onRedo;
   final VoidCallback? onRestart;
 
   const _ActionButtons({
     required this.canUndo,
+    required this.canRedo,
     this.onUndo,
+    this.onRedo,
     this.onRestart,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    return Column(
       children: [
-        Expanded(
-          child: ElevatedButton.icon(
-            onPressed: canUndo ? onUndo : null,
-            icon: const Icon(Icons.undo, size: 18),
-            label: const Text('撤销'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.orange.shade400,
-              foregroundColor: Colors.white,
-              disabledBackgroundColor: Colors.grey.shade300,
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+        // 撤销和重做按钮
+        Row(
+          children: [
+            Expanded(
+              child: ElevatedButton.icon(
+                onPressed: canUndo ? onUndo : null,
+                icon: const Icon(Icons.undo, size: 18),
+                label: const Text('撤销'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.orange.shade400,
+                  foregroundColor: Colors.white,
+                  disabledBackgroundColor: Colors.grey.shade300,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
               ),
             ),
-          ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: ElevatedButton.icon(
+                onPressed: canRedo ? onRedo : null,
+                icon: const Icon(Icons.redo, size: 18),
+                label: const Text('重做'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.purple.shade400,
+                  foregroundColor: Colors.white,
+                  disabledBackgroundColor: Colors.grey.shade300,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
-        const SizedBox(width: 8),
-        Expanded(
+        const SizedBox(height: 8),
+        // 重新开始按钮
+        SizedBox(
+          width: double.infinity,
           child: ElevatedButton.icon(
             onPressed: onRestart,
             icon: const Icon(Icons.refresh, size: 18),

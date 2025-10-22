@@ -56,6 +56,7 @@ class GameBloc extends Bloc<GameEvent, GameState> {
     on<MovePieceEvent>(_onMovePiece);
     on<DeselectPieceEvent>(_onDeselectPiece);
     on<UndoMoveEvent>(_onUndoMove);
+    on<RedoMoveEvent>(_onRedoMove);
     on<AIPlayEvent>(_onAIPlay);
     on<SaveGameEvent>(_onSaveGame);
     on<LoadGameEvent>(_onLoadGame);
@@ -205,12 +206,14 @@ class GameBloc extends Bloc<GameEvent, GameState> {
     }
 
     // 游戏继续，更新状态
+    // 执行移动后清空撤销栈（因为新移动会使之前的重做无效）
     emit(playing.copyWith(
       boardState: result.newBoard!,
       selectedPiece: null,
       clearSelectedPiece: true,
       validMoves: const [],
       moveHistory: newMoveHistory,
+      undoStack: const [], // 清空撤销栈
       lastMove: move,
       lastCapturedPosition: result.captured,
       clearLastCapturedPosition: result.captured == null,
@@ -243,16 +246,30 @@ class GameBloc extends Bloc<GameEvent, GameState> {
 
     _audioService.playSound(SoundType.click);
 
-    // 计算要撤销的步数（AI模式撤销2步，双人模式撤销1步）
+    // 计算要撤销的步数（AI模式撤销2步，双人模式按指定步数）
     final stepsToUndo = playing.mode == GameMode.pve ? 2 : event.steps;
     
-    if (playing.moveHistory.length < stepsToUndo) return;
+    // 限制最多撤销10步
+    final actualSteps = stepsToUndo.clamp(1, 10);
+    
+    if (playing.moveHistory.length < actualSteps) return;
+
+    // 将撤销的移动加入撤销栈
+    final movesToUndo = playing.moveHistory.sublist(
+      playing.moveHistory.length - actualSteps,
+    );
+    final newUndoStack = [...playing.undoStack, ...movesToUndo];
+    
+    // 限制撤销栈最多10步
+    final trimmedUndoStack = newUndoStack.length > 10
+        ? newUndoStack.sublist(newUndoStack.length - 10)
+        : newUndoStack;
 
     // 从初始状态重新执行移动
     var newBoard = BoardState.initial();
     final newMoveHistory = playing.moveHistory.sublist(
       0,
-      playing.moveHistory.length - stepsToUndo,
+      playing.moveHistory.length - actualSteps,
     );
 
     for (final move in newMoveHistory) {
@@ -268,8 +285,54 @@ class GameBloc extends Bloc<GameEvent, GameState> {
       clearSelectedPiece: true,
       validMoves: const [],
       moveHistory: newMoveHistory,
+      undoStack: trimmedUndoStack,
       lastMove: newMoveHistory.isNotEmpty ? newMoveHistory.last : null,
       clearLastMove: newMoveHistory.isEmpty,
+    ),);
+  }
+
+  /// 处理重做移动事件
+  Future<void> _onRedoMove(RedoMoveEvent event, Emitter<GameState> emit) async {
+    if (state is! GamePlaying) return;
+    final playing = state as GamePlaying;
+
+    if (!playing.canRedo || playing.isAIThinking) return;
+
+    _audioService.playSound(SoundType.click);
+
+    // 计算要重做的步数
+    final stepsToRedo = event.steps.clamp(1, playing.undoStack.length);
+    
+    if (playing.undoStack.isEmpty || stepsToRedo <= 0) return;
+
+    // 从撤销栈中取出移动
+    final movesToRedo = playing.undoStack.sublist(
+      playing.undoStack.length - stepsToRedo,
+    );
+    final newUndoStack = playing.undoStack.sublist(
+      0,
+      playing.undoStack.length - stepsToRedo,
+    );
+
+    // 重新构建棋盘状态
+    var newBoard = BoardState.initial();
+    final newMoveHistory = [...playing.moveHistory, ...movesToRedo];
+
+    for (final move in newMoveHistory) {
+      final result = _gameEngine.executeMove(newBoard, move.from, move.to);
+      if (result.success && result.newBoard != null) {
+        newBoard = result.newBoard!;
+      }
+    }
+
+    emit(playing.copyWith(
+      boardState: newBoard,
+      selectedPiece: null,
+      clearSelectedPiece: true,
+      validMoves: const [],
+      moveHistory: newMoveHistory,
+      undoStack: newUndoStack,
+      lastMove: newMoveHistory.last,
     ),);
   }
 

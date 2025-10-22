@@ -174,11 +174,15 @@ class _GamePageContent extends StatelessWidget {
       whitePieceCount: state.whitePieceCount,
       moveHistory: state.moveHistory,
       canUndo: state.canUndo && !isAIThinking,
+      canRedo: state.canRedo && !isAIThinking,
       isAIThinking: isAIThinking,
       aiThinkingProgress: aiProgress,
       aiThinkingStatus: aiStatus,
       onUndo: () {
         context.read<GameBloc>().add(const UndoMoveEvent());
+      },
+      onRedo: () {
+        context.read<GameBloc>().add(const RedoMoveEvent());
       },
       onRestart: () {
         _showRestartConfirmation(context);

@@ -36,6 +36,9 @@ abstract class GameState extends Equatable {
   /// 移动历史记录
   final List<Move> moveHistory;
 
+  /// 撤销栈（已撤销的移动）
+  final List<Move> undoStack;
+
   /// 上一步移动
   final Move? lastMove;
 
@@ -66,6 +69,7 @@ abstract class GameState extends Equatable {
     this.selectedPiece,
     this.validMoves = const [],
     this.moveHistory = const [],
+    this.undoStack = const [],
     this.lastMove,
     this.lastCapturedPosition,
     this.isGameOver = false,
@@ -85,6 +89,9 @@ abstract class GameState extends Equatable {
   /// 是否可以撤销
   bool get canUndo => moveHistory.isNotEmpty && !isGameOver;
 
+  /// 是否可以重做
+  bool get canRedo => undoStack.isNotEmpty && !isGameOver;
+
   /// 黑方棋子数量
   int get blackPieceCount => boardState.blackPieces.length;
 
@@ -101,6 +108,7 @@ abstract class GameState extends Equatable {
         selectedPiece,
         validMoves,
         moveHistory,
+        undoStack,
         lastMove,
         lastCapturedPosition,
         isGameOver,
@@ -132,6 +140,7 @@ class GamePlaying extends GameState {
     super.selectedPiece,
     super.validMoves,
     super.moveHistory,
+    super.undoStack,
     super.lastMove,
     super.lastCapturedPosition,
     super.aiDifficulty,
@@ -151,6 +160,7 @@ class GamePlaying extends GameState {
     bool clearSelectedPiece = false,
     List<Position>? validMoves,
     List<Move>? moveHistory,
+    List<Move>? undoStack,
     Move? lastMove,
     bool clearLastMove = false,
     Position? lastCapturedPosition,
@@ -166,6 +176,7 @@ class GamePlaying extends GameState {
       selectedPiece: clearSelectedPiece ? null : (selectedPiece ?? this.selectedPiece),
       validMoves: validMoves ?? this.validMoves,
       moveHistory: moveHistory ?? this.moveHistory,
+      undoStack: undoStack ?? this.undoStack,
       lastMove: clearLastMove ? null : (lastMove ?? this.lastMove),
       lastCapturedPosition: clearLastCapturedPosition ? null : (lastCapturedPosition ?? this.lastCapturedPosition),
       aiDifficulty: aiDifficulty ?? this.aiDifficulty,

@@ -2,6 +2,8 @@
 // Task: 实现音频服务，管理游戏音效播放
 
 import 'package:audioplayers/audioplayers.dart';
+import '../exceptions/app_exceptions.dart';
+import '../services/logger_service.dart';
 
 /// 音效类型
 enum SoundType {
@@ -38,14 +40,20 @@ class AudioService {
 
   /// 初始化音频服务
   Future<void> initialize() async {
-    // 为每种音效创建独立的播放器
-    for (final type in SoundType.values) {
-      _players[type] = AudioPlayer();
-      await _players[type]!.setVolume(_volume);
-    }
+    try {
+      // 为每种音效创建独立的播放器
+      for (final type in SoundType.values) {
+        _players[type] = AudioPlayer();
+        await _players[type]!.setVolume(_volume);
+      }
 
-    // 预加载音效文件
-    await _preloadSounds();
+      // 预加载音效文件
+      await _preloadSounds();
+      logger.info('音频服务初始化成功', 'AudioService');
+    } catch (e) {
+      logger.error('音频服务初始化失败', 'AudioService', e);
+      throw AudioException('音频服务初始化失败', originalError: e);
+    }
   }
 
   /// 预加载所有音效
@@ -63,8 +71,8 @@ class AudioService {
       try {
         await _players[entry.key]!.setSource(AssetSource(entry.value));
       } catch (e) {
-        // 音效文件不存在时忽略错误
-        print('Failed to load sound: ${entry.value}');
+        // 音效文件不存在时记录警告
+        logger.warning('无法加载音效文件: ${entry.value}', 'AudioService');
       }
     }
   }
@@ -73,12 +81,20 @@ class AudioService {
   void playSound(SoundType type) {
     if (!_enabled) return;
 
-    final player = _players[type];
-    if (player == null) return;
+    try {
+      final player = _players[type];
+      if (player == null) {
+        logger.warning('音效播放器未初始化: $type', 'AudioService');
+        return;
+      }
 
-    // 停止当前播放并重新开始
-    player.stop();
-    player.resume();
+      // 停止当前播放并重新开始
+      player.stop();
+      player.resume();
+    } catch (e) {
+      logger.error('播放音效失败: $type', 'AudioService', e);
+      // 音效播放失败不抛出异常，仅记录日志
+    }
   }
 
   /// 设置音效开关
