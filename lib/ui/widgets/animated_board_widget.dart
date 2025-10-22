@@ -102,7 +102,7 @@ class _AnimatedBoardWidgetState extends State<AnimatedBoardWidget>
     ).animate(CurvedAnimation(
       parent: _captureAnimationController!,
       curve: const Interval(0.25, 1.0, curve: Curves.easeOut),
-    ));
+    ),);
   }
 
   @override
@@ -146,7 +146,7 @@ class _AnimatedBoardWidgetState extends State<AnimatedBoardWidget>
     ).animate(CurvedAnimation(
       parent: _moveAnimationController!,
       curve: Curves.easeInOut,
-    ));
+    ),);
 
     _moveAnimationController!.forward(from: 0.0).then((_) {
       setState(() {

@@ -257,13 +257,13 @@ class _SettingsPageState extends State<SettingsPage> {
     return _SettingsGroup(
       title: '关于',
       children: [
-        _SettingsItem(
+        const _SettingsItem(
           label: '版本号',
           value: '0.1.0',
           icon: Icons.info_outline,
         ),
         const Divider(),
-        _SettingsItem(
+        const _SettingsItem(
           label: '开发者',
           value: 'Qoder AI',
           icon: Icons.code,

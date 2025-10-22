@@ -4,6 +4,7 @@
 /// - 管理应用主题
 /// - 提供多种预设主题
 /// - 支持自定义主题配置
+library;
 
 import 'package:flutter/material.dart';
 

@@ -21,6 +21,8 @@ class GameInfoPanel extends StatelessWidget {
   final VoidCallback? onUndo;
   final VoidCallback? onRestart;
   final bool isAIThinking;
+  final double aiThinkingProgress;
+  final String aiThinkingStatus;
 
   const GameInfoPanel({
     super.key,
@@ -32,6 +34,8 @@ class GameInfoPanel extends StatelessWidget {
     this.onUndo,
     this.onRestart,
     this.isAIThinking = false,
+    this.aiThinkingProgress = 0.0,
+    this.aiThinkingStatus = '',
   });
 
   @override
@@ -59,6 +63,14 @@ class GameInfoPanel extends StatelessWidget {
             isAIThinking: isAIThinking,
           ),
           const SizedBox(height: 16),
+          
+          // AI思考指示器
+          if (isAIThinking)
+            _AIThinkingIndicator(
+              progress: aiThinkingProgress,
+              status: aiThinkingStatus,
+            ),
+          if (isAIThinking) const SizedBox(height: 16),
           
           // 棋子数量统计
           _PieceCountSection(
@@ -336,6 +348,92 @@ class _MoveHistorySection extends StatelessWidget {
                 ),
         ),
       ],
+    );
+  }
+}
+
+/// AI思考指示器
+class _AIThinkingIndicator extends StatelessWidget {
+  final double progress;
+  final String status;
+
+  const _AIThinkingIndicator({
+    required this.progress,
+    required this.status,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.blue.shade50,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: Colors.blue.shade200,
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    Colors.blue.shade600,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'AI思考中',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.blue.shade800,
+                ),
+              ),
+              const Spacer(),
+              Text(
+                '${(progress * 100).toInt()}%',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.blue.shade600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: progress,
+              backgroundColor: Colors.blue.shade100,
+              valueColor: AlwaysStoppedAnimation<Color>(
+                Colors.blue.shade400,
+              ),
+              minHeight: 6,
+            ),
+          ),
+          if (status.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Text(
+              status,
+              style: TextStyle(
+                fontSize: 11,
+                color: Colors.grey.shade600,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 }

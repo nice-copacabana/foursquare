@@ -5,6 +5,7 @@
 /// - 用户交互
 /// - 棋子显示
 /// - 选中状态
+library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';

@@ -88,7 +88,7 @@ void main() {
 
     group('isGameOver', () {
       test('应反映游戏状态', () {
-        final ongoing = GameResult(
+        const ongoing = GameResult(
           status: GameStatus.ongoing,
           reason: '',
           moveCount: 0,
@@ -192,12 +192,12 @@ void main() {
       });
 
       test('应正确处理null winner', () {
-        final result = GameResult(
+        const result = GameResult(
           status: GameStatus.ongoing,
           winner: null,
           reason: '游戏进行中',
           moveCount: 5,
-          duration: const Duration(minutes: 2),
+          duration: Duration(minutes: 2),
         );
 
         final json = result.toJson();

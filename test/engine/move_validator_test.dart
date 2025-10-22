@@ -163,7 +163,7 @@ void main() {
         expect(moves.length, 1); // 只有下
         expect(moves, containsAll([
           const Position(0, 1),
-        ]));
+        ]),);
       });
 
       test('角落棋子应有1个可移动位置', () {
@@ -175,7 +175,7 @@ void main() {
         expect(moves.length, 1); // 只有下
         expect(moves, containsAll([
           const Position(3, 1),
-        ]));
+        ]),);
       });
 
       test('中间棋子应有多个可移动位置', () {
@@ -321,7 +321,7 @@ void main() {
           const Position(1, 0),
           const Position(2, 0),
           const Position(3, 0),
-        ]));
+        ]),);
       });
 
       test('应返回白方所有可能移动', () {
@@ -383,23 +383,23 @@ void main() {
         var customBoard = BoardState(
           grid: List.generate(4, (y) => List.filled(4, PieceType.white)),
           blackPieces: const [],
-          whitePieces: [
-            const Position(0, 0),
-            const Position(1, 0),
-            const Position(2, 0),
-            const Position(3, 0),
-            const Position(0, 1),
-            const Position(1, 1),
-            const Position(2, 1),
-            const Position(3, 1),
-            const Position(0, 2),
-            const Position(1, 2),
-            const Position(2, 2),
-            const Position(3, 2),
-            const Position(0, 3),
-            const Position(1, 3),
-            const Position(2, 3),
-            const Position(3, 3),
+          whitePieces: const [
+            Position(0, 0),
+            Position(1, 0),
+            Position(2, 0),
+            Position(3, 0),
+            Position(0, 1),
+            Position(1, 1),
+            Position(2, 1),
+            Position(3, 1),
+            Position(0, 2),
+            Position(1, 2),
+            Position(2, 2),
+            Position(3, 2),
+            Position(0, 3),
+            Position(1, 3),
+            Position(2, 3),
+            Position(3, 3),
           ],
           currentPlayer: PieceType.white,
         );

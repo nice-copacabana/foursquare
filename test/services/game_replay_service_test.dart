@@ -5,6 +5,7 @@
 /// - 前进/后退导航
 /// - 跳转功能
 /// - 边界条件
+library;
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:foursquare/services/game_replay_service.dart';

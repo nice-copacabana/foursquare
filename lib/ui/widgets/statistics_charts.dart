@@ -4,6 +4,7 @@
 /// - 提供胜率趋势图
 /// - 提供时间分布图
 /// - 使用fl_chart绘制图表
+library;
 
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';

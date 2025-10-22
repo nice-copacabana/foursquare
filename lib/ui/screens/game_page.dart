@@ -36,7 +36,7 @@ class GamePage extends StatelessWidget {
         ..add(NewGameEvent(
           mode: mode,
           aiDifficulty: aiDifficulty,
-        )),
+        ),),
       child: const _GamePageContent(),
     );
   }
@@ -165,6 +165,8 @@ class _GamePageContent extends StatelessWidget {
 
   Widget _buildInfoPanel(BuildContext context, GameState state) {
     final isAIThinking = state is GamePlaying && state.isAIThinking;
+    final aiProgress = state is GamePlaying ? state.aiThinkingProgress : 0.0;
+    final aiStatus = state is GamePlaying ? state.aiThinkingStatus : '';
 
     return GameInfoPanel(
       currentPlayer: state.currentPlayer,
@@ -173,6 +175,8 @@ class _GamePageContent extends StatelessWidget {
       moveHistory: state.moveHistory,
       canUndo: state.canUndo && !isAIThinking,
       isAIThinking: isAIThinking,
+      aiThinkingProgress: aiProgress,
+      aiThinkingStatus: aiStatus,
       onUndo: () {
         context.read<GameBloc>().add(const UndoMoveEvent());
       },
@@ -200,7 +204,7 @@ class _GamePageContent extends StatelessWidget {
         bloc.add(MovePieceEvent(
           from: state.selectedPiece!,
           to: position,
-        ));
+        ),);
       }
       // 点击己方其他棋子 -> 重新选中
       else if (piece == state.currentPlayer) {

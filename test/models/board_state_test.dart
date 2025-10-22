@@ -218,7 +218,7 @@ void main() {
           const Position(1, 0),
           const Position(2, 0),
           const Position(3, 0),
-        ]));
+        ]),);
       });
 
       test('应返回所有白方棋子位置', () {
@@ -229,7 +229,7 @@ void main() {
           const Position(1, 3),
           const Position(2, 3),
           const Position(3, 3),
-        ]));
+        ]),);
       });
 
       test('应返回所有空位', () {

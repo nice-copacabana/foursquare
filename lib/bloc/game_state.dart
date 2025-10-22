@@ -53,6 +53,12 @@ abstract class GameState extends Equatable {
 
   /// AI是否正在思考
   final bool isAIThinking;
+  
+  /// AI思考进度 (0.0-1.0)
+  final double aiThinkingProgress;
+  
+  /// AI思考状态描述
+  final String aiThinkingStatus;
 
   const GameState({
     required this.boardState,
@@ -66,6 +72,8 @@ abstract class GameState extends Equatable {
     this.gameResult,
     this.aiDifficulty,
     this.isAIThinking = false,
+    this.aiThinkingProgress = 0.0,
+    this.aiThinkingStatus = '',
   });
 
   /// 当前玩家
@@ -99,6 +107,8 @@ abstract class GameState extends Equatable {
         gameResult,
         aiDifficulty,
         isAIThinking,
+        aiThinkingProgress,
+        aiThinkingStatus,
       ];
 }
 
@@ -126,6 +136,8 @@ class GamePlaying extends GameState {
     super.lastCapturedPosition,
     super.aiDifficulty,
     super.isAIThinking,
+    super.aiThinkingProgress,
+    super.aiThinkingStatus,
   }) : super(
           isGameOver: false,
           gameResult: null,
@@ -145,6 +157,8 @@ class GamePlaying extends GameState {
     bool clearLastCapturedPosition = false,
     String? aiDifficulty,
     bool? isAIThinking,
+    double? aiThinkingProgress,
+    String? aiThinkingStatus,
   }) {
     return GamePlaying(
       boardState: boardState ?? this.boardState,
@@ -156,6 +170,8 @@ class GamePlaying extends GameState {
       lastCapturedPosition: clearLastCapturedPosition ? null : (lastCapturedPosition ?? this.lastCapturedPosition),
       aiDifficulty: aiDifficulty ?? this.aiDifficulty,
       isAIThinking: isAIThinking ?? this.isAIThinking,
+      aiThinkingProgress: aiThinkingProgress ?? this.aiThinkingProgress,
+      aiThinkingStatus: aiThinkingStatus ?? this.aiThinkingStatus,
     );
   }
 

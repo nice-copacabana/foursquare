@@ -50,7 +50,7 @@ void main() {
           const Position(1, 2), // 下
           const Position(0, 1), // 左
           const Position(2, 1), // 右
-        ]));
+        ]),);
       });
 
       test('左上角位置应返回2个相邻位置', () {
@@ -61,7 +61,7 @@ void main() {
         expect(adjacent, containsAll([
           const Position(0, 1), // 下
           const Position(1, 0), // 右
-        ]));
+        ]),);
       });
 
       test('右下角位置应返回2个相邻位置', () {
@@ -72,7 +72,7 @@ void main() {
         expect(adjacent, containsAll([
           const Position(3, 2), // 上
           const Position(2, 3), // 左
-        ]));
+        ]),);
       });
 
       test('左边缘位置应返回3个相邻位置', () {
@@ -84,7 +84,7 @@ void main() {
           const Position(0, 1), // 上
           const Position(0, 3), // 下
           const Position(1, 2), // 右
-        ]));
+        ]),);
       });
 
       test('上边缘位置应返回3个相邻位置', () {
@@ -96,7 +96,7 @@ void main() {
           const Position(2, 1), // 下
           const Position(1, 0), // 左
           const Position(3, 0), // 右
-        ]));
+        ]),);
       });
     });
 

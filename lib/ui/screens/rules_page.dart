@@ -50,12 +50,12 @@ class RulesPage extends StatelessWidget {
   }
 
   Widget _buildObjectiveSection() {
-    return _RuleSection(
+    return const _RuleSection(
       title: '游戏目标',
       icon: Icons.flag,
       color: Colors.blue,
       children: [
-        const Text(
+        Text(
           '通过移动棋子形成特定的三子连线，吃掉对方的棋子，最终吃掉对方所有棋子或使对方无子可走。',
           style: TextStyle(fontSize: 16, height: 1.5),
         ),
@@ -348,7 +348,7 @@ class RulesPage extends StatelessWidget {
             item,
             style: const TextStyle(fontSize: 15, height: 1.4),
           ),
-        )),
+        ),),
       ],
     );
   }

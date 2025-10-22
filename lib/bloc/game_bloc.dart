@@ -21,7 +21,9 @@ import '../models/game_save.dart';
 import '../engine/game_engine.dart';
 import '../engine/move_validator.dart';
 import '../services/audio_service.dart';
+import '../services/music_service.dart';
 import '../services/storage_service.dart';
+import '../services/logger_service.dart';
 import '../ai/ai_player.dart';
 import '../ai/minimax_ai.dart';
 import 'game_event.dart';
@@ -32,16 +34,19 @@ class GameBloc extends Bloc<GameEvent, GameState> {
   final GameEngine _gameEngine;
   final MoveValidator _moveValidator;
   final AudioService _audioService;
+  final MusicService _musicService;
   final StorageService _storageService;
 
   GameBloc({
     GameEngine? gameEngine,
     MoveValidator? moveValidator,
     AudioService? audioService,
+    MusicService? musicService,
     StorageService? storageService,
   })  : _gameEngine = gameEngine ?? GameEngine(),
         _moveValidator = moveValidator ?? MoveValidator(),
         _audioService = audioService ?? AudioService(),
+        _musicService = musicService ?? MusicService(),
         _storageService = storageService ?? StorageService(),
         super(GameInitial()) {
     // 注册事件处理器
@@ -60,13 +65,16 @@ class GameBloc extends Bloc<GameEvent, GameState> {
   /// 处理新游戏事件
   Future<void> _onNewGame(NewGameEvent event, Emitter<GameState> emit) async {
     _audioService.playSound(SoundType.click);
+    
+    // 切换到游戏音乐
+    await _musicService.playMusic(MusicTheme.gameplay);
 
     emit(GamePlaying(
       boardState: BoardState.initial(),
       mode: event.mode,
       aiDifficulty: event.aiDifficulty,
       moveHistory: const [],
-    ));
+    ),);
 
     // 如果是AI模式且AI先手，触发AI移动
     if (event.mode == GameMode.pve && state.currentPlayer == PieceType.white) {
@@ -88,7 +96,7 @@ class GameBloc extends Bloc<GameEvent, GameState> {
       mode: currentMode,
       aiDifficulty: currentAIDifficulty,
       moveHistory: const [],
-    ));
+    ),);
 
     // 如果是AI模式且AI先手，触发AI移动
     if (currentMode == GameMode.pve && state.currentPlayer == PieceType.white) {
@@ -120,7 +128,7 @@ class GameBloc extends Bloc<GameEvent, GameState> {
     emit(playing.copyWith(
       selectedPiece: event.position,
       validMoves: validMoves,
-    ));
+    ),);
   }
 
   /// 处理移动棋子事件
@@ -158,6 +166,11 @@ class GameBloc extends Bloc<GameEvent, GameState> {
     // 检查游戏是否结束
     if (result.gameResult != null) {
       // 播放胜利/失败音效
+      final isPlayerWin = (result.gameResult!.status == GameStatus.blackWin &&
+              playing.currentPlayer == PieceType.black) ||
+          (result.gameResult!.status == GameStatus.whiteWin &&
+              playing.currentPlayer == PieceType.white);
+              
       if (result.gameResult!.status == GameStatus.blackWin) {
         _audioService.playSound(
           playing.mode == GameMode.pve && playing.currentPlayer == PieceType.black
@@ -171,6 +184,11 @@ class GameBloc extends Bloc<GameEvent, GameState> {
               : SoundType.win,
         );
       }
+      
+      // 播放胜利音乐（只在玩家获胜时播放）
+      if (isPlayerWin) {
+        await _musicService.switchTheme(MusicTheme.victory);
+      }
 
       // 更新统计数据
       await _updateStatistics(result.gameResult!, newMoveHistory.length, playing);
@@ -182,7 +200,7 @@ class GameBloc extends Bloc<GameEvent, GameState> {
         moveHistory: newMoveHistory,
         lastMove: move,
         aiDifficulty: playing.aiDifficulty,
-      ));
+      ),);
       return;
     }
 
@@ -196,7 +214,7 @@ class GameBloc extends Bloc<GameEvent, GameState> {
       lastMove: move,
       lastCapturedPosition: result.captured,
       clearLastCapturedPosition: result.captured == null,
-    ));
+    ),);
 
     // 如果是AI模式且轮到AI，触发AI移动
     if (playing.mode == GameMode.pve && result.newBoard!.currentPlayer == PieceType.white) {
@@ -213,7 +231,7 @@ class GameBloc extends Bloc<GameEvent, GameState> {
       selectedPiece: null,
       clearSelectedPiece: true,
       validMoves: const [],
-    ));
+    ),);
   }
 
   /// 处理撤销移动事件
@@ -252,7 +270,7 @@ class GameBloc extends Bloc<GameEvent, GameState> {
       moveHistory: newMoveHistory,
       lastMove: newMoveHistory.isNotEmpty ? newMoveHistory.last : null,
       clearLastMove: newMoveHistory.isEmpty,
-    ));
+    ),);
   }
 
   /// 处理AI移动事件
@@ -265,11 +283,26 @@ class GameBloc extends Bloc<GameEvent, GameState> {
     }
 
     // 标记AI正在思考
-    emit(playing.copyWith(isAIThinking: true));
+    emit(playing.copyWith(
+      isAIThinking: true,
+      aiThinkingProgress: 0.0,
+      aiThinkingStatus: '初始化...',
+    ),);
 
     // 创建AI实例
     final aiDifficulty = AIDifficulty.fromString(playing.aiDifficulty ?? 'medium');
     final ai = MinimaxAI(aiDifficulty);
+    
+    // 设置进度回调
+    ai.setProgressCallback((progress, status) {
+      if (state is GamePlaying) {
+        emit((state as GamePlaying).copyWith(
+          isAIThinking: true,
+          aiThinkingProgress: progress,
+          aiThinkingStatus: status,
+        ),);
+      }
+    });
     
     // AI思考
     final aiMove = await ai.selectMove(playing.boardState);
@@ -287,12 +320,16 @@ class GameBloc extends Bloc<GameEvent, GameState> {
         moveHistory: playing.moveHistory,
         lastMove: playing.lastMove,
         aiDifficulty: playing.aiDifficulty,
-      ));
+      ),);
       return;
     }
     
     // 取消AI思考标记
-    emit(playing.copyWith(isAIThinking: false));
+    emit(playing.copyWith(
+      isAIThinking: false,
+      aiThinkingProgress: 0.0,
+      aiThinkingStatus: '',
+    ),);
 
     // 执行AI移动
     add(MovePieceEvent(from: aiMove.from, to: aiMove.to));
@@ -322,7 +359,7 @@ class GameBloc extends Bloc<GameEvent, GameState> {
         _audioService.playSound(SoundType.click);
       }
     } catch (e) {
-      print('保存游戏失败: $e');
+      logger.error('保存游戏失败', 'GameBloc', e);
     }
   }
 
@@ -350,14 +387,14 @@ class GameBloc extends Bloc<GameEvent, GameState> {
         moveHistory: moveHistory,
         mode: mode,
         aiDifficulty: gameSave.aiDifficulty,
-      ));
+      ),);
       
       _audioService.playSound(SoundType.click);
       
       // 加载后删除存档
       await _storageService.deleteGameSave();
     } catch (e) {
-      print('加载游戏失败: $e');
+      logger.error('加载游戏失败', 'GameBloc', e);
     }
   }
 
@@ -370,11 +407,12 @@ class GameBloc extends Bloc<GameEvent, GameState> {
     
     // 更新音乐设置
     if (event.musicEnabled != null) {
-      // TODO: 当实现背景音乐时处理
+      await _musicService.setEnabled(event.musicEnabled!);
     }
     
     // 震动和主题设置已由SettingsPage直接保存到StorageService
     // 这里不需要额外处理
+    // 注意：音效/音乐的音量控制和主题切换需要在SettingsPage中直接调用服务
   }
 
   /// 更新统计数据

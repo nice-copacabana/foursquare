@@ -168,7 +168,7 @@ class CaptureDetector {
           risks.add(CaptureRisk(
             threatenedPiece: pos2,
             enemyTarget: pos0,
-          ));
+          ),);
         }
       }
 
@@ -183,7 +183,7 @@ class CaptureDetector {
           risks.add(CaptureRisk(
             threatenedPiece: piece,
             enemyTarget: null, // 已经形成威胁
-          ));
+          ),);
         }
       }
     }

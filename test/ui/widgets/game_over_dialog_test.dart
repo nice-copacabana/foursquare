@@ -4,6 +4,7 @@
 /// - 对话框渲染
 /// - 按钮交互
 /// - 不同游戏结果显示
+library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';

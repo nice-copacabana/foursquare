@@ -216,7 +216,7 @@ class MoveData extends Equatable {
       to: PositionData.fromJson(Map<String, dynamic>.from(json['to'])),
       capturedPosition: json['capturedPosition'] != null
           ? PositionData.fromJson(
-              Map<String, dynamic>.from(json['capturedPosition']))
+              Map<String, dynamic>.from(json['capturedPosition']),)
           : null,
       capturedPiece: json['capturedPiece'] as String?,
     );

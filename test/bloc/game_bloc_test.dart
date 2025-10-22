@@ -216,7 +216,7 @@ void main() {
             player: PieceType.black,
           ),
           newBoard: newBoard,
-        ));
+        ),);
 
         return GameBloc(
           gameEngine: gameEngine,
@@ -302,7 +302,7 @@ void main() {
           ),
           newBoard: newBoard,
           captured: const Position(3, 3),
-        ));
+        ),);
 
         return GameBloc(
           gameEngine: gameEngine,

@@ -112,6 +112,41 @@ class UndoMoveEvent extends GameEvent {
   String toString() => 'UndoMoveEvent(steps: $steps)';
 }
 
+/// 重做移动事件
+/// 
+/// 重做之前撤销的移动
+class RedoMoveEvent extends GameEvent {
+  final int steps; // 重做步数，默认1步
+
+  const RedoMoveEvent({this.steps = 1});
+
+  @override
+  List<Object?> get props => [steps];
+
+  @override
+  String toString() => 'RedoMoveEvent(steps: $steps)';
+}
+
+/// 确认移动事件
+/// 
+/// 当启用移动确认机制时，用户需要确认移动
+class ConfirmMoveEvent extends GameEvent {
+  const ConfirmMoveEvent();
+
+  @override
+  String toString() => 'ConfirmMoveEvent()';
+}
+
+/// 取消移动事件
+/// 
+/// 取消当前待确认的移动
+class CancelMoveEvent extends GameEvent {
+  const CancelMoveEvent();
+
+  @override
+  String toString() => 'CancelMoveEvent()';
+}
+
 /// 切换玩家事件（主要用于测试）
 class SwitchPlayerEvent extends GameEvent {
   const SwitchPlayerEvent();

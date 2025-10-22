@@ -5,6 +5,7 @@
 /// - 提供前进/后退导航功能
 /// - 支持跳转到特定步骤
 /// - 记录回放状态
+library;
 
 import '../models/board_state.dart';
 import '../models/move.dart';

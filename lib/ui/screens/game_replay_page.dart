@@ -5,6 +5,7 @@
 /// - 回放控制按钮
 /// - 步骤导航
 /// - 移动历史列表
+library;
 
 import 'package:flutter/material.dart';
 import '../../models/move.dart';

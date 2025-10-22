@@ -5,6 +5,7 @@
 /// - 支持多种音乐主题切换
 /// - 控制音乐音量
 /// - 循环播放控制
+library;
 
 import 'package:audioplayers/audioplayers.dart';
 
@@ -46,12 +47,12 @@ class MusicService {
 
   /// 音乐文件映射
   final Map<MusicTheme, String> _musicFiles = {
-    MusicTheme.main: 'music/main_menu.mp3',
-    MusicTheme.gameplay: 'music/gameplay.mp3',
-    MusicTheme.victory: 'music/victory.mp3',
-    MusicTheme.classic: 'music/classic.mp3',
-    MusicTheme.night: 'music/night.mp3',
-    MusicTheme.relaxing: 'music/relaxing.mp3',
+    MusicTheme.main: 'sounds/music/main.mp3',
+    MusicTheme.gameplay: 'sounds/music/gameplay.mp3',
+    MusicTheme.victory: 'sounds/music/victory.mp3',
+    MusicTheme.classic: 'sounds/music/classic.mp3',
+    MusicTheme.night: 'sounds/music/night.mp3',
+    MusicTheme.relaxing: 'sounds/music/relaxing.mp3',
   };
 
   /// 初始化音乐服务
