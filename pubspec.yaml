@@ -31,6 +31,9 @@ dependencies:
   # UI
   flutter_animate: ^4.3.0
   fl_chart: ^0.66.0  # 添加图表库
+  
+  # 环境配置
+  flutter_dotenv: ^5.1.0  # 环境变量管理
 
 dev_dependencies:
   flutter_test:
@@ -45,6 +48,10 @@ dev_dependencies:
   
   # 代码生成
   build_runner: ^2.4.7
+  
+  # 应用图标和启动屏幕
+  flutter_launcher_icons: ^0.13.1
+  flutter_native_splash: ^2.3.10
 
 flutter:
   uses-material-design: true
@@ -54,3 +61,7 @@ flutter:
     - assets/images/
     - assets/sounds/
     - assets/sounds/music/
+    - assets/icon/
+    - assets/splash/
+    - .env.development
+    - .env.production

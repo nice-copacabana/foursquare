@@ -282,7 +282,7 @@ class _GameTestPageState extends State<GameTestPage> {
     
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-      color: isCurrent ? Colors.amber.withOpacity(0.3) : Colors.transparent,
+      color: isCurrent ? Colors.amber.withValues(alpha: 0.3) : Colors.transparent,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [

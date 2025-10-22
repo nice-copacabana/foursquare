@@ -89,7 +89,7 @@ class GameOverDialog extends StatelessWidget {
                       icon: Icons.close,
                       label: '退出',
                       onPressed: onExit,
-                      backgroundColor: Colors.white.withOpacity(0.2),
+                      backgroundColor: Colors.white.withValues(alpha: 0.2),
                     ),
                     
                     // 重新开始按钮
@@ -97,7 +97,7 @@ class GameOverDialog extends StatelessWidget {
                       icon: Icons.refresh,
                       label: '再来一局',
                       onPressed: onRestart,
-                      backgroundColor: Colors.white.withOpacity(0.3),
+                      backgroundColor: Colors.white.withValues(alpha: 0.3),
                     ),
                   ],
                 ),
@@ -112,7 +112,7 @@ class GameOverDialog extends StatelessWidget {
                       icon: Icons.play_circle_outline,
                       label: '查看回放',
                       onPressed: onReplay!,
-                      backgroundColor: Colors.white.withOpacity(0.25),
+                      backgroundColor: Colors.white.withValues(alpha: 0.25),
                     ),
                   ),
               ],

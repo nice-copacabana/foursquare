@@ -122,7 +122,7 @@ class BoardPainter extends CustomPainter {
 
     // 绘制棋子阴影
     final shadowPaint = Paint()
-      ..color = Colors.black.withOpacity(0.3)
+      ..color = Colors.black.withValues(alpha: 0.3)
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
 
     canvas.drawCircle(
@@ -141,8 +141,8 @@ class BoardPainter extends CustomPainter {
     // 绘制棋子边框
     final borderPaint = Paint()
       ..color = piece == PieceType.black 
-          ? Colors.white.withOpacity(0.3)
-          : Colors.black.withOpacity(0.3)
+          ? Colors.white.withValues(alpha: 0.3)
+          : Colors.black.withValues(alpha: 0.3)
       ..strokeWidth = 2.0
       ..style = PaintingStyle.stroke;
 
@@ -173,7 +173,7 @@ class BoardPainter extends CustomPainter {
 
     // 绘制光晕效果
     final glowPaint = Paint()
-      ..color = Colors.amber.withOpacity(0.3)
+      ..color = Colors.amber.withValues(alpha: 0.3)
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8)
       ..style = PaintingStyle.fill;
 
@@ -197,7 +197,7 @@ class BoardPainter extends CustomPainter {
     final radius = cellSize * 0.15;
 
     final paint = Paint()
-      ..color = Colors.green.withOpacity(0.5)
+      ..color = Colors.green.withValues(alpha: 0.5)
       ..style = PaintingStyle.fill;
 
     canvas.drawCircle(center, radius, paint);
@@ -214,7 +214,7 @@ class BoardPainter extends CustomPainter {
   /// 绘制最后移动标记
   void _drawLastMove(Canvas canvas, double cellSize, Position from, Position to) {
     final paint = Paint()
-      ..color = Colors.blue.withOpacity(0.2)
+      ..color = Colors.blue.withValues(alpha: 0.2)
       ..style = PaintingStyle.fill;
 
     // 标记起始位置
@@ -237,7 +237,7 @@ class BoardPainter extends CustomPainter {
 
     // 绘制箭头
     final arrowPaint = Paint()
-      ..color = Colors.blue.withOpacity(0.6)
+      ..color = Colors.blue.withValues(alpha: 0.6)
       ..strokeWidth = 3.0
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;

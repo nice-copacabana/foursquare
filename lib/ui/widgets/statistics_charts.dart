@@ -126,7 +126,7 @@ class WinRateTrendChart extends StatelessWidget {
               ),
               belowBarData: BarAreaData(
                 show: true,
-                color: Colors.blue.withOpacity(0.1),
+                color: Colors.blue.withValues(alpha: 0.1),
               ),
             ),
           ],
@@ -418,7 +418,7 @@ class _Badge extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 4,
           ),
         ],

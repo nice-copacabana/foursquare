@@ -139,13 +139,21 @@ class OnlineGameBloc extends Bloc<OnlineGameEvent, OnlineGameState> {
   }
 
   /// 处理开始匹配事件
+  /// 
+  /// 注意：在线对战功能需要WebSocket服务器支持。
+  /// 当前版本暂未连接实际服务器，此功能处于演示状态。
+  /// 生产环境部署时需要：
+  /// 1. 实现并部署WebSocket服务器
+  /// 2. 在环境配置文件中设置WS_URL
+  /// 3. 取消下方连接代码的注释
   Future<void> _onStartMatching(
     StartMatchingEvent event,
     Emitter<OnlineGameState> emit,
   ) async {
     _currentPlayerId = event.playerId;
     
-    // TODO: 连接到实际的WebSocket服务器
+    // NOTE: 在线对战功能需要服务器支持，当前处于演示状态
+    // 部署服务器后取消以下代码注释：
     // final connected = await _webSocketService.connect('ws://your-server.com/game');
     // if (!connected) {
     //   emit(OnlineGameError(
@@ -370,12 +378,23 @@ class OnlineGameBloc extends Bloc<OnlineGameEvent, OnlineGameState> {
   }
 
   /// 处理重连事件
+  /// 
+  /// 注意：重连功能需要服务器支持会话恢复。
+  /// 实现重连逻辑时需要：
+  /// 1. 保存断线前的matchId和playerId
+  /// 2. 重新建立WebSocket连接
+  /// 3. 从服务器获取最新游戏状态
+  /// 4. 恢复本地状态并同步棋盘
   Future<void> _onReconnect(
     ReconnectEvent event,
     Emitter<OnlineGameState> emit,
   ) async {
-    // TODO: 实现重连逻辑
-    // 从服务器获取最新状态并恢复
+    // NOTE: 重连功能需要服务器端支持，当前处于待实现状态
+    // 部署服务器后实现以下逻辑：
+    // 1. await _webSocketService.reconnect();
+    // 2. final gameState = await _webSocketService.getGameState(matchId);
+    // 3. 恢复本地状态并同步UI
+    logger.warning('重连功能需要服务器支持，当前未实现', 'OnlineGameBloc');
   }
 
   /// 处理游戏结束事件

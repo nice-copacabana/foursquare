@@ -223,7 +223,7 @@ class _AnimatedBoardWidgetState extends State<AnimatedBoardWidget>
       decoration: BoxDecoration(
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.3),
+            color: Colors.black.withValues(alpha: 0.3),
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),
@@ -349,7 +349,7 @@ class _PiecePainter extends CustomPainter {
 
     // 绘制阴影
     final shadowPaint = Paint()
-      ..color = Colors.black.withOpacity(0.3)
+      ..color = Colors.black.withValues(alpha: 0.3)
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
 
     canvas.drawCircle(
@@ -364,7 +364,7 @@ class _PiecePainter extends CustomPainter {
     // 绘制高光
     final highlightPaint = Paint()
       ..style = PaintingStyle.fill
-      ..color = Colors.white.withOpacity(piece == PieceType.black ? 0.2 : 0.4);
+      ..color = Colors.white.withValues(alpha: piece == PieceType.black ? 0.2 : 0.4);
 
     canvas.drawCircle(
       center - Offset(radius * 0.3, radius * 0.3),
