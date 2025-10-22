@@ -2,6 +2,7 @@
 // Task: 实现棋盘绘制器，使用CustomPainter绘制4x4棋盘和棋子
 
 import 'package:flutter/material.dart';
+import 'dart:math' as math;
 import '../../models/board_state.dart';
 import '../../models/position.dart';
 import '../../models/piece_type.dart';
@@ -19,6 +20,7 @@ class BoardPainter extends CustomPainter {
   final List<Position> validMoves;
   final Position? lastMoveFrom;
   final Position? lastMoveTo;
+  final Position? hidePiece; // 隐藏指定位置的棋子（用于动画）
 
   BoardPainter({
     required this.boardState,
@@ -26,6 +28,7 @@ class BoardPainter extends CustomPainter {
     this.validMoves = const [],
     this.lastMoveFrom,
     this.lastMoveTo,
+    this.hidePiece,
   });
 
   @override
@@ -52,6 +55,10 @@ class BoardPainter extends CustomPainter {
     for (var y = 0; y < 4; y++) {
       for (var x = 0; x < 4; x++) {
         final pos = Position(x, y);
+        // 跳过需要隐藏的棋子
+        if (hidePiece != null && pos == hidePiece) {
+          continue;
+        }
         final piece = boardState.getPiece(pos);
         if (piece != PieceType.empty) {
           _drawPiece(canvas, cellSize, pos, piece);
@@ -272,8 +279,8 @@ class BoardPainter extends CustomPainter {
     // 左侧箭头线
     final leftAngle = angle + 2.5;
     arrowPath.lineTo(
-      to.dx - arrowSize * (leftAngle.cos),
-      to.dy - arrowSize * (leftAngle.sin),
+      to.dx - arrowSize * math.cos(leftAngle),
+      to.dy - arrowSize * math.sin(leftAngle),
     );
     
     arrowPath.moveTo(to.dx, to.dy);
@@ -281,8 +288,8 @@ class BoardPainter extends CustomPainter {
     // 右侧箭头线
     final rightAngle = angle - 2.5;
     arrowPath.lineTo(
-      to.dx - arrowSize * (rightAngle.cos),
-      to.dy - arrowSize * (rightAngle.sin),
+      to.dx - arrowSize * math.cos(rightAngle),
+      to.dy - arrowSize * math.sin(rightAngle),
     );
 
     canvas.drawPath(arrowPath, paint);

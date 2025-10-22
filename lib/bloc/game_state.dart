@@ -99,9 +99,9 @@ abstract class GameState extends Equatable {
 
 /// 初始状态 - 游戏尚未开始
 class GameInitial extends GameState {
-  const GameInitial()
+  GameInitial()
       : super(
-          boardState: const BoardState.initial(),
+          boardState: BoardState.initial(),
           mode: GameMode.pvp,
         );
 
@@ -225,9 +225,9 @@ class GameOver extends GameState {
 
 /// 游戏加载中状态（用于加载保存的游戏）
 class GameLoading extends GameState {
-  const GameLoading()
+  GameLoading()
       : super(
-          boardState: const BoardState.initial(),
+          boardState: BoardState.initial(),
           mode: GameMode.pvp,
         );
 

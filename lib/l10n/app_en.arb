@@ -1,0 +1,110 @@
+{
+  "@@locale": "en",
+  "appTitle": "Four Square Game",
+  "@appTitle": {
+    "description": "Application name"
+  },
+  
+  "homeTitle": "Four Square",
+  "startGame": "Start Game",
+  "playerVsPlayer": "Player vs Player",
+  "playerVsAI": "Player vs AI",
+  "statistics": "Statistics",
+  "rules": "Game Rules",
+  "settings": "Settings",
+  
+  "difficultyEasy": "Easy",
+  "difficultyMedium": "Medium",
+  "difficultyHard": "Hard",
+  
+  "blackPlayer": "Black",
+  "whitePlayer": "White",
+  "currentTurn": "Current Turn",
+  "moveCount": "Moves",
+  
+  "gameOver": "Game Over",
+  "blackWins": "Black Wins!",
+  "whiteWins": "White Wins!",
+  "draw": "Draw",
+  "playAgain": "Play Again",
+  "backToMenu": "Back to Menu",
+  "exit": "Exit",
+  "viewReplay": "View Replay",
+  
+  "undo": "Undo",
+  "restart": "Restart",
+  "pause": "Pause",
+  
+  "statisticsTitle": "Statistics",
+  "totalGames": "Total Games",
+  "wins": "Wins",
+  "losses": "Losses",
+  "draws": "Draws",
+  "winRate": "Win Rate",
+  "maxStreak": "Best Streak",
+  "avgGameTime": "Avg Time",
+  "totalPlayTime": "Total Time",
+  
+  "rulesTitle": "Game Rules",
+  "rulesObjective": "Objective",
+  "rulesBasic": "Basic Rules",
+  "rulesMovement": "Movement",
+  "rulesCapture": "Capture",
+  
+  "settingsTitle": "Settings",
+  "soundEffects": "Sound Effects",
+  "music": "Music",
+  "vibration": "Vibration",
+  "theme": "Theme",
+  "language": "Language",
+  "aiDifficulty": "AI Difficulty",
+  
+  "themeLight": "Light",
+  "themeDark": "Dark",
+  "themeSystem": "System",
+  "themeDefault": "Default",
+  "themeClassic": "Classic",
+  "themeNight": "Night",
+  "themeColorful": "Colorful",
+  
+  "musicThemeMain": "Main Menu",
+  "musicThemeGameplay": "Gameplay",
+  "musicThemeClassic": "Classic",
+  "musicThemeNight": "Night",
+  "musicThemeRelaxing": "Relaxing",
+  
+  "replayTitle": "Game Replay",
+  "replayStep": "Step {step} / {total}",
+  "@replayStep": {
+    "description": "Replay step description",
+    "placeholders": {
+      "step": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "initialState": "Initial State",
+  "moveHistory": "Move History",
+  "goToStart": "Go to Start",
+  "goToEnd": "Go to End",
+  "stepForward": "Forward",
+  "stepBackward": "Backward",
+  
+  "save": "Save",
+  "cancel": "Cancel",
+  "confirm": "Confirm",
+  "delete": "Delete",
+  "clear": "Clear",
+  
+  "errorTitle": "Error",
+  "errorMessage": "An error occurred, please try again",
+  "invalidMove": "Invalid Move",
+  "loadingFailed": "Loading Failed",
+  
+  "minutes": "min",
+  "seconds": "sec",
+  "hours": "hrs"
+}

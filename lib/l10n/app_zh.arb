@@ -1,0 +1,110 @@
+{
+  "@@locale": "zh",
+  "appTitle": "\u56db\u5b50\u6e38\u620f",
+  "@appTitle": {
+    "description": "\u5e94\u7528\u540d\u79f0"
+  },
+  
+  "homeTitle": "\u56db\u5b50\u6e38\u620f",
+  "startGame": "\u5f00\u59cb\u6e38\u620f",
+  "playerVsPlayer": "\u53cc\u4eba\u5bf9\u6218",
+  "playerVsAI": "\u4eba\u673aAI",
+  "statistics": "\u6218\u7ee9\u7edf\u8ba1",
+  "rules": "\u6e38\u620f\u89c4\u5219",
+  "settings": "\u8bbe\u7f6e",
+  
+  "difficultyEasy": "\u7b80\u5355",
+  "difficultyMedium": "\u4e2d\u7b49",
+  "difficultyHard": "\u56f0\u96be",
+  
+  "blackPlayer": "\u9ed1\u65b9",
+  "whitePlayer": "\u767d\u65b9",
+  "currentTurn": "\u5f53\u524d\u56de\u5408",
+  "moveCount": "\u79fb\u52a8\u6b65\u6570",
+  
+  "gameOver": "\u6e38\u620f\u7ed3\u675f",
+  "blackWins": "\u9ed1\u65b9\u80dc\u5229\uff01",
+  "whiteWins": "\u767d\u65b9\u80dc\u5229\uff01",
+  "draw": "\u5e73\u5c40",
+  "playAgain": "\u518d\u6765\u4e00\u5c40",
+  "backToMenu": "\u8fd4\u56de\u4e3b\u83dc\u5355",
+  "exit": "\u9000\u51fa",
+  "viewReplay": "\u67e5\u770b\u56de\u653e",
+  
+  "undo": "\u64a4\u9500",
+  "restart": "\u91cd\u65b0\u5f00\u59cb",
+  "pause": "\u6682\u505c",
+  
+  "statisticsTitle": "\u6218\u7ee9\u7edf\u8ba1",
+  "totalGames": "\u603b\u573a\u6b21",
+  "wins": "\u80dc\u573a",
+  "losses": "\u8d25\u573a",
+  "draws": "\u5e73\u5c40",
+  "winRate": "\u80dc\u7387",
+  "maxStreak": "\u6700\u9ad8\u8fde\u80dc",
+  "avgGameTime": "\u5e73\u5747\u65f6\u957f",
+  "totalPlayTime": "\u603b\u6e38\u620f\u65f6\u95f4",
+  
+  "rulesTitle": "\u6e38\u620f\u89c4\u5219",
+  "rulesObjective": "\u6e38\u620f\u76ee\u6807",
+  "rulesBasic": "\u57fa\u672c\u89c4\u5219",
+  "rulesMovement": "\u79fb\u52a8\u89c4\u5219",
+  "rulesCapture": "\u5403\u5b50\u89c4\u5219",
+  
+  "settingsTitle": "\u8bbe\u7f6e",
+  "soundEffects": "\u97f3\u6548",
+  "music": "\u80cc\u666f\u97f3\u4e50",
+  "vibration": "\u9707\u52a8\u53cd\u9988",
+  "theme": "\u4e3b\u9898",
+  "language": "\u8bed\u8a00",
+  "aiDifficulty": "AI\u96be\u5ea6",
+  
+  "themeLight": "\u6d45\u8272",
+  "themeDark": "\u6df1\u8272",
+  "themeSystem": "\u8ddf\u968f\u7cfb\u7edf",
+  "themeDefault": "\u9ed8\u8ba4",
+  "themeClassic": "\u7ecf\u5178",
+  "themeNight": "\u591c\u95f4",
+  "themeColorful": "\u5f69\u8272",
+  
+  "musicThemeMain": "\u4e3b\u83dc\u5355",
+  "musicThemeGameplay": "\u6e38\u620f\u4e2d",
+  "musicThemeClassic": "\u7ecf\u5178",
+  "musicThemeNight": "\u591c\u95f4",
+  "musicThemeRelaxing": "\u8f7b\u677e",
+  
+  "replayTitle": "\u6e38\u620f\u56de\u653e",
+  "replayStep": "\u7b2c {step} \u6b65 / \u5171 {total} \u6b65",
+  "@replayStep": {
+    "description": "\u56de\u653e\u6b65\u9aa4\u63cf\u8ff0",
+    "placeholders": {
+      "step": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "initialState": "\u521d\u59cb\u72b6\u6001",
+  "moveHistory": "\u79fb\u52a8\u5386\u53f2",
+  "goToStart": "\u8df3\u8f6c\u5230\u5f00\u59cb",
+  "goToEnd": "\u8df3\u8f6c\u5230\u7ed3\u675f",
+  "stepForward": "\u524d\u8fdb",
+  "stepBackward": "\u540e\u9000",
+  
+  "save": "\u4fdd\u5b58",
+  "cancel": "\u53d6\u6d88",
+  "confirm": "\u786e\u8ba4",
+  "delete": "\u5220\u9664",
+  "clear": "\u6e05\u7a7a",
+  
+  "errorTitle": "\u9519\u8bef",
+  "errorMessage": "\u53d1\u751f\u9519\u8bef\uff0c\u8bf7\u91cd\u8bd5",
+  "invalidMove": "\u975e\u6cd5\u79fb\u52a8",
+  "loadingFailed": "\u52a0\u8f7d\u5931\u8d25",
+  
+  "minutes": "\u5206\u949f",
+  "seconds": "\u79d2",
+  "hours": "\u5c0f\u65f6"
+}

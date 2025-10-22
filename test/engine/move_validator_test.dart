@@ -160,22 +160,20 @@ void main() {
           const Position(0, 0),
         );
 
-        expect(moves.length, 2); // 右和下
+        expect(moves.length, 1); // 只有下
         expect(moves, containsAll([
-          const Position(1, 0),
           const Position(0, 1),
         ]));
       });
 
-      test('角落棋子应有2个可移动位置', () {
+      test('角落棋子应有1个可移动位置', () {
         final moves = validator.getValidMoves(
           board,
           const Position(3, 0),
         );
 
-        expect(moves.length, 2);
+        expect(moves.length, 1); // 只有下
         expect(moves, containsAll([
-          const Position(2, 0),
           const Position(3, 1),
         ]));
       });
@@ -189,7 +187,7 @@ void main() {
           const Position(2, 2),
         );
 
-        expect(moves.length, 4); // 上下左右都可以
+        expect(moves.length, 3); // 上左右，下面有白棋
       });
 
       test('被包围的棋子应返回空列表', () {

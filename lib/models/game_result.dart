@@ -15,6 +15,9 @@ enum GameStatus {
   /// 白方胜利
   whiteWin,
   
+  /// 平局
+  draw,
+  
   /// 超时
   timeout,
   
@@ -37,6 +40,8 @@ extension GameStatusExtension on GameStatus {
         return '黑方胜利';
       case GameStatus.whiteWin:
         return '白方胜利';
+      case GameStatus.draw:
+        return '平局';
       case GameStatus.timeout:
         return '超时';
       case GameStatus.abandoned:
@@ -101,6 +106,21 @@ class GameResult extends Equatable {
     return GameResult(
       status: GameStatus.whiteWin,
       winner: PieceType.white,
+      reason: reason,
+      moveCount: moveCount,
+      duration: duration,
+    );
+  }
+
+  /// 创建平局结果
+  factory GameResult.draw({
+    required String reason,
+    required int moveCount,
+    required Duration duration,
+  }) {
+    return GameResult(
+      status: GameStatus.draw,
+      winner: null,
       reason: reason,
       moveCount: moveCount,
       duration: duration,

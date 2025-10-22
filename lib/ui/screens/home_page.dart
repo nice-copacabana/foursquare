@@ -9,6 +9,9 @@ library;
 import 'package:flutter/material.dart';
 import '../../bloc/game_event.dart';
 import 'game_page.dart';
+import 'statistics_page.dart';
+import 'rules_page.dart';
+import 'settings_page.dart';
 
 /// 主菜单页面
 class HomePage extends StatelessWidget {
@@ -152,9 +155,11 @@ class HomePage extends StatelessWidget {
                 icon: Icons.bar_chart,
                 label: '统计',
                 onPressed: () {
-                  // TODO: 导航到统计页面
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('统计功能即将推出')),
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const StatisticsPage(),
+                    ),
                   );
                 },
               ),
@@ -165,8 +170,12 @@ class HomePage extends StatelessWidget {
                 icon: Icons.book,
                 label: '规则',
                 onPressed: () {
-                  // TODO: 导航到规则页面
-                  _showRulesDialog(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const RulesPage(),
+                    ),
+                  );
                 },
               ),
             ),
@@ -176,9 +185,11 @@ class HomePage extends StatelessWidget {
                 icon: Icons.settings,
                 label: '设置',
                 onPressed: () {
-                  // TODO: 导航到设置页面
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('设置功能即将推出')),
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const SettingsPage(),
+                    ),
                   );
                 },
               ),

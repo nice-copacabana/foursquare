@@ -16,6 +16,7 @@ import '../../models/position.dart';
 import '../widgets/board_widget.dart';
 import '../widgets/game_info_panel.dart';
 import '../widgets/game_over_dialog.dart';
+import 'game_replay_page.dart'; // 导入回放页面
 
 /// 游戏页面
 class GamePage extends StatelessWidget {
@@ -155,7 +156,8 @@ class _GamePageContent extends StatelessWidget {
       boardState: state.boardState,
       selectedPiece: state.selectedPiece,
       validMoves: state.validMoves,
-      lastMove: state.lastMove,
+      lastMoveFrom: state.lastMove?.from,
+      lastMoveTo: state.lastMove?.to,
       onPositionTapped: (position) => _handlePositionTapped(context, state, position),
     );
   }
@@ -231,6 +233,21 @@ class _GamePageContent extends StatelessWidget {
           Navigator.of(context).pop();
           Navigator.of(context).pop();
         },
+        onReplay: state.moveHistory.isNotEmpty
+            ? () {
+                Navigator.of(context).pop();
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => GameReplayPage(
+                      moveHistory: state.moveHistory,
+                      gameTitle: state.mode == GameMode.pvp
+                          ? 'PVP 游戏回放'
+                          : 'PVE 游戏回放',
+                    ),
+                  ),
+                );
+              }
+            : null,
       );
     });
   }

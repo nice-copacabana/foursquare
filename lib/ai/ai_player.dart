@@ -7,7 +7,6 @@
 library;
 
 import '../models/board_state.dart';
-import '../models/move.dart';
 import '../models/position.dart';
 
 /// AI难度级别

@@ -2,25 +2,79 @@
 // Task: 主程序入口，启动游戏应用
 
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'ui/screens/home_page.dart';
+import 'services/storage_service.dart';
+import 'theme/theme_manager.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // 初始化存储服务
+  final storageService = StorageService();
+  await storageService.initialize();
+  
   runApp(const FourSquareGameApp());
 }
 
-class FourSquareGameApp extends StatelessWidget {
+class FourSquareGameApp extends StatefulWidget {
   const FourSquareGameApp({super.key});
 
   @override
+  State<FourSquareGameApp> createState() => _FourSquareGameAppState();
+}
+
+class _FourSquareGameAppState extends State<FourSquareGameApp> {
+  final StorageService _storageService = StorageService();
+  GameTheme _currentTheme = ThemeManager.defaultTheme;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTheme();
+  }
+
+  Future<void> _loadTheme() async {
+    final settings = await _storageService.loadSettings();
+    final themeType = ThemeManager.getThemeTypeByName(settings.selectedTheme);
+    setState(() {
+      _currentTheme = ThemeManager.getTheme(themeType);
+      _isLoading = false;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const MaterialApp(
+        home: Scaffold(
+          body: Center(
+            child: CircularProgressIndicator(),
+          ),
+        ),
+        debugShowCheckedModeBanner: false,
+      );
+    }
+
     return MaterialApp(
       title: '四子游戏',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.brown),
-        useMaterial3: true,
-      ),
+      theme: _currentTheme.materialTheme,
       home: const HomePage(),
       debugShowCheckedModeBanner: false,
+      // 国际化配置
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('zh', ''), // 中文
+        Locale('en', ''), // 英文
+        Locale('ja', ''), // 日文
+      ],
     );
   }
 }

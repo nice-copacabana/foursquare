@@ -15,10 +15,9 @@ library;
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../models/board_state.dart';
-import '../models/position.dart';
 import '../models/piece_type.dart';
-import '../models/move.dart';
 import '../models/game_result.dart';
+import '../models/game_save.dart';
 import '../engine/game_engine.dart';
 import '../engine/move_validator.dart';
 import '../services/audio_service.dart';
@@ -44,7 +43,7 @@ class GameBloc extends Bloc<GameEvent, GameState> {
         _moveValidator = moveValidator ?? MoveValidator(),
         _audioService = audioService ?? AudioService(),
         _storageService = storageService ?? StorageService(),
-        super(const GameInitial()) {
+        super(GameInitial()) {
     // 注册事件处理器
     on<NewGameEvent>(_onNewGame);
     on<RestartGameEvent>(_onRestartGame);
@@ -63,7 +62,7 @@ class GameBloc extends Bloc<GameEvent, GameState> {
     _audioService.playSound(SoundType.click);
 
     emit(GamePlaying(
-      boardState: const BoardState.initial(),
+      boardState: BoardState.initial(),
       mode: event.mode,
       aiDifficulty: event.aiDifficulty,
       moveHistory: const [],
@@ -85,7 +84,7 @@ class GameBloc extends Bloc<GameEvent, GameState> {
         : null;
 
     emit(GamePlaying(
-      boardState: const BoardState.initial(),
+      boardState: BoardState.initial(),
       mode: currentMode,
       aiDifficulty: currentAIDifficulty,
       moveHistory: const [],
@@ -144,20 +143,14 @@ class GameBloc extends Bloc<GameEvent, GameState> {
     }
 
     // 播放音效
-    if (result.capturedPiece != null) {
+    if (result.captured != null) {
       _audioService.playSound(SoundType.capture);
     } else {
       _audioService.playSound(SoundType.move);
     }
 
-    // 创建移动记录
-    final move = Move(
-      from: event.from,
-      to: event.to,
-      player: playing.currentPlayer,
-      capturedPiece: result.capturedPiece,
-      timestamp: DateTime.now(),
-    );
+    // 移动记录已经在executeMove中创建，直接使用
+    final move = result.move!;
 
     // 更新移动历史
     final newMoveHistory = [...playing.moveHistory, move];
@@ -183,7 +176,7 @@ class GameBloc extends Bloc<GameEvent, GameState> {
       await _updateStatistics(result.gameResult!, newMoveHistory.length, playing);
 
       emit(GameOver(
-        boardState: result.newBoard,
+        boardState: result.newBoard!,
         mode: playing.mode,
         gameResult: result.gameResult!,
         moveHistory: newMoveHistory,
@@ -195,7 +188,7 @@ class GameBloc extends Bloc<GameEvent, GameState> {
 
     // 游戏继续，更新状态
     emit(playing.copyWith(
-      boardState: result.newBoard,
+      boardState: result.newBoard!,
       selectedPiece: null,
       clearSelectedPiece: true,
       validMoves: const [],
@@ -204,7 +197,7 @@ class GameBloc extends Bloc<GameEvent, GameState> {
     ));
 
     // 如果是AI模式且轮到AI，触发AI移动
-    if (playing.mode == GameMode.pve && result.newBoard.currentPlayer == PieceType.white) {
+    if (playing.mode == GameMode.pve && result.newBoard!.currentPlayer == PieceType.white) {
       add(const AIPlayEvent());
     }
   }
@@ -236,7 +229,7 @@ class GameBloc extends Bloc<GameEvent, GameState> {
     if (playing.moveHistory.length < stepsToUndo) return;
 
     // 从初始状态重新执行移动
-    var newBoard = const BoardState.initial();
+    var newBoard = BoardState.initial();
     final newMoveHistory = playing.moveHistory.sublist(
       0,
       playing.moveHistory.length - stepsToUndo,
@@ -244,8 +237,8 @@ class GameBloc extends Bloc<GameEvent, GameState> {
 
     for (final move in newMoveHistory) {
       final result = _gameEngine.executeMove(newBoard, move.from, move.to);
-      if (result.success) {
-        newBoard = result.newBoard;
+      if (result.success && result.newBoard != null) {
+        newBoard = result.newBoard!;
       }
     }
 
@@ -284,7 +277,11 @@ class GameBloc extends Bloc<GameEvent, GameState> {
       emit(GameOver(
         boardState: playing.boardState,
         mode: playing.mode,
-        gameResult: GameResult.blackWin('白方无子可走'),
+        gameResult: GameResult.blackWin(
+          reason: '白方无子可走',
+          moveCount: playing.moveHistory.length,
+          duration: Duration.zero,
+        ),
         moveHistory: playing.moveHistory,
         lastMove: playing.lastMove,
         aiDifficulty: playing.aiDifficulty,
@@ -301,23 +298,81 @@ class GameBloc extends Bloc<GameEvent, GameState> {
 
   /// 处理保存游戏事件
   Future<void> _onSaveGame(SaveGameEvent event, Emitter<GameState> emit) async {
-    // TODO: 实现游戏保存功能
-    _audioService.playSound(SoundType.click);
+    if (state is! GamePlaying) return;
+    
+    final playing = state as GamePlaying;
+    
+    try {
+      final gameSave = GameSave(
+        id: 'current_game',
+        saveTime: DateTime.now(),
+        boardState: BoardStateData.fromBoardState(playing.boardState),
+        moveHistory: playing.moveHistory
+            .map((m) => MoveData.fromMove(m))
+            .toList(),
+        currentPlayer: playing.currentPlayer == PieceType.black ? 'black' : 'white',
+        mode: playing.mode.toJson(),
+        aiDifficulty: playing.aiDifficulty,
+      );
+      
+      final success = await _storageService.saveGame(gameSave);
+      if (success) {
+        _audioService.playSound(SoundType.click);
+      }
+    } catch (e) {
+      print('保存游戏失败: $e');
+    }
   }
 
   /// 处理加载游戏事件
   Future<void> _onLoadGame(LoadGameEvent event, Emitter<GameState> emit) async {
-    // TODO: 实现游戏加载功能
-    _audioService.playSound(SoundType.click);
+    try {
+      final gameSave = await _storageService.loadGame();
+      if (gameSave == null) {
+        return;
+      }
+      
+      final currentPlayer = gameSave.currentPlayer == 'black' 
+          ? PieceType.black 
+          : PieceType.white;
+      
+      final boardState = gameSave.boardState.toBoardState(currentPlayer);
+      final moveHistory = gameSave.moveHistory
+          .map((m) => m.toMove())
+          .toList();
+      
+      final mode = GameModeExtensions.fromJson(gameSave.mode);
+      
+      emit(GamePlaying(
+        boardState: boardState,
+        moveHistory: moveHistory,
+        mode: mode,
+        aiDifficulty: gameSave.aiDifficulty,
+      ));
+      
+      _audioService.playSound(SoundType.click);
+      
+      // 加载后删除存档
+      await _storageService.deleteGameSave();
+    } catch (e) {
+      print('加载游戏失败: $e');
+    }
   }
 
   /// 处理设置变更事件
   Future<void> _onSettingsChanged(SettingsChangedEvent event, Emitter<GameState> emit) async {
-    // 更新音频设置
+    // 更新音效设置
     if (event.soundEnabled != null) {
       _audioService.setEnabled(event.soundEnabled!);
     }
-    // TODO: 处理其他设置变更
+    
+    // 更新音乐设置
+    if (event.musicEnabled != null) {
+      // TODO: 当实现背景音乐时处理
+    }
+    
+    // 震动和主题设置已由SettingsPage直接保存到StorageService
+    // 这里不需要额外处理
   }
 
   /// 更新统计数据

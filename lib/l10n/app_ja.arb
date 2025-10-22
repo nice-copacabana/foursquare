@@ -1,0 +1,110 @@
+{
+  "@@locale": "ja",
+  "appTitle": "四子ゲーム",
+  "@appTitle": {
+    "description": "アプリ名"
+  },
+  
+  "homeTitle": "四子ゲーム",
+  "startGame": "ゲーム開始",
+  "playerVsPlayer": "対人戦",
+  "playerVsAI": "AI対戦",
+  "statistics": "統計",
+  "rules": "ルール",
+  "settings": "設定",
+  
+  "difficultyEasy": "簡単",
+  "difficultyMedium": "普通",
+  "difficultyHard": "難しい",
+  
+  "blackPlayer": "黒",
+  "whitePlayer": "白",
+  "currentTurn": "現在のターン",
+  "moveCount": "手数",
+  
+  "gameOver": "ゲーム終了",
+  "blackWins": "黒の勝利！",
+  "whiteWins": "白の勝利！",
+  "draw": "引き分け",
+  "playAgain": "もう一度",
+  "backToMenu": "メニューへ",
+  "exit": "終了",
+  "viewReplay": "リプレイ",
+  
+  "undo": "元に戻す",
+  "restart": "再開",
+  "pause": "一時停止",
+  
+  "statisticsTitle": "統計",
+  "totalGames": "総ゲーム数",
+  "wins": "勝利",
+  "losses": "敗北",
+  "draws": "引き分け",
+  "winRate": "勝率",
+  "maxStreak": "最高連勝",
+  "avgGameTime": "平均時間",
+  "totalPlayTime": "総プレイ時間",
+  
+  "rulesTitle": "ゲームルール",
+  "rulesObjective": "目的",
+  "rulesBasic": "基本ルール",
+  "rulesMovement": "移動ルール",
+  "rulesCapture": "取るルール",
+  
+  "settingsTitle": "設定",
+  "soundEffects": "効果音",
+  "music": "音楽",
+  "vibration": "振動",
+  "theme": "テーマ",
+  "language": "言語",
+  "aiDifficulty": "AI難易度",
+  
+  "themeLight": "ライト",
+  "themeDark": "ダーク",
+  "themeSystem": "システム",
+  "themeDefault": "デフォルト",
+  "themeClassic": "クラシック",
+  "themeNight": "ナイト",
+  "themeColorful": "カラフル",
+  
+  "musicThemeMain": "メインメニュー",
+  "musicThemeGameplay": "ゲームプレイ",
+  "musicThemeClassic": "クラシック",
+  "musicThemeNight": "ナイト",
+  "musicThemeRelaxing": "リラックス",
+  
+  "replayTitle": "ゲームリプレイ",
+  "replayStep": "{step}手目 / 全{total}手",
+  "@replayStep": {
+    "description": "リプレイステップの説明",
+    "placeholders": {
+      "step": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "initialState": "初期状態",
+  "moveHistory": "手の履歴",
+  "goToStart": "最初へ",
+  "goToEnd": "最後へ",
+  "stepForward": "次へ",
+  "stepBackward": "前へ",
+  
+  "save": "保存",
+  "cancel": "キャンセル",
+  "confirm": "確認",
+  "delete": "削除",
+  "clear": "クリア",
+  
+  "errorTitle": "エラー",
+  "errorMessage": "エラーが発生しました。もう一度お試しください",
+  "invalidMove": "無効な移動",
+  "loadingFailed": "読み込み失敗",
+  
+  "minutes": "分",
+  "seconds": "秒",
+  "hours": "時間"
+}

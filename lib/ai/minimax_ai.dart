@@ -44,12 +44,22 @@ class MinimaxAI extends AIPlayer {
     final startTime = DateTime.now();
     int nodesEvaluated = 0;
     
-    final possibleMoves = _engine.getPossibleMoves(board);
+    final possibleMoves = _engine.getPossibleMoves(board, board.currentPlayer);
     if (possibleMoves.isEmpty) return null;
+    
+    // 将Map<Position, List<Position>>转换为List的移动
+    final moveList = <_MoveOption>[];
+    for (final entry in possibleMoves.entries) {
+      for (final to in entry.value) {
+        moveList.add(_MoveOption(from: entry.key, to: to));
+      }
+    }
+    
+    if (moveList.isEmpty) return null;
     
     // 简单难度：30%概率随机移动
     if (difficulty == AIDifficulty.easy && _random.nextDouble() < 0.3) {
-      final randomMove = possibleMoves[_random.nextInt(possibleMoves.length)];
+      final randomMove = moveList[_random.nextInt(moveList.length)];
       return AIMoveResult(
         from: randomMove.from,
         to: randomMove.to,
@@ -63,18 +73,18 @@ class MinimaxAI extends AIPlayer {
     Position? bestTo;
     int bestScore = -9999999;
     
-    for (final move in possibleMoves) {
+    for (final move in moveList) {
       final result = _engine.executeMove(board, move.from, move.to);
-      if (!result.success) continue;
+      if (!result.success || result.newBoard == null) continue;
       
       nodesEvaluated++;
       final score = -_minimax(
-        result.newBoard,
+        result.newBoard!,
         _maxDepth - 1,
         -9999999,
         9999999,
         false,
-        result.newBoard.currentPlayer,
+        board.currentPlayer,
       );
       
       if (score > bestScore) {
@@ -106,10 +116,12 @@ class MinimaxAI extends AIPlayer {
     // 检查游戏结束
     final gameResult = _engine.checkGameOver(board);
     if (gameResult != null) {
-      if (gameResult.status.toString().contains(aiPlayer.toString())) {
+      if (gameResult.winner == aiPlayer) {
         return 10000 + depth; // AI获胜
-      } else {
+      } else if (gameResult.winner == aiPlayer.getOpponent()) {
         return -10000 - depth; // AI失败
+      } else {
+        return 0; // 平局
       }
     }
     
@@ -118,18 +130,26 @@ class MinimaxAI extends AIPlayer {
       return BoardEvaluator.evaluate(board, aiPlayer);
     }
     
-    final possibleMoves = _engine.getPossibleMoves(board);
+    final possibleMoves = _engine.getPossibleMoves(board, board.currentPlayer);
     if (possibleMoves.isEmpty) {
       return BoardEvaluator.evaluate(board, aiPlayer);
     }
     
+    // 将Map转换为List
+    final moveList = <_MoveOption>[];
+    for (final entry in possibleMoves.entries) {
+      for (final to in entry.value) {
+        moveList.add(_MoveOption(from: entry.key, to: to));
+      }
+    }
+    
     if (isMaximizing) {
       int maxScore = -9999999;
-      for (final move in possibleMoves) {
+      for (final move in moveList) {
         final result = _engine.executeMove(board, move.from, move.to);
-        if (!result.success) continue;
+        if (!result.success || result.newBoard == null) continue;
         
-        final score = _minimax(result.newBoard, depth - 1, alpha, beta, false, aiPlayer);
+        final score = _minimax(result.newBoard!, depth - 1, alpha, beta, false, aiPlayer);
         maxScore = max(maxScore, score);
         alpha = max(alpha, score);
         if (beta <= alpha) break; // Beta剪枝
@@ -137,11 +157,11 @@ class MinimaxAI extends AIPlayer {
       return maxScore;
     } else {
       int minScore = 9999999;
-      for (final move in possibleMoves) {
+      for (final move in moveList) {
         final result = _engine.executeMove(board, move.from, move.to);
-        if (!result.success) continue;
+        if (!result.success || result.newBoard == null) continue;
         
-        final score = _minimax(result.newBoard, depth - 1, alpha, beta, true, aiPlayer);
+        final score = _minimax(result.newBoard!, depth - 1, alpha, beta, true, aiPlayer);
         minScore = min(minScore, score);
         beta = min(beta, score);
         if (beta <= alpha) break; // Alpha剪枝
@@ -149,4 +169,12 @@ class MinimaxAI extends AIPlayer {
       return minScore;
     }
   }
+}
+
+/// 移动选项内部类
+class _MoveOption {
+  final Position from;
+  final Position to;
+  
+  _MoveOption({required this.from, required this.to});
 }

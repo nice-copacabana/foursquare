@@ -115,9 +115,14 @@ class MoveValidator {
     final pieces = board.getAllPieces(player);
 
     for (final piece in pieces) {
-      final moves = getValidMoves(board, piece);
-      if (moves.isNotEmpty) {
-        return true;
+      // 获取四方向相邻位置
+      final adjacentPositions = piece.getAdjacentPositions();
+      
+      // 检查是否有空位
+      for (final pos in adjacentPositions) {
+        if (board.isEmpty(pos)) {
+          return true;
+        }
       }
     }
 

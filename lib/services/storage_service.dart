@@ -13,6 +13,7 @@ library;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'dart:convert';
+import '../models/game_save.dart';
 
 /// 游戏设置数据模型
 class GameSettings {
@@ -20,6 +21,7 @@ class GameSettings {
   final double soundVolume;
   final bool musicEnabled;
   final double musicVolume;
+  final String? musicTheme; // 音乐主题: 'main', 'gameplay', 'classic', 'night', 'relaxing'
   final bool vibrationEnabled;
   final String selectedTheme;
   final String difficulty; // 'easy', 'medium', 'hard'
@@ -29,6 +31,7 @@ class GameSettings {
     this.soundVolume = 0.7,
     this.musicEnabled = true,
     this.musicVolume = 0.5,
+    this.musicTheme = 'main',
     this.vibrationEnabled = true,
     this.selectedTheme = 'default',
     this.difficulty = 'medium',
@@ -39,6 +42,7 @@ class GameSettings {
     'soundVolume': soundVolume,
     'musicEnabled': musicEnabled,
     'musicVolume': musicVolume,
+    'musicTheme': musicTheme,
     'vibrationEnabled': vibrationEnabled,
     'selectedTheme': selectedTheme,
     'difficulty': difficulty,
@@ -50,6 +54,7 @@ class GameSettings {
       soundVolume: json['soundVolume'] ?? 0.7,
       musicEnabled: json['musicEnabled'] ?? true,
       musicVolume: json['musicVolume'] ?? 0.5,
+      musicTheme: json['musicTheme'] ?? 'main',
       vibrationEnabled: json['vibrationEnabled'] ?? true,
       selectedTheme: json['selectedTheme'] ?? 'default',
       difficulty: json['difficulty'] ?? 'medium',
@@ -61,6 +66,7 @@ class GameSettings {
     double? soundVolume,
     bool? musicEnabled,
     double? musicVolume,
+    String? musicTheme,
     bool? vibrationEnabled,
     String? selectedTheme,
     String? difficulty,
@@ -70,6 +76,7 @@ class GameSettings {
       soundVolume: soundVolume ?? this.soundVolume,
       musicEnabled: musicEnabled ?? this.musicEnabled,
       musicVolume: musicVolume ?? this.musicVolume,
+      musicTheme: musicTheme ?? this.musicTheme,
       vibrationEnabled: vibrationEnabled ?? this.vibrationEnabled,
       selectedTheme: selectedTheme ?? this.selectedTheme,
       difficulty: difficulty ?? this.difficulty,
@@ -89,6 +96,8 @@ class GameStatistics {
   final int totalCaptures;
   final DateTime? lastPlayedAt;
   final Map<String, int> difficultyWins; // AI难度胜利次数
+  final Map<String, double> dailyWinRate; // 每日胜率 (日期字符串 -> 胜率)
+  final Map<String, int> hourlyGames; // 每小时游戏数 (小时字符串 -> 游戏数)
   
   const GameStatistics({
     this.totalGames = 0,
@@ -101,6 +110,8 @@ class GameStatistics {
     this.totalCaptures = 0,
     this.lastPlayedAt,
     this.difficultyWins = const {},
+    this.dailyWinRate = const {},
+    this.hourlyGames = const {},
   });
   
   double get winRate => totalGames > 0 ? wins / totalGames : 0.0;
@@ -116,6 +127,8 @@ class GameStatistics {
     'totalCaptures': totalCaptures,
     'lastPlayedAt': lastPlayedAt?.toIso8601String(),
     'difficultyWins': difficultyWins,
+    'dailyWinRate': dailyWinRate,
+    'hourlyGames': hourlyGames,
   };
   
   factory GameStatistics.fromJson(Map<String, dynamic> json) {
@@ -132,6 +145,8 @@ class GameStatistics {
           ? DateTime.parse(json['lastPlayedAt']) 
           : null,
       difficultyWins: Map<String, int>.from(json['difficultyWins'] ?? {}),
+      dailyWinRate: Map<String, double>.from(json['dailyWinRate'] ?? {}),
+      hourlyGames: Map<String, int>.from(json['hourlyGames'] ?? {}),
     );
   }
   
@@ -146,6 +161,8 @@ class GameStatistics {
     int? totalCaptures,
     DateTime? lastPlayedAt,
     Map<String, int>? difficultyWins,
+    Map<String, double>? dailyWinRate,
+    Map<String, int>? hourlyGames,
   }) {
     return GameStatistics(
       totalGames: totalGames ?? this.totalGames,
@@ -158,6 +175,8 @@ class GameStatistics {
       totalCaptures: totalCaptures ?? this.totalCaptures,
       lastPlayedAt: lastPlayedAt ?? this.lastPlayedAt,
       difficultyWins: difficultyWins ?? this.difficultyWins,
+      dailyWinRate: dailyWinRate ?? this.dailyWinRate,
+      hourlyGames: hourlyGames ?? this.hourlyGames,
     );
   }
 }
@@ -170,11 +189,14 @@ class StorageService {
   
   SharedPreferences? _prefs;
   Box? _statisticsBox;
+  Box? _gameSaveBox;
   
   // 存储键
   static const String _keySettings = 'game_settings';
   static const String _keyStatistics = 'game_statistics';
+  static const String _keyGameSave = 'current_game_save';
   static const String _boxNameStatistics = 'statistics';
+  static const String _boxNameGameSave = 'game_save';
   
   /// 初始化存储服务
   Future<void> initialize() async {
@@ -184,6 +206,7 @@ class StorageService {
     // 初始化 Hive
     await Hive.initFlutter();
     _statisticsBox = await Hive.openBox(_boxNameStatistics);
+    _gameSaveBox = await Hive.openBox(_boxNameGameSave);
   }
   
   /// 保存游戏设置
@@ -305,5 +328,51 @@ class StorageService {
   /// 清理资源
   Future<void> dispose() async {
     await _statisticsBox?.close();
+    await _gameSaveBox?.close();
+  }
+  
+  /// 保存游戏状态
+  Future<bool> saveGame(GameSave gameSave) async {
+    try {
+      await _gameSaveBox!.put(_keyGameSave, gameSave.toJson());
+      return true;
+    } catch (e) {
+      print('保存游戏失败: $e');
+      return false;
+    }
+  }
+  
+  /// 加载游戏状态
+  Future<GameSave?> loadGame() async {
+    try {
+      final json = _gameSaveBox!.get(_keyGameSave);
+      if (json == null) {
+        return null;
+      }
+      return GameSave.fromJson(Map<String, dynamic>.from(json));
+    } catch (e) {
+      print('加载游戏失败: $e');
+      return null;
+    }
+  }
+  
+  /// 删除游戏存档
+  Future<bool> deleteGameSave() async {
+    try {
+      await _gameSaveBox!.delete(_keyGameSave);
+      return true;
+    } catch (e) {
+      print('删除游戏存档失败: $e');
+      return false;
+    }
+  }
+  
+  /// 检查是否有存档
+  Future<bool> hasSavedGame() async {
+    try {
+      return _gameSaveBox!.containsKey(_keyGameSave);
+    } catch (e) {
+      return false;
+    }
   }
 }

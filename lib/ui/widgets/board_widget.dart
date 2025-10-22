@@ -35,29 +35,31 @@ class BoardWidget extends StatelessWidget {
     final boardSize = size ?? _calculateBoardSize(context);
 
     return Center(
-      child: Container(
-        width: boardSize,
-        height: boardSize,
-        decoration: BoxDecoration(
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.3),
-              blurRadius: 10,
-              offset: const Offset(0, 5),
+      child: RepaintBoundary( // 添加 RepaintBoundary 优化渲染
+        child: Container(
+          width: boardSize,
+          height: boardSize,
+          decoration: BoxDecoration(
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.3),
+                blurRadius: 10,
+                offset: const Offset(0, 5),
+              ),
+            ],
+          ),
+          child: GestureDetector(
+            onTapUp: (details) => _handleTap(details, boardSize),
+            child: CustomPaint(
+              painter: BoardPainter(
+                boardState: boardState,
+                selectedPiece: selectedPiece,
+                validMoves: validMoves,
+                lastMoveFrom: lastMoveFrom,
+                lastMoveTo: lastMoveTo,
+              ),
+              size: Size(boardSize, boardSize),
             ),
-          ],
-        ),
-        child: GestureDetector(
-          onTapUp: (details) => _handleTap(details, boardSize),
-          child: CustomPaint(
-            painter: BoardPainter(
-              boardState: boardState,
-              selectedPiece: selectedPiece,
-              validMoves: validMoves,
-              lastMoveFrom: lastMoveFrom,
-              lastMoveTo: lastMoveTo,
-            ),
-            size: Size(boardSize, boardSize),
           ),
         ),
       ),

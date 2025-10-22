@@ -16,6 +16,7 @@ class GameOverDialog extends StatelessWidget {
   final GameResult gameResult;
   final VoidCallback onRestart;
   final VoidCallback onExit;
+  final VoidCallback? onReplay; // 新增：查看回放
 
   const GameOverDialog({
     super.key,
@@ -23,6 +24,7 @@ class GameOverDialog extends StatelessWidget {
     required this.gameResult,
     required this.onRestart,
     required this.onExit,
+    this.onReplay, // 新增：查看回放
   });
 
   @override
@@ -76,24 +78,43 @@ class GameOverDialog extends StatelessWidget {
             const SizedBox(height: 24),
             
             // 按钮组
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            Column(
               children: [
-                // 退出按钮
-                _DialogButton(
-                  icon: Icons.close,
-                  label: '退出',
-                  onPressed: onExit,
-                  backgroundColor: Colors.white.withOpacity(0.2),
+                // 第一行：重新开始 和 退出
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    // 退出按钮
+                    _DialogButton(
+                      icon: Icons.close,
+                      label: '退出',
+                      onPressed: onExit,
+                      backgroundColor: Colors.white.withOpacity(0.2),
+                    ),
+                    
+                    // 重新开始按钮
+                    _DialogButton(
+                      icon: Icons.refresh,
+                      label: '再来一局',
+                      onPressed: onRestart,
+                      backgroundColor: Colors.white.withOpacity(0.3),
+                    ),
+                  ],
                 ),
                 
-                // 重新开始按钮
-                _DialogButton(
-                  icon: Icons.refresh,
-                  label: '再来一局',
-                  onPressed: onRestart,
-                  backgroundColor: Colors.white.withOpacity(0.3),
-                ),
+                // 第二行：查看回放（如果可用）
+                if (onReplay != null)
+                  const SizedBox(height: 12),
+                if (onReplay != null)
+                  SizedBox(
+                    width: double.infinity,
+                    child: _DialogButton(
+                      icon: Icons.play_circle_outline,
+                      label: '查看回放',
+                      onPressed: onReplay!,
+                      backgroundColor: Colors.white.withOpacity(0.25),
+                    ),
+                  ),
               ],
             ),
           ],
@@ -196,6 +217,7 @@ Future<void> showGameOverDialog(
   required GameResult gameResult,
   required VoidCallback onRestart,
   required VoidCallback onExit,
+  VoidCallback? onReplay, // 新增：查看回放
 }) {
   return showDialog(
     context: context,
@@ -205,6 +227,7 @@ Future<void> showGameOverDialog(
       gameResult: gameResult,
       onRestart: onRestart,
       onExit: onExit,
+      onReplay: onReplay, // 传递回放回调
     ),
   );
 }
