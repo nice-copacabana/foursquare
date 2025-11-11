@@ -3,10 +3,28 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.VIBRATE" />
     
+    <!-- Wear OS支持声明（适配小米/OPPO/vivo手表） -->
+    <uses-feature android:name="android.hardware.type.watch" />
+    
+    <!-- 支持圆形屏幕（小米Watch/TicWatch等） -->
+    <uses-feature android:name="android.hardware.screen.round" android:required="false" />
+    
+    <!-- 支持方形屏幕（OPPO Watch等） -->
+    <uses-feature android:name="android.hardware.screen.portrait" android:required="false" />
+    
     <application
         android:label="四子游戏"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
+        
+        <!-- Wear OS应用元数据（小米/OPPO/vivo手表支持） -->
+        <meta-data
+            android:name="com.google.android.wearable.standalone"
+            android:value="true" />
+        
+        <uses-library
+            android:name="com.google.android.wearable"
+            android:required="false" />
         <activity
             android:name=".MainActivity"
             android:exported="true"
