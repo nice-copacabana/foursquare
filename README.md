@@ -3,7 +3,8 @@
 一个基于Flutter开发的跨平台四子棋类游戏，支持双人对战和人机对战模式。
 
 ## 项目概述
-//86-54 (20-18-12-2-2)
+//86-53 (20-18-11-2-2)
+//88-54 (20-18-12-2-2)
 四子游戏是一款策略性棋类游戏，在4×4的棋盘上进行。游戏目标是通过移动棋子形成特定的三子连线来吃掉对方的棋子，最终吃掉对方所有棋子或使对方无子可走获得胜利。
 
 ### 核心特性
@@ -290,15 +291,28 @@ Model层 (Models)
 
 ### 文档导航
 
-- [📖 实施计划](IMPLEMENTATION_PLAN.md) - 当前开发计划和进度跟踪
-- [🚀 快速开始指南](QUICK_START_GUIDE.md) - 项目快速启动和发布准备
-- [📑 变更日志](CHANGELOG.md) - 项目版本变更记录
+#### 核心文档
 - [📋 项目说明](README.md) - 本文档
+- [📑 变更日志](CHANGELOG.md) - 项目版本变更记录
 
-**新功能文档** - 语音控制与冥想模式:
-- 功能规划: 见 `IMPLEMENTATION_PLAN.md` 阶段3 (32小时开发计划)
-- 用户指南: 见 `QUICK_START_GUIDE.md` 创新功能章节
-- 技术亮点: 纯语音对弈、突破屏幕限制、空间记忆锻炼、无障碍支持
+#### 设计文档
+- [📖 实施计划](docs/design/IMPLEMENTATION_PLAN.md) - 当前开发计划和进度跟踪
+- [🎤 语音冥想功能设计](docs/design/VOICE_MEDITATION_FEATURE_DESIGN.md) - 创新功能设计文档
+
+#### 开发指南
+- [🚀 快速开始指南](docs/guides/QUICK_START_GUIDE.md) - 项目快速启动和发布准备
+- [📱 应用图标启动屏指南](docs/guides/APP_ICON_SPLASH_GUIDE.md) - 图标和启动屏配置
+- [🔊 音频集成指南](docs/guides/AUDIO_INTEGRATION_GUIDE.md) - 音频系统集成说明
+- [🔒 代码混淆指南](docs/guides/CODE_OBFUSCATION_GUIDE.md) - 代码保护配置
+- [🤖 Android构建修复指南](docs/guides/ANDROID_BUILD_FIX_GUIDE.md) - 构建问题解决方案
+- [🏪 商店资产指南](docs/guides/STORE_ASSETS_GUIDE.md) - 应用商店发布准备
+- [⚡ 快速发布指南](docs/guides/QUICK_PUBLISH_GUIDE.md) - 快速发布流程
+
+#### 开发报告
+- [📊 月度报告](docs/reports/monthly/) - 项目月度进度报告
+- [🔄 迭代报告](docs/reports/iterations/) - 各轮迭代总结
+- [📋 任务报告](docs/reports/tasks/) - 任务执行状态
+- [🎯 阶段报告](docs/reports/phases/) - 开发阶段总结
 
 ### 核心模块
 

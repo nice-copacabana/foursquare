@@ -95,3 +95,4 @@ coverage/
 # Exceptions to above rules.
 !/packages/flutter_tools/test/data/dart_dependencies_test/**/.packages
 !/dev/ci/**/Gemfile.lock
+!/android/.vscode/settings.json
