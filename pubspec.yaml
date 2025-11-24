@@ -25,6 +25,11 @@ dependencies:
   # 音频
   audioplayers: ^5.2.1
   
+  # 语音控制
+  speech_to_text: ^6.3.0  # 语音转文字
+  flutter_tts: ^3.8.0  # 文字转语音
+  permission_handler: ^11.0.0  # 运行时权限管理
+  
   # WebSocket支持
   web_socket_channel: ^2.4.0
   
@@ -37,6 +42,8 @@ dependencies:
 
 dev_dependencies:
   flutter_test:
+    sdk: flutter
+  integration_test:
     sdk: flutter
   
   # Lint

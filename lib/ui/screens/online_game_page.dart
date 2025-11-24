@@ -7,6 +7,8 @@ import '../../bloc/online_game_bloc.dart';
 import '../../bloc/online_game_event.dart';
 import '../../bloc/online_game_state.dart';
 import '../../models/piece_type.dart';
+import '../../models/position.dart';
+import '../widgets/board_widget.dart';
 
 /// 在线对战游戏页面
 /// 
@@ -81,43 +83,61 @@ class OnlineGamePage extends StatelessWidget {
         
         const Divider(height: 1),
         
-        // 棋盘区域（这里使用占位符，实际需要集成BoardWidget）
+        // 棋盘区域 - 集成真实的BoardWidget组件
         Expanded(
           child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(
-                  Icons.grid_4x4,
-                  size: 200,
-                  color: Colors.grey,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  state.isLocalPlayerTurn ? '你的回合' : '对手回合',
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  '匹配ID: ${state.match.matchId}',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[600],
-                  ),
-                ),
-                const SizedBox(height: 24),
-                const Text(
-                  '注意：棋盘组件待集成\n实际应用中会显示可交互的棋盘',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.orange,
-                  ),
-                ),
-              ],
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final size = constraints.maxWidth < constraints.maxHeight
+                    ? constraints.maxWidth * 0.9
+                    : constraints.maxHeight * 0.9;
+                
+                return Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // 回合提示
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: Text(
+                        state.isLocalPlayerTurn ? '你的回合' : '对手回合',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: state.isLocalPlayerTurn 
+                              ? Colors.blue 
+                              : Colors.grey,
+                        ),
+                      ),
+                    ),
+                    
+                    // 棋盘组件
+                    SizedBox(
+                      width: size,
+                      height: size,
+                      child: BoardWidget(
+                        boardState: state.boardState,
+                        selectedPiece: null, // 在线对战不显示选中状态
+                        validMoves: const [],
+                        lastMoveFrom: state.lastMove?.from,
+                        lastMoveTo: state.lastMove?.to,
+                        onPositionTapped: (position) => _handlePositionTapped(context, state, position),
+                      ),
+                    ),
+                    
+                    // 对局信息
+                    Padding(
+                      padding: const EdgeInsets.only(top: 16),
+                      child: Text(
+                        '对局ID: ${state.match.matchId}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
           ),
         ),
@@ -425,6 +445,25 @@ class OnlineGamePage extends StatelessWidget {
             child: const Text('确定退出'),
           ),
         ],
+      ),
+    );
+  }
+
+  /// 处理棋盘点击事件
+  void _handlePositionTapped(BuildContext context, OnlinePlaying state, Position position) {
+    // 如果不是本地玩家回合，忽略点击
+    if (!state.isLocalPlayerTurn) {
+      return;
+    }
+
+    // TODO: 实现完整的棋子选中和移动逻辑
+    // 这里仅作示例，实际需要根据业务逻辑完善
+    
+    // 临时方案：显示提示
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('点击了位置: ${position.x},${position.y}'),
+        duration: const Duration(seconds: 1),
       ),
     );
   }
