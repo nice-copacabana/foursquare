@@ -25,10 +25,10 @@ dependencies:
   # 音频
   audioplayers: ^5.2.1
   
-  # 语音控制（暂时禁用，编译问题）
-  # speech_to_text: ^6.3.0  # 语音转文字
-  # flutter_tts: ^3.8.0  # 文字转语音
-  # permission_handler: ^11.0.0  # 运行时权限管理
+  # 语音控制
+  # speech_to_text: ^6.3.0  # 语音转文字(暂时禁用)
+  flutter_tts: ^4.2.0  # 文字转语音
+  # permission_handler: ^11.0.0  # 运行时权限管理(暂时禁用)
   
   # WebSocket支持
   web_socket_channel: ^2.4.0
@@ -68,6 +68,14 @@ flutter:
     - assets/images/
     - assets/sounds/
     - assets/sounds/music/
+    - assets/sounds/select.wav
+    - assets/sounds/move.wav
+    - assets/sounds/capture.wav
+    - assets/sounds/win.wav
+    - assets/sounds/lose.wav
+    - assets/sounds/click.wav
+    - assets/sounds/music/main.wav
+    - assets/sounds/music/gameplay.wav
     - assets/icon/
     - assets/splash/
     - .env.development

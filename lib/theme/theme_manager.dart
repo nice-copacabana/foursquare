@@ -4,9 +4,14 @@
 /// - 管理应用主题
 /// - 提供多种预设主题
 /// - 支持自定义主题配置
+/// - 管理棋盘主题
 library;
 
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:async';
+import '../models/board_theme.dart';
+import '../constants/theme_presets.dart';
 
 /// 主题类型枚举
 enum AppThemeType {
@@ -77,6 +82,64 @@ class ThemeManager {
   static final ThemeManager _instance = ThemeManager._internal();
   factory ThemeManager() => _instance;
   ThemeManager._internal();
+
+  SharedPreferences? _prefs;
+  BoardTheme _currentBoardTheme = ThemePresets.defaultTheme;
+  final _themeController = StreamController<BoardTheme>.broadcast();
+
+  static const String _keyBoardTheme = 'board_theme_id';
+
+  /// 主题变化流
+  Stream<BoardTheme> get themeStream => _themeController.stream;
+
+  /// 当前棋盘主题
+  BoardTheme get currentBoardTheme => _currentBoardTheme;
+
+  /// 初始化主题管理器
+  Future<void> initialize() async {
+    _prefs = await SharedPreferences.getInstance();
+    await _loadBoardTheme();
+  }
+
+  /// 加载棋盘主题
+  Future<void> _loadBoardTheme() async {
+    try {
+      final themeId = _prefs?.getString(_keyBoardTheme);
+      if (themeId != null) {
+        final theme = ThemePresets.getById(themeId);
+        if (theme != null) {
+          _currentBoardTheme = theme;
+        }
+      }
+    } catch (e) {
+      print('加载棋盘主题失败: $e');
+    }
+  }
+
+  /// 切换棋盘主题
+  Future<void> setBoardTheme(BoardTheme theme) async {
+    _currentBoardTheme = theme;
+    _themeController.add(theme);
+    await _prefs?.setString(_keyBoardTheme, theme.id);
+  }
+
+  /// 根据ID切换主题
+  Future<void> setBoardThemeById(String themeId) async {
+    final theme = ThemePresets.getById(themeId);
+    if (theme != null) {
+      await setBoardTheme(theme);
+    }
+  }
+
+  /// 获取所有可用棋盘主题
+  List<BoardTheme> getAllBoardThemes() {
+    return ThemePresets.all;
+  }
+
+  /// 释放资源
+  void dispose() {
+    _themeController.close();
+  }
 
   /// 获取默认主题
   static GameTheme get defaultTheme => GameTheme(

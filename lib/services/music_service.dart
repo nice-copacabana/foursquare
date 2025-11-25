@@ -47,12 +47,12 @@ class MusicService {
 
   /// 音乐文件映射
   final Map<MusicTheme, String> _musicFiles = {
-    MusicTheme.main: 'sounds/music/main.mp3',
-    MusicTheme.gameplay: 'sounds/music/gameplay.mp3',
-    MusicTheme.victory: 'sounds/music/victory.mp3',
-    MusicTheme.classic: 'sounds/music/classic.mp3',
-    MusicTheme.night: 'sounds/music/night.mp3',
-    MusicTheme.relaxing: 'sounds/music/relaxing.mp3',
+    MusicTheme.main: 'sounds/music/main.wav',
+    MusicTheme.gameplay: 'sounds/music/gameplay.wav',
+    MusicTheme.victory: 'sounds/music/main.wav',  // 暂时复用
+    MusicTheme.classic: 'sounds/music/gameplay.wav',  // 暂时复用
+    MusicTheme.night: 'sounds/music/gameplay.wav',  // 暂时复用
+    MusicTheme.relaxing: 'sounds/music/main.wav',  // 暂时复用
   };
 
   /// 初始化音乐服务

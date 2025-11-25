@@ -6,6 +6,7 @@ import 'dart:math' as math;
 import '../../models/board_state.dart';
 import '../../models/position.dart';
 import '../../models/piece_type.dart';
+import '../../models/board_theme.dart';
 import '../../constants/ui_constants.dart';
 
 /// 棋盘绘制器
@@ -22,6 +23,8 @@ class BoardPainter extends CustomPainter {
   final Position? lastMoveFrom;
   final Position? lastMoveTo;
   final Position? hidePiece; // 隐藏指定位置的棋子（用于动画）
+  final BoardTheme? theme; // 棋盘主题
+  final double? selectionPulse; // 选中呼吸缩放系数
 
   BoardPainter({
     required this.boardState,
@@ -30,6 +33,8 @@ class BoardPainter extends CustomPainter {
     this.lastMoveFrom,
     this.lastMoveTo,
     this.hidePiece,
+    this.theme,
+    this.selectionPulse,
   });
 
   @override
@@ -75,8 +80,9 @@ class BoardPainter extends CustomPainter {
 
   /// 绘制背景
   void _drawBackground(Canvas canvas, Size size) {
+    final bgColor = theme?.backgroundColor ?? UIConstants.boardBackgroundColor;
     final paint = Paint()
-      ..color = UIConstants.boardBackgroundColor
+      ..color = bgColor
       ..style = PaintingStyle.fill;
 
     canvas.drawRect(
@@ -87,9 +93,12 @@ class BoardPainter extends CustomPainter {
 
   /// 绘制网格线
   void _drawGrid(Canvas canvas, Size size, double cellSize) {
+    final gridColor = theme?.gridColor ?? UIConstants.boardGridColor;
+    final lineWidth = theme?.gridLineWidth ?? UIConstants.gridLineWidth;
+    
     final paint = Paint()
-      ..color = UIConstants.boardGridColor
-      ..strokeWidth = UIConstants.gridLineWidth
+      ..color = gridColor
+      ..strokeWidth = lineWidth
       ..style = PaintingStyle.stroke;
 
     // 绘制横线
@@ -170,11 +179,14 @@ class BoardPainter extends CustomPainter {
       pos.x * cellSize + cellSize / 2,
       pos.y * cellSize + cellSize / 2,
     );
-    final radius = cellSize * UIConstants.selectionRadiusRatio;
+    final pulse = selectionPulse ?? 1.0;
+    final radius = cellSize * UIConstants.selectionRadiusRatio * pulse;
+
+    final selectionColor = theme?.selectionColor ?? UIConstants.selectionColor;
 
     // 绘制光晕效果
     final glowPaint = Paint()
-      ..color = UIConstants.selectionColor.withValues(alpha: UIConstants.selectionGlowOpacity)
+      ..color = selectionColor.withValues(alpha: UIConstants.selectionGlowOpacity)
       ..maskFilter = MaskFilter.blur(BlurStyle.normal, UIConstants.selectionGlowBlur)
       ..style = PaintingStyle.fill;
 
@@ -182,7 +194,7 @@ class BoardPainter extends CustomPainter {
 
     // 绘制高亮圆环
     final ringPaint = Paint()
-      ..color = UIConstants.selectionColor
+      ..color = selectionColor
       ..strokeWidth = UIConstants.selectionRingWidth
       ..style = PaintingStyle.stroke;
 
@@ -197,15 +209,17 @@ class BoardPainter extends CustomPainter {
     );
     final radius = cellSize * UIConstants.moveHintRadiusRatio;
 
+    final hintColor = theme?.moveHintColor ?? UIConstants.moveHintColor;
+
     final paint = Paint()
-      ..color = UIConstants.moveHintColor.withValues(alpha: UIConstants.moveHintOpacity)
+      ..color = hintColor.withValues(alpha: UIConstants.moveHintOpacity)
       ..style = PaintingStyle.fill;
 
     canvas.drawCircle(center, radius, paint);
 
     // 绘制边框
     final borderPaint = Paint()
-      ..color = UIConstants.moveHintColor
+      ..color = hintColor
       ..strokeWidth = UIConstants.moveHintBorderWidth
       ..style = PaintingStyle.stroke;
 

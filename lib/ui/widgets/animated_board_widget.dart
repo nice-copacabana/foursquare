@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import '../../models/board_state.dart';
 import '../../models/position.dart';
 import '../../models/piece_type.dart';
+import '../../models/board_theme.dart';
 import 'board_painter.dart';
 
 /// 带动画效果的棋盘Widget
@@ -24,6 +25,7 @@ class AnimatedBoardWidget extends StatefulWidget {
   final Function(Position) onPositionTapped;
   final double? size;
   final bool vibrationEnabled;
+  final BoardTheme? theme; // 棋盘主题
 
   const AnimatedBoardWidget({
     super.key,
@@ -36,6 +38,7 @@ class AnimatedBoardWidget extends StatefulWidget {
     this.capturedPiecePosition,
     this.size,
     this.vibrationEnabled = true,
+    this.theme,
   });
 
   @override
@@ -57,6 +60,10 @@ class _AnimatedBoardWidgetState extends State<AnimatedBoardWidget>
   Position? _capturingPosition;
   PieceType? _capturingPiece;
 
+  // 选中呼吸动画控制器
+  AnimationController? _selectionAnimationController;
+  Animation<double>? _selectionPulseAnimation;
+
   @override
   void initState() {
     super.initState();
@@ -67,17 +74,18 @@ class _AnimatedBoardWidgetState extends State<AnimatedBoardWidget>
   void dispose() {
     _moveAnimationController?.dispose();
     _captureAnimationController?.dispose();
+    _selectionAnimationController?.dispose();
     super.dispose();
   }
 
   void _initAnimations() {
-    // 移动动画：300ms
+    // 移动动画：300ms，使用easeOutBack曲线实现微弹效果
     _moveAnimationController = AnimationController(
       duration: const Duration(milliseconds: 300),
       vsync: this,
     );
 
-    // 吃子动画：400ms
+    // 吃子动画：400ms，加入旋转效果
     _captureAnimationController = AnimationController(
       duration: const Duration(milliseconds: 400),
       vsync: this,
@@ -103,6 +111,20 @@ class _AnimatedBoardWidgetState extends State<AnimatedBoardWidget>
       parent: _captureAnimationController!,
       curve: const Interval(0.25, 1.0, curve: Curves.easeOut),
     ),);
+
+    // 选中呼吸动画：1.5s循环
+    _selectionAnimationController = AnimationController(
+      duration: const Duration(milliseconds: 1500),
+      vsync: this,
+    )..repeat(reverse: true);
+
+    _selectionPulseAnimation = Tween<double>(
+      begin: 1.0,
+      end: 1.15,
+    ).animate(CurvedAnimation(
+      parent: _selectionAnimationController!,
+      curve: Curves.easeInOut,
+    ));
   }
 
   @override
@@ -166,7 +188,7 @@ class _AnimatedBoardWidgetState extends State<AnimatedBoardWidget>
       end: Offset(to.x.toDouble(), to.y.toDouble()),
     ).animate(CurvedAnimation(
       parent: _moveAnimationController!,
-      curve: Curves.easeInOut,
+      curve: Curves.easeOutBack, // 使用easeOutBack实现微弹效果
     ),);
 
     _moveAnimationController!.forward(from: 0.0).then((_) {
@@ -261,6 +283,8 @@ class _AnimatedBoardWidgetState extends State<AnimatedBoardWidget>
           lastMoveFrom: widget.lastMoveFrom,
           lastMoveTo: widget.lastMoveTo,
           hidePiece: _animatingTo, // 隐藏目标位置的棋子，显示动画棋子
+          theme: widget.theme,
+          selectionPulse: _selectionPulseAnimation?.value,
         ),
         size: Size(boardSize, boardSize),
       ),

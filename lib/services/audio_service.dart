@@ -59,12 +59,12 @@ class AudioService {
   /// 预加载所有音效
   Future<void> _preloadSounds() async {
     final soundFiles = {
-      SoundType.select: 'sounds/select.mp3',
-      SoundType.move: 'sounds/move.mp3',
-      SoundType.capture: 'sounds/capture.mp3',
-      SoundType.win: 'sounds/win.mp3',
-      SoundType.lose: 'sounds/lose.mp3',
-      SoundType.click: 'sounds/click.mp3',
+      SoundType.select: 'sounds/select.wav',
+      SoundType.move: 'sounds/move.wav',
+      SoundType.capture: 'sounds/capture.wav',
+      SoundType.win: 'sounds/win.wav',
+      SoundType.lose: 'sounds/lose.wav',
+      SoundType.click: 'sounds/click.wav',
     };
 
     for (final entry in soundFiles.entries) {

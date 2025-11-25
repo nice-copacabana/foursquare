@@ -14,8 +14,12 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../services/storage_service.dart';
 import '../../services/audio_service.dart';
-import '../../services/music_service.dart'; // 导入音乐服务
-import '../../theme/theme_manager.dart'; // 导入主题管理器
+import '../../services/music_service.dart';
+import '../../services/audio_coordinator.dart';
+import '../../theme/theme_manager.dart';
+import '../../models/audio_settings.dart';
+import '../../models/display_settings.dart';
+import '../../constants/theme_presets.dart';
 import '../../constants/storage_constants.dart';
 import 'onboarding_page.dart';
 
@@ -29,10 +33,12 @@ class SettingsPage extends StatefulWidget {
 
 class _SettingsPageState extends State<SettingsPage> {
   final StorageService _storageService = StorageService();
-  final AudioService _audioService = AudioService();
-  final MusicService _musicService = MusicService(); // 添加音乐服务
+  final AudioCoordinator _audioCoordinator = AudioCoordinator();
+  final ThemeManager _themeManager = ThemeManager();
   
   GameSettings _settings = const GameSettings();
+  AudioSettings _audioSettings = AudioSettings.defaultSettings;
+  DisplaySettings _displaySettings = DisplaySettings.defaultSettings;
   bool _isLoading = true;
 
   @override
@@ -44,6 +50,11 @@ class _SettingsPageState extends State<SettingsPage> {
   Future<void> _loadSettings() async {
     setState(() => _isLoading = true);
     final settings = await _storageService.loadSettings();
+    _audioSettings = _audioCoordinator.settings;
+    _displaySettings = DisplaySettings(
+      themeId: _themeManager.currentBoardTheme.id,
+      vibrationEnabled: settings.vibrationEnabled,
+    );
     setState(() {
       _settings = settings;
       _isLoading = false;
@@ -95,31 +106,27 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Widget _buildSoundSettingsGroup() {
     return _SettingsGroup(
-      title: '音效设置',
+      title: '音频设置',
       children: [
         _SettingsSwitch(
           label: '音效开关',
           subtitle: '移动、吃子等游戏音效',
-          value: _settings.soundEnabled,
-          onChanged: (value) {
-            _audioService.setEnabled(value);
-            if (value) {
-              _audioService.playSound(SoundType.move);
-            }
-            _updateSetting(_settings.copyWith(soundEnabled: value));
+          value: _audioSettings.soundEnabled,
+          onChanged: (value) async {
+            final newSettings = _audioSettings.copyWith(soundEnabled: value);
+            await _audioCoordinator.updateSettings(newSettings);
+            setState(() => _audioSettings = newSettings);
           },
         ),
-        if (_settings.soundEnabled) ...[
+        if (_audioSettings.soundEnabled) ...[
           const Divider(),
           _SettingsSlider(
             label: '音效音量',
-            value: _settings.soundVolume,
-            onChanged: (value) {
-              _audioService.setVolume(value);
-              _updateSetting(_settings.copyWith(soundVolume: value));
-            },
-            onChangeEnd: (_) {
-              _audioService.playSound(SoundType.move);
+            value: _audioSettings.soundVolume,
+            onChanged: (value) async {
+              final newSettings = _audioSettings.copyWith(soundVolume: value);
+              await _audioCoordinator.updateSettings(newSettings);
+              setState(() => _audioSettings = newSettings);
             },
           ),
         ],
@@ -127,66 +134,36 @@ class _SettingsPageState extends State<SettingsPage> {
         _SettingsSwitch(
           label: '背景音乐',
           subtitle: '游戏背景音乐',
-          value: _settings.musicEnabled,
+          value: _audioSettings.musicEnabled,
           onChanged: (value) async {
-            if (value) {
-              await _musicService.setEnabled(true);
-              await _musicService.playMusic(MusicTheme.main);
-            } else {
-              await _musicService.setEnabled(false);
-            }
-            _updateSetting(_settings.copyWith(musicEnabled: value));
+            final newSettings = _audioSettings.copyWith(musicEnabled: value);
+            await _audioCoordinator.updateSettings(newSettings);
+            setState(() => _audioSettings = newSettings);
           },
         ),
-        if (_settings.musicEnabled) ...[
+        if (_audioSettings.musicEnabled) ...[
           const Divider(),
           _SettingsSlider(
             label: '音乐音量',
-            value: _settings.musicVolume,
+            value: _audioSettings.musicVolume,
             onChanged: (value) async {
-              await _musicService.setVolume(value);
-              _updateSetting(_settings.copyWith(musicVolume: value));
-            },
-          ),
-          const Divider(),
-          _SettingsSelector(
-            label: '音乐主题',
-            subtitle: '选择喜欢的背景音乐',
-            options: const ['main', 'gameplay', 'classic', 'night', 'relaxing'],
-            optionLabels: const {
-              'main': '主菜单',
-              'gameplay': '游戏中',
-              'classic': '经典',
-              'night': '夜间',
-              'relaxing': '轻松',
-            },
-            value: _settings.musicTheme ?? 'main',
-            onChanged: (value) async {
-              MusicTheme theme;
-              switch (value) {
-                case 'main':
-                  theme = MusicTheme.main;
-                  break;
-                case 'gameplay':
-                  theme = MusicTheme.gameplay;
-                  break;
-                case 'classic':
-                  theme = MusicTheme.classic;
-                  break;
-                case 'night':
-                  theme = MusicTheme.night;
-                  break;
-                case 'relaxing':
-                  theme = MusicTheme.relaxing;
-                  break;
-                default:
-                  theme = MusicTheme.main;
-              }
-              await _musicService.switchTheme(theme);
-              _updateSetting(_settings.copyWith(musicTheme: value));
+              final newSettings = _audioSettings.copyWith(musicVolume: value);
+              await _audioCoordinator.updateSettings(newSettings);
+              setState(() => _audioSettings = newSettings);
             },
           ),
         ],
+        const Divider(),
+        _SettingsSwitch(
+          label: '语音播报',
+          subtitle: '游戏过程语音提示',
+          value: _audioSettings.voiceEnabled,
+          onChanged: (value) async {
+            final newSettings = _audioSettings.copyWith(voiceEnabled: value);
+            await _audioCoordinator.updateSettings(newSettings);
+            setState(() => _audioSettings = newSettings);
+          },
+        ),
       ],
     );
   }
@@ -233,23 +210,37 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Widget _buildThemeGroup() {
+    final allThemes = ThemePresets.all;
     return _SettingsGroup(
-      title: '主题设置',
+      title: '棋盘主题',
       children: [
         _SettingsSelector(
-          label: '棋盘主题',
+          label: '主题风格',
           subtitle: '选择喜欢的棋盘风格',
-          options: ThemeManager.getThemeNames(),
-          optionLabels: ThemeManager.getThemeDisplayNames(),
-          value: _settings.selectedTheme == 'default' ? 'default' : _settings.selectedTheme,
+          options: allThemes.map((t) => t.id).toList(),
+          optionLabels: {for (var t in allThemes) t.id: t.name},
+          value: _displaySettings.themeId,
+          onChanged: (value) async {
+            await _themeManager.setBoardThemeById(value);
+            setState(() {
+              _displaySettings = _displaySettings.copyWith(themeId: value);
+            });
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('已切换到${allThemes.firstWhere((t) => t.id == value).name}主题')),
+              );
+            }
+          },
+        ),
+        const Divider(),
+        _SettingsSwitch(
+          label: '动画效果',
+          subtitle: '棋子移动和吃子动画',
+          value: _displaySettings.animationEnabled,
           onChanged: (value) {
-            _updateSetting(_settings.copyWith(selectedTheme: value));
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('主题将在重启应用后生效'),
-                duration: Duration(seconds: 2),
-              ),
-            );
+            setState(() {
+              _displaySettings = _displaySettings.copyWith(animationEnabled: value);
+            });
           },
         ),
       ],
