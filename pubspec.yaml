@@ -26,9 +26,9 @@ dependencies:
   audioplayers: ^5.2.1
   
   # 语音控制
-  # speech_to_text: ^6.3.0  # 语音转文字(暂时禁用)
+  speech_to_text: ^6.3.0  # 语音转文字
   flutter_tts: ^4.2.0  # 文字转语音
-  # permission_handler: ^11.0.0  # 运行时权限管理(暂时禁用)
+  permission_handler: ^11.0.1  # 运行时权限管理
   
   # WebSocket支持
   web_socket_channel: ^2.4.0

@@ -19,6 +19,8 @@ class BoardWidget extends StatelessWidget {
   final Position? lastMoveTo;
   final Function(Position) onPositionTapped;
   final double? size;
+  /// 是否翻转棋盘视角（让白方在下方）
+  final bool flipBoard;
 
   const BoardWidget({
     super.key,
@@ -29,12 +31,35 @@ class BoardWidget extends StatelessWidget {
     this.lastMoveFrom,
     this.lastMoveTo,
     this.size,
+    this.flipBoard = false,
   });
 
   @override
   Widget build(BuildContext context) {
     // 计算棋盘尺寸
     final boardSize = size ?? _calculateBoardSize(context);
+
+    Widget boardContent = GestureDetector(
+      onTapUp: (details) => _handleTap(details, boardSize),
+      child: CustomPaint(
+        painter: BoardPainter(
+          boardState: boardState,
+          selectedPiece: selectedPiece,
+          validMoves: validMoves,
+          lastMoveFrom: lastMoveFrom,
+          lastMoveTo: lastMoveTo,
+        ),
+        size: Size(boardSize, boardSize),
+      ),
+    );
+
+    // 如果需要翻转视角，旋转180度
+    if (flipBoard) {
+      boardContent = Transform.rotate(
+        angle: 3.14159, // 180度 = π弧度
+        child: boardContent,
+      );
+    }
 
     return Center(
       child: RepaintBoundary( // 添加 RepaintBoundary 优化渲染
@@ -44,19 +69,7 @@ class BoardWidget extends StatelessWidget {
           decoration: BoxDecoration(
             boxShadow: [UIConstants.boardShadow],
           ),
-          child: GestureDetector(
-            onTapUp: (details) => _handleTap(details, boardSize),
-            child: CustomPaint(
-              painter: BoardPainter(
-                boardState: boardState,
-                selectedPiece: selectedPiece,
-                validMoves: validMoves,
-                lastMoveFrom: lastMoveFrom,
-                lastMoveTo: lastMoveTo,
-              ),
-              size: Size(boardSize, boardSize),
-            ),
-          ),
+          child: boardContent,
         ),
       ),
     );
@@ -79,7 +92,15 @@ class BoardWidget extends StatelessWidget {
   /// 处理点击事件
   void _handleTap(TapUpDetails details, double boardSize) {
     final cellSize = boardSize / GameConstants.boardSize;
-    final localPos = details.localPosition;
+    var localPos = details.localPosition;
+
+    // 如果棋盘已翻转，需要反转坐标
+    if (flipBoard) {
+      localPos = Offset(
+        boardSize - localPos.dx,
+        boardSize - localPos.dy,
+      );
+    }
 
     // 将屏幕坐标转换为棋盘坐标
     final x = (localPos.dx / cellSize).floor();

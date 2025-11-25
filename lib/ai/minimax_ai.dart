@@ -54,11 +54,11 @@ class MinimaxAI extends AIPlayer {
   static int _getDepthForDifficulty(AIDifficulty difficulty) {
     switch (difficulty) {
       case AIDifficulty.easy:
-        return 2;
+        return 3;  // 从easy2层提升到3层
       case AIDifficulty.medium:
-        return 3;
+        return 4;  // 从med3层提升到4层
       case AIDifficulty.hard:
-        return 4;
+        return 5;  // 从hard4层提升到5层
     }
   }
   
@@ -93,13 +93,13 @@ class MinimaxAI extends AIPlayer {
       }
     }
     
-    // 根据棋子数量调整深度
+    // 根据棋子数量调整深度（优化后）
     if (totalPieces >= 6) {
       return _baseDepth; // 开局，使用基础深度
     } else if (totalPieces >= 4) {
-      return _baseDepth + 1; // 中局，增加深度
+      return _baseDepth + 1; // 中局，增加1层
     } else {
-      return _baseDepth + 2; // 残局，显著增加深度以精确计算
+      return _baseDepth + 2; // 残局，增加2层以精确计算
     }
   }
   
@@ -174,8 +174,8 @@ class MinimaxAI extends AIPlayer {
     
     if (moveList.isEmpty) return null;
     
-    // 简单难度：30%概率随机移动
-    if (difficulty == AIDifficulty.easy && _random.nextDouble() < 0.3) {
+    // 简单难度：10%概率随机移动（从30%降低）
+    if (difficulty == AIDifficulty.easy && _random.nextDouble() < 0.1) {
       final randomMove = moveList[_random.nextInt(moveList.length)];
       return AIMoveResult(
         from: randomMove.from,

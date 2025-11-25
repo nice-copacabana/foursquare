@@ -3,8 +3,7 @@
 
 library;
 
-// 暂时禁用整个冥想模式，因为需要语音服务支持
-/*
+import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../models/board_state.dart';
 import '../models/piece_type.dart';
@@ -19,9 +18,6 @@ import '../ai/ai_player.dart';
 import '../ai/minimax_ai.dart';
 import 'meditation_mode_event.dart';
 import 'meditation_mode_state.dart';
-*/
-
-/*
 /// 冥想模式BLoC
 /// 
 /// 负责冥想模式的完整业务逻辑，包括：
@@ -614,8 +610,7 @@ class MeditationModeBloc extends Bloc<MeditationModeEvent, MeditationModeState> 
   @override
   Future<void> close() async {
     await _voiceRecognition.dispose();
-    await _voiceSynthesisdipose();
+    await _voiceSynthesis.dispose();
     return super.close();
   }
 }
-*/

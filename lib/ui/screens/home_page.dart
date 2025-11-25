@@ -7,12 +7,16 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../bloc/game_event.dart';
+import '../../bloc/meditation_mode_bloc.dart';
+import '../../bloc/meditation_mode_event.dart';
 import '../widgets/game_icon.dart';
 import 'game_page.dart';
 import 'statistics_page.dart';
 import 'rules_page.dart';
 import 'settings_page.dart';
+import 'meditation_game_page.dart';
 
 /// 主菜单页面
 class HomePage extends StatelessWidget {
@@ -148,6 +152,28 @@ class HomePage extends StatelessWidget {
           ),
           onPressed: () {
             _showDifficultyDialog(context);
+          },
+        ),
+        const SizedBox(height: 16),
+        
+        _MenuButton(
+          icon: Icons.self_improvement,
+          label: '冥想模式',
+          subtitle: '语音交互对弈',
+          gradient: LinearGradient(
+            colors: [Colors.purple.shade400, Colors.deepPurple.shade600],
+          ),
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => BlocProvider(
+                  create: (context) => MeditationModeBloc()
+                    ..add(const StartMeditationGame()),
+                  child: const MeditationGamePage(),
+                ),
+              ),
+            );
           },
         ),
         const SizedBox(height: 16),
