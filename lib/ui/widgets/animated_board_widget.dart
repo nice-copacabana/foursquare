@@ -109,6 +109,20 @@ class _AnimatedBoardWidgetState extends State<AnimatedBoardWidget>
   void didUpdateWidget(AnimatedBoardWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
 
+    // 检测棋盘状态变化，如果正在动画的位置棋子变化了，清除动画状态
+    if (_animatingTo != null && widget.boardState != oldWidget.boardState) {
+      final currentPiece = widget.boardState.getPiece(_animatingTo!);
+      // 如果目标位置的棋子与动画棋子不同，说明棋盘状态变化了（如撤销）
+      if (currentPiece != _animatingPiece) {
+        setState(() {
+          _animatingTo = null;
+          _animatingPiece = null;
+        });
+        _moveAnimationController?.stop();
+        return;
+      }
+    }
+
     // 检测移动
     if (widget.lastMoveFrom != null &&
         widget.lastMoveTo != null &&
@@ -119,6 +133,13 @@ class _AnimatedBoardWidgetState extends State<AnimatedBoardWidget>
         widget.lastMoveTo!,
         widget.boardState.getPiece(widget.lastMoveTo!),
       );
+    } else if (widget.lastMoveFrom != oldWidget.lastMoveFrom ||
+               widget.lastMoveTo != oldWidget.lastMoveTo) {
+      // lastMove变化但为空（如撤销到初始状态），清除动画状态
+      setState(() {
+        _animatingTo = null;
+        _animatingPiece = null;
+      });
     }
 
     // 检测吃子
@@ -149,10 +170,13 @@ class _AnimatedBoardWidgetState extends State<AnimatedBoardWidget>
     ),);
 
     _moveAnimationController!.forward(from: 0.0).then((_) {
-      setState(() {
-        _animatingTo = null;
-        _animatingPiece = null;
-      });
+      // 确保动画完成后立即显示棋子
+      if (mounted) {
+        setState(() {
+          _animatingTo = null;
+          _animatingPiece = null;
+        });
+      }
     });
   }
 

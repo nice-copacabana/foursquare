@@ -464,12 +464,12 @@ class _ActionButtons extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // 撤销和重做按钮
+        // 撤销和重做按钮（暂时禁用，避免动画问题）
         Row(
           children: [
             Expanded(
               child: ElevatedButton.icon(
-                onPressed: canUndo ? onUndo : null,
+                onPressed: null, // 暂时禁用
                 icon: const Icon(Icons.undo, size: 18),
                 label: const Text('撤销'),
                 style: ElevatedButton.styleFrom(
@@ -486,7 +486,7 @@ class _ActionButtons extends StatelessWidget {
             const SizedBox(width: 8),
             Expanded(
               child: ElevatedButton.icon(
-                onPressed: canRedo ? onRedo : null,
+                onPressed: null, // 暂时禁用
                 icon: const Icon(Icons.redo, size: 18),
                 label: const Text('重做'),
                 style: ElevatedButton.styleFrom(

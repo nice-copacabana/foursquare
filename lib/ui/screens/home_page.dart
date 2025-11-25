@@ -8,6 +8,7 @@ library;
 
 import 'package:flutter/material.dart';
 import '../../bloc/game_event.dart';
+import '../widgets/game_icon.dart';
 import 'game_page.dart';
 import 'statistics_page.dart';
 import 'rules_page.dart';
@@ -76,10 +77,13 @@ class HomePage extends StatelessWidget {
               ),
             ],
           ),
-          child: const Icon(
-            Icons.grid_4x4,
-            size: 60,
-            color: Colors.white,
+          child: const Padding(
+            padding: EdgeInsets.all(20),
+            child: GameIcon(
+              size: 80,
+              gridColor: Colors.white,
+              showPieces: false,
+            ),
           ),
         ),
         const SizedBox(height: 24),

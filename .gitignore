@@ -78,6 +78,9 @@ app.*.map.json
 # macOS
 **/macos/Flutter/GeneratedPluginRegistrant.swift
 **/macos/Flutter/ephemeral
+**/macos/Pods/
+**/macos/.symlinks/
+**/macos/xcuserdata/
 
 # Windows
 **/windows/flutter/generated_plugin_registrant.cc
@@ -89,8 +92,58 @@ app.*.map.json
 **/linux/flutter/generated_plugin_registrant.h
 **/linux/flutter/generated_plugins.cmake
 
+# Web
+**/web/.dart_tool/
+
 # Coverage
 coverage/
+*.lcov
+
+# Test related
+**/test/**/.test_coverage.dart
+.test_coverage.dart
+
+# Generated files
+*.g.dart
+*.freezed.dart
+*.mocks.dart
+**/generated/
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+*.realm
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Log files
+logs/
+*.log.*
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.backup
+*~
+
+# OS generated files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Package files
+*.apk
+*.aab
+*.ipa
+*.app
+*.dSYM.zip
+*.dSYM
 
 # Exceptions to above rules.
 !/packages/flutter_tools/test/data/dart_dependencies_test/**/.packages

@@ -3,6 +3,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../widgets/game_icon.dart';
 import '../../constants/ui_constants.dart';
 import '../../constants/storage_constants.dart';
 
@@ -181,10 +182,11 @@ class _WelcomePage extends StatelessWidget {
               color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(UIConstants.borderRadiusLarge),
             ),
-            child: Icon(
-              Icons.grid_4x4,
-              size: 120,
-              color: Theme.of(context).primaryColor,
+            child: const Center(
+              child: GameIcon(
+                size: 120,
+                showPieces: false,
+              ),
             ),
           ),
           const SizedBox(height: 32),
@@ -249,7 +251,19 @@ class _RulesBoardPage extends StatelessWidget {
           
           const SizedBox(height: 32),
           _InfoCard(
-            icon: Icons.grid_on,
+            customIcon: Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: GameIcon(
+                size: 32,
+                gridColor: Theme.of(context).primaryColor,
+                showPieces: false,
+              ),
+            ),
             title: '4×4 棋盘',
             description: '游戏在一个4×4的棋盘上进行',
           ),
@@ -365,7 +379,7 @@ class _RulesCapturePage extends StatelessWidget {
           ),
           const SizedBox(height: 32),
           
-          // 吃子示意图
+          // 吃子示意图：己方2子 + 对方1子 = 3子连线
           Container(
             width: 240,
             height: 120,
@@ -378,7 +392,7 @@ class _RulesCapturePage extends StatelessWidget {
               children: [
                 _buildPiece(Colors.black),
                 _buildPiece(Colors.black),
-                _buildPiece(Colors.black),
+                _buildPiece(Colors.white),
                 Icon(Icons.arrow_forward, color: Colors.red.shade400, size: 32),
                 _buildPiece(Colors.white, opacity: 0.3),
               ],
@@ -386,10 +400,10 @@ class _RulesCapturePage extends StatelessWidget {
           ),
           
           const SizedBox(height: 32),
-          _InfoCard(
+          const _InfoCard(
             icon: Icons.filter_3,
             title: '三子连线',
-            description: '当己方三个棋子连成一线时',
+            description: '当己方2子与对方1子连成一线时',
           ),
           const SizedBox(height: 16),
           _InfoCard(
@@ -472,15 +486,17 @@ class _FeaturesPage extends StatelessWidget {
 
 /// 信息卡片
 class _InfoCard extends StatelessWidget {
-  final IconData icon;
+  final IconData? icon;
+  final Widget? customIcon;
   final String title;
   final String description;
 
   const _InfoCard({
-    required this.icon,
+    this.icon,
+    this.customIcon,
     required this.title,
     required this.description,
-  });
+  }) : assert(icon != null || customIcon != null, 'Either icon or customIcon must be provided');
 
   @override
   Widget build(BuildContext context) {
@@ -499,7 +515,7 @@ class _InfoCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(icon, size: 32, color: Theme.of(context).primaryColor),
+          customIcon ?? Icon(icon!, size: 32, color: Theme.of(context).primaryColor),
           const SizedBox(width: 16),
           Expanded(
             child: Column(

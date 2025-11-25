@@ -63,7 +63,7 @@ class UIConstants {
   static const double moveHintBorderWidth = 2.0;
   
   /// 最后移动箭头宽度
-  static const double lastMoveArrowWidth = 3.0;
+  static const double lastMoveArrowWidth = 2.0;
   
   /// 箭头头部大小
   static const double arrowHeadSize = 10.0;
@@ -83,7 +83,7 @@ class UIConstants {
   static const double lastMoveBackgroundOpacity = 0.2;
   
   /// 最后移动箭头透明度
-  static const double lastMoveArrowOpacity = 0.6;
+  static const double lastMoveArrowOpacity = 0.25;
 
   // ========== 动画时长 ==========
   

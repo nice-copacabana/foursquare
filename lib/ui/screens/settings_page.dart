@@ -11,10 +11,13 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../services/storage_service.dart';
 import '../../services/audio_service.dart';
 import '../../services/music_service.dart'; // 导入音乐服务
 import '../../theme/theme_manager.dart'; // 导入主题管理器
+import '../../constants/storage_constants.dart';
+import 'onboarding_page.dart';
 
 /// 设置页面
 class SettingsPage extends StatefulWidget {
@@ -270,6 +273,14 @@ class _SettingsPageState extends State<SettingsPage> {
         ),
         const Divider(),
         ListTile(
+          leading: const Icon(Icons.school),
+          title: const Text('重新查看游戏说明'),
+          subtitle: const Text('查看新手引导和游戏规则'),
+          trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+          onTap: _showOnboarding,
+        ),
+        const Divider(),
+        ListTile(
           leading: const Icon(Icons.article),
           title: const Text('开源许可'),
           trailing: const Icon(Icons.arrow_forward_ios, size: 16),
@@ -371,6 +382,21 @@ class _SettingsPageState extends State<SettingsPage> {
           const SnackBar(content: Text('已重置所有设置')),
         );
       }
+    }
+  }
+
+  Future<void> _showOnboarding() async {
+    // 重置首次启动标记，然后跳转到引导页
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(StorageConstants.keyFirstLaunch, true);
+    
+    if (mounted) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const OnboardingPage(),
+        ),
+      );
     }
   }
 }

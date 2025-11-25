@@ -42,10 +42,10 @@ class BoardPainter extends CustomPainter {
     // 2. 绘制网格线
     _drawGrid(canvas, size, cellSize);
 
-    // 3. 绘制最后移动标记
-    if (lastMoveFrom != null && lastMoveTo != null) {
-      _drawLastMove(canvas, cellSize, lastMoveFrom!, lastMoveTo!);
-    }
+    // 3. 绘制最后移动标记（暂时关闭，避免遮挡棋子）
+    // if (lastMoveFrom != null && lastMoveTo != null) {
+    //   _drawLastMove(canvas, cellSize, lastMoveFrom!, lastMoveTo!);
+    // }
 
     // 4. 绘制合法移动提示
     for (final pos in validMoves) {
@@ -236,7 +236,7 @@ class BoardPainter extends CustomPainter {
     );
     canvas.drawRect(toRect, paint);
 
-    // 绘制箭头
+    // 绘制箭头（缩短长度，避免遮挡棋子）
     final arrowPaint = Paint()
       ..color = UIConstants.lastMoveColor.withValues(alpha: UIConstants.lastMoveArrowOpacity)
       ..strokeWidth = UIConstants.lastMoveArrowWidth
@@ -253,10 +253,19 @@ class BoardPainter extends CustomPainter {
       to.y * cellSize + cellSize / 2,
     );
 
-    canvas.drawLine(fromCenter, toCenter, arrowPaint);
+    // 计算箭头方向向量
+    final direction = toCenter - fromCenter;
+    final distance = direction.distance;
+    final normalizedDir = direction / distance;
+    
+    // 缩短箭头，从起点留出40%，终点留出40%，确保不遮挡棋子
+    final arrowStart = fromCenter + normalizedDir * (distance * 0.4);
+    final arrowEnd = toCenter - normalizedDir * (distance * 0.4);
+
+    canvas.drawLine(arrowStart, arrowEnd, arrowPaint);
 
     // 绘制箭头头部
-    _drawArrowHead(canvas, fromCenter, toCenter, arrowPaint);
+    _drawArrowHead(canvas, arrowStart, arrowEnd, arrowPaint);
   }
 
   /// 绘制箭头头部

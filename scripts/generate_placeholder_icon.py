@@ -15,36 +15,36 @@ def create_placeholder_icon(size, filename):
     img = Image.new('RGB', (size, size), color='#1E3A8A')
     draw = ImageDraw.Draw(img)
     
-    # 绘制棋盘网格
+    # 绘制棋盘网格（5×5线，形成4×4格子）
     grid_color = '#FFFFFF'
     line_width = max(2, size // 100)
     grid_size = size // 5
     
-    for i in range(6):
+    for i in range(5):
         # 垂直线
-        x = i * grid_size
+        x = grid_size + i * grid_size
         draw.line([(x, grid_size), (x, size - grid_size)], fill=grid_color, width=line_width)
         # 水平线
-        y = i * grid_size
+        y = grid_size + i * grid_size
         draw.line([(grid_size, y), (size - grid_size, y)], fill=grid_color, width=line_width)
     
     # 绘制棋子
     piece_radius = grid_size // 3
     
-    # 黑色棋子
-    black_pieces = [(2, 2), (3, 3)]
+    # 黑色棋子（放在格子中心）
+    black_pieces = [(0, 0), (0, 1), (0, 2), (0, 3)]
     for row, col in black_pieces:
-        x = grid_size + col * grid_size
-        y = grid_size + row * grid_size
+        x = grid_size + (col + 0.5) * grid_size
+        y = grid_size + (row + 0.5) * grid_size
         draw.ellipse([x - piece_radius, y - piece_radius, 
                      x + piece_radius, y + piece_radius], 
                      fill='#000000', outline='#FFFFFF', width=line_width)
     
-    # 白色棋子
-    white_pieces = [(2, 3), (3, 2)]
+    # 白色棋子（放在格子中心）
+    white_pieces = [(3, 0), (3, 1), (3, 2), (3, 3)]
     for row, col in white_pieces:
-        x = grid_size + col * grid_size
-        y = grid_size + row * grid_size
+        x = grid_size + (col + 0.5) * grid_size
+        y = grid_size + (row + 0.5) * grid_size
         draw.ellipse([x - piece_radius, y - piece_radius, 
                      x + piece_radius, y + piece_radius], 
                      fill='#FFFFFF', outline='#000000', width=line_width)
@@ -59,37 +59,37 @@ def create_adaptive_foreground(size, filename):
     img = Image.new('RGBA', (size, size), color=(0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
     
-    # 绘制简化的棋盘
+    # 绘制简化的棋盘（5×5线，形成4×4格子）
     grid_color = (30, 58, 138, 255)  # 深蓝色
     line_width = max(2, size // 50)
     grid_size = size // 5
     margin = size // 10
     
-    for i in range(6):
+    for i in range(5):
         # 垂直线
-        x = margin + i * grid_size
+        x = margin + grid_size + i * grid_size
         draw.line([(x, margin + grid_size), (x, size - margin - grid_size)], 
                  fill=grid_color, width=line_width)
         # 水平线
-        y = margin + i * grid_size
+        y = margin + grid_size + i * grid_size
         draw.line([(margin + grid_size, y), (size - margin - grid_size, y)], 
                  fill=grid_color, width=line_width)
     
     # 绘制棋子
     piece_radius = grid_size // 3
     
-    # 黑色棋子
-    for row, col in [(2, 2), (3, 3)]:
-        x = margin + grid_size + col * grid_size
-        y = margin + grid_size + row * grid_size
+    # 黑色棋子（放在格子中心）
+    for row, col in [(0, 1), (0, 2)]:
+        x = margin + grid_size + (col + 0.5) * grid_size
+        y = margin + grid_size + (row + 0.5) * grid_size
         draw.ellipse([x - piece_radius, y - piece_radius, 
                      x + piece_radius, y + piece_radius], 
                      fill=(0, 0, 0, 255), outline=(255, 255, 255, 255), width=line_width)
     
-    # 白色棋子
-    for row, col in [(2, 3), (3, 2)]:
-        x = margin + grid_size + col * grid_size
-        y = margin + grid_size + row * grid_size
+    # 白色棋子（放在格子中心）
+    for row, col in [(3, 1), (3, 2)]:
+        x = margin + grid_size + (col + 0.5) * grid_size
+        y = margin + grid_size + (row + 0.5) * grid_size
         draw.ellipse([x - piece_radius, y - piece_radius, 
                      x + piece_radius, y + piece_radius], 
                      fill=(255, 255, 255, 255), outline=(0, 0, 0, 255), width=line_width)
@@ -126,14 +126,18 @@ def create_splash_logo(size, filename):
     center = size // 2
     piece_radius = grid_size // 2
     
-    # 黑色棋子
-    draw.ellipse([center - piece_radius - grid_size, center - piece_radius, 
-                 center + piece_radius - grid_size, center + piece_radius], 
+    # 黑色棋子（放在格子中心）
+    black_x = margin + grid_size * 1.5
+    black_y = margin + grid_size * 1.5
+    draw.ellipse([black_x - piece_radius, black_y - piece_radius, 
+                 black_x + piece_radius, black_y + piece_radius], 
                  fill=(0, 0, 0, 255), outline=(255, 255, 255, 255), width=line_width)
     
-    # 白色棋子
-    draw.ellipse([center - piece_radius + grid_size, center - piece_radius, 
-                 center + piece_radius + grid_size, center + piece_radius], 
+    # 白色棋子（放在格子中心）
+    white_x = margin + grid_size * 2.5
+    white_y = margin + grid_size * 2.5
+    draw.ellipse([white_x - piece_radius, white_y - piece_radius, 
+                 white_x + piece_radius, white_y + piece_radius], 
                  fill=(255, 255, 255, 255), outline=(0, 0, 0, 255), width=line_width)
     
     # 保存图像
