@@ -19,6 +19,7 @@ class ThemePresets {
     selectionColor: Colors.amber,
     moveHintColor: Colors.green,
     lastMoveColor: Colors.blue,
+    backgroundTexture: 'wood',
   );
 
   /// 现代简约主题
@@ -32,6 +33,7 @@ class ThemePresets {
     selectionColor: Colors.blue,
     moveHintColor: Color(0xFF64B5F6), // 浅蓝色
     lastMoveColor: Color(0xFF42A5F5),
+    backgroundTexture: 'linen',
   );
 
   /// 深夜模式主题
@@ -45,6 +47,7 @@ class ThemePresets {
     selectionColor: Colors.cyan,
     moveHintColor: Colors.tealAccent,
     lastMoveColor: Color(0xFF26C6DA),
+    backgroundTexture: 'night',
   );
 
   /// 所有预设主题列表

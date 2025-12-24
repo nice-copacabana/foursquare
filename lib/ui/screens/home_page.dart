@@ -12,6 +12,8 @@ import '../../bloc/game_event.dart';
 import '../../bloc/meditation_mode_bloc.dart';
 import '../../bloc/meditation_mode_event.dart';
 import '../widgets/game_icon.dart';
+import '../../services/storage_service.dart';
+import '../../services/resource_warmup_service.dart';
 import 'game_page.dart';
 import 'statistics_page.dart';
 import 'rules_page.dart';
@@ -19,8 +21,32 @@ import 'settings_page.dart';
 import 'meditation_game_page.dart';
 
 /// 主菜单页面
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  final StorageService _storageService = StorageService();
+  final ResourceWarmupService _resourceWarmupService = ResourceWarmupService();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _warmupResources();
+    });
+  }
+
+  Future<void> _warmupResources() async {
+    final settings = await _storageService.loadSettings();
+    if (!mounted) return;
+    if (settings.resourceWarmupEnabled) {
+      await _resourceWarmupService.warmup(context);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {

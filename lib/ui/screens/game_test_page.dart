@@ -8,7 +8,7 @@ import '../../models/piece_type.dart';
 import '../../models/move.dart';
 import '../../engine/game_engine.dart';
 import '../../engine/move_validator.dart';
-import '../widgets/board_widget.dart';
+import '../widgets/themed_board_widget.dart';
 
 /// 游戏测试页面
 /// 
@@ -216,12 +216,13 @@ class _GameTestPageState extends State<GameTestPage> {
         // 棋盘
         Expanded(
           child: Center(
-            child: BoardWidget(
+            child: ThemedBoardWidget(
               boardState: _board,
               selectedPiece: _selectedPiece,
               validMoves: _validMoves,
               lastMoveFrom: _lastMove?.from,
               lastMoveTo: _lastMove?.to,
+              capturedPiecePosition: _lastMove?.capturedPiece,
               onPositionTapped: _handlePositionTapped,
             ),
           ),
@@ -250,7 +251,7 @@ class _GameTestPageState extends State<GameTestPage> {
               _buildPlayerInfo(isTop: true),
               Expanded(
                 child: Center(
-                  child: BoardWidget(
+                  child: ThemedBoardWidget(
                     boardState: _board,
                     selectedPiece: _selectedPiece,
                     validMoves: _validMoves,

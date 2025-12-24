@@ -81,7 +81,10 @@ class AudioCoordinator {
   AudioSettings _settings = AudioSettings.defaultSettings;
   GameScene _currentScene = GameScene.mainMenu;
   bool _isVoicePlaying = false;
+  bool _voiceProcessing = false;
   double _originalMusicVolume = 0.4;
+  final List<_VoiceAnnouncement> _voiceQueue = [];
+  DateTime? _lastAiThinkingAt;
 
   static const String _keyAudioSettings = 'audio_settings';
 
@@ -172,16 +175,13 @@ class AudioCoordinator {
 
       case GameEvent.pieceMoved:
         _audioService.playSound(SoundType.move);
-        if (_settings.voiceEnabled) {
-          // 语音播报移动(可选)
-        }
         break;
 
       case GameEvent.pieceCaptured:
         _audioService.playSound(SoundType.capture);
         if (_settings.voiceEnabled && data != null) {
           final player = data['player'] as String? ?? '';
-          _speakWithMusicDucking('$player吃掉对方棋子');
+          _enqueueAnnouncement('${player}??????', priority: 1);
         }
         break;
 
@@ -190,32 +190,35 @@ class AudioCoordinator {
         _musicService.playMusic(MusicTheme.victory);
         if (_settings.voiceEnabled && data != null) {
           final player = data['player'] as String? ?? '';
-          _speakWithMusicDucking('$player获胜');
+          _enqueueAnnouncement('${player}??', priority: 3, interrupt: true);
         }
         break;
 
       case GameEvent.gameLost:
         _audioService.playSound(SoundType.lose);
         if (_settings.voiceEnabled) {
-          _speakWithMusicDucking('游戏结束');
+          final player = data?['player'] as String?;
+          _enqueueAnnouncement(player != null && player.isNotEmpty ? '${player}??' : '????', priority: 3, interrupt: true);
         }
         break;
 
       case GameEvent.turnChanged:
         if (_settings.voiceEnabled && data != null) {
           final player = data['player'] as String? ?? '';
-          _speakWithMusicDucking('轮到$player');
+          _enqueueAnnouncement('??${player}', priority: 1);
         }
         break;
 
       case GameEvent.aiThinking:
-        if (_settings.voiceEnabled) {
-          _speakWithMusicDucking('AI正在思考');
+        if (_settings.voiceEnabled && _shouldAnnounceAiThinking()) {
+          _enqueueAnnouncement('AI????', priority: 0);
         }
         break;
 
       case GameEvent.invalidOperation:
-        // 可选:播放错误音效
+        if (_settings.voiceEnabled) {
+          _enqueueAnnouncement('????', priority: 1);
+        }
         break;
 
       case GameEvent.buttonClicked:
@@ -257,19 +260,70 @@ class AudioCoordinator {
   }
 
   /// 带音乐降低的语音播报
-  void _speakWithMusicDucking(String text) async {
-    if (!_settings.voiceEnabled || _isVoicePlaying) return;
+  bool _shouldAnnounceAiThinking() {
+    final now = DateTime.now();
+    final last = _lastAiThinkingAt;
+    if (last != null && now.difference(last).inSeconds < 5) {
+      return false;
+    }
+    _lastAiThinkingAt = now;
+    return true;
+  }
+
+  void _enqueueAnnouncement(
+    String text, {
+    int priority = 0,
+    bool interrupt = false,
+  }) {
+    if (!_settings.voiceEnabled) return;
+
+    if (interrupt) {
+      _voiceQueue.clear();
+      _voiceService.stop();
+    }
+
+    final entry = _VoiceAnnouncement(
+      text: text,
+      priority: priority,
+      interrupt: interrupt,
+      timestamp: DateTime.now(),
+    );
+
+    if (_voiceQueue.isEmpty) {
+      _voiceQueue.add(entry);
+    } else {
+      final index = _voiceQueue.indexWhere((e) => e.priority < priority);
+      if (index == -1) {
+        _voiceQueue.add(entry);
+      } else {
+        _voiceQueue.insert(index, entry);
+      }
+    }
+
+    _processVoiceQueue();
+  }
+
+  Future<void> _processVoiceQueue() async {
+    if (_voiceProcessing) return;
+    _voiceProcessing = true;
+
+    while (_voiceQueue.isNotEmpty) {
+      final next = _voiceQueue.removeAt(0);
+      await _playAnnouncement(next.text);
+    }
+
+    _voiceProcessing = false;
+  }
+
+  Future<void> _playAnnouncement(String text) async {
+    if (!_settings.voiceEnabled) return;
+    if (_isVoicePlaying) return;
 
     _isVoicePlaying = true;
 
-    // 降低音乐音量
     await _onVoiceStart();
-
-    // 播报语音
     await _voiceService.speak(text);
-
-    // 恢复音乐音量
-    await Future.delayed(const Duration(milliseconds: 500));
+    await Future.delayed(const Duration(milliseconds: 300));
     await _onVoiceEnd();
 
     _isVoicePlaying = false;
@@ -314,4 +368,18 @@ class AudioCoordinator {
     await _musicService.dispose();
     await _voiceService.dispose();
   }
+}
+
+class _VoiceAnnouncement {
+  final String text;
+  final int priority;
+  final bool interrupt;
+  final DateTime timestamp;
+
+  _VoiceAnnouncement({
+    required this.text,
+    required this.priority,
+    required this.interrupt,
+    required this.timestamp,
+  });
 }

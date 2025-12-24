@@ -6,6 +6,8 @@ import 'package:flutter/services.dart';
 import '../../models/board_state.dart';
 import '../../models/position.dart';
 import '../../models/piece_type.dart';
+import '../../constants/ui_constants.dart';
+import '../../constants/game_constants.dart';
 import '../../models/board_theme.dart';
 import 'board_painter.dart';
 
@@ -25,6 +27,9 @@ class AnimatedBoardWidget extends StatefulWidget {
   final Function(Position) onPositionTapped;
   final double? size;
   final bool vibrationEnabled;
+  final bool animationEnabled;
+  final bool particleEnabled;
+  final bool flipBoard;
   final BoardTheme? theme; // 棋盘主题
 
   const AnimatedBoardWidget({
@@ -38,6 +43,9 @@ class AnimatedBoardWidget extends StatefulWidget {
     this.capturedPiecePosition,
     this.size,
     this.vibrationEnabled = true,
+    this.animationEnabled = true,
+    this.particleEnabled = true,
+    this.flipBoard = false,
     this.theme,
   });
 
@@ -116,7 +124,11 @@ class _AnimatedBoardWidgetState extends State<AnimatedBoardWidget>
     _selectionAnimationController = AnimationController(
       duration: const Duration(milliseconds: 1500),
       vsync: this,
-    )..repeat(reverse: true);
+    );
+
+    if (widget.animationEnabled) {
+      _selectionAnimationController?.repeat(reverse: true);
+    }
 
     _selectionPulseAnimation = Tween<double>(
       begin: 1.0,
@@ -130,6 +142,24 @@ class _AnimatedBoardWidgetState extends State<AnimatedBoardWidget>
   @override
   void didUpdateWidget(AnimatedBoardWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
+
+    if (oldWidget.animationEnabled != widget.animationEnabled) {
+      if (widget.animationEnabled) {
+        _selectionAnimationController?.repeat(reverse: true);
+      } else {
+        _selectionAnimationController?.stop();
+        setState(() {
+          _animatingTo = null;
+          _animatingPiece = null;
+          _capturingPosition = null;
+          _capturingPiece = null;
+        });
+      }
+    }
+
+    if (!widget.animationEnabled) {
+      return;
+    }
 
     // 检测棋盘状态变化，如果正在动画的位置棋子变化了，清除动画状态
     if (_animatingTo != null && widget.boardState != oldWidget.boardState) {
@@ -176,6 +206,7 @@ class _AnimatedBoardWidgetState extends State<AnimatedBoardWidget>
 
   /// 播放移动动画
   void _playMoveAnimation(Position from, Position to, PieceType? piece) {
+    if (!widget.animationEnabled) return;
     if (piece == null) return;
 
     setState(() {
@@ -204,6 +235,7 @@ class _AnimatedBoardWidgetState extends State<AnimatedBoardWidget>
 
   /// 播放吃子动画
   void _playCaptureAnimation(Position position, PieceType? piece) {
+    if (!widget.animationEnabled) return;
     if (piece == null) return;
 
     setState(() {
@@ -228,42 +260,55 @@ class _AnimatedBoardWidgetState extends State<AnimatedBoardWidget>
   @override
   Widget build(BuildContext context) {
     final boardSize = widget.size ?? _calculateBoardSize(context);
-    final cellSize = boardSize / 4;
+    final cellSize = boardSize / GameConstants.boardSize;
+
+    Widget boardStack = SizedBox(
+      width: boardSize,
+      height: boardSize,
+      child: Stack(
+        children: [
+          // Base board and static pieces
+          RepaintBoundary(
+            child: _buildBasicBoard(boardSize),
+          ),
+
+          // Moving piece
+          if (widget.animationEnabled && _animatingPiece != null && _moveAnimation != null)
+            RepaintBoundary(
+              child: _buildAnimatingPiece(cellSize),
+            ),
+
+          // Captured piece
+          if (widget.animationEnabled && _capturingPiece != null && _capturingPosition != null)
+            RepaintBoundary(
+              child: _buildCapturingPiece(cellSize),
+            ),
+
+          if (widget.animationEnabled && widget.particleEnabled && _capturingPosition != null)
+            RepaintBoundary(
+              child: _buildCaptureParticles(boardSize, cellSize),
+            ),
+
+          // Touch layer
+          _buildTouchLayer(boardSize),
+        ],
+      ),
+    );
+
+    if (widget.flipBoard) {
+      boardStack = Transform.rotate(
+        angle: 3.14159,
+        child: boardStack,
+      );
+    }
 
     return Center(
-      child: RepaintBoundary( // 添加 RepaintBoundary 优化渲染
-        child: SizedBox(
-          width: boardSize,
-          height: boardSize,
-          child: Stack(
-            children: [
-              // 基础棋盘和静态棋子
-              RepaintBoundary(
-                child: _buildBasicBoard(boardSize),
-              ),
-
-              // 移动中的棋子
-              if (_animatingPiece != null && _moveAnimation != null)
-                RepaintBoundary(
-                  child: _buildAnimatingPiece(cellSize),
-                ),
-
-              // 被吃的棋子
-              if (_capturingPiece != null && _capturingPosition != null)
-                RepaintBoundary(
-                  child: _buildCapturingPiece(cellSize),
-                ),
-
-              // 触摸层
-              _buildTouchLayer(boardSize),
-            ],
-          ),
-        ),
+      child: RepaintBoundary(
+        child: boardStack,
       ),
     );
   }
 
-  /// 构建基础棋盘
   Widget _buildBasicBoard(double boardSize) {
     return Container(
       decoration: BoxDecoration(
@@ -284,7 +329,7 @@ class _AnimatedBoardWidgetState extends State<AnimatedBoardWidget>
           lastMoveTo: widget.lastMoveTo,
           hidePiece: _animatingTo, // 隐藏目标位置的棋子，显示动画棋子
           theme: widget.theme,
-          selectionPulse: _selectionPulseAnimation?.value,
+          selectionPulse: widget.animationEnabled ? _selectionPulseAnimation?.value : null,
         ),
         size: Size(boardSize, boardSize),
       ),
@@ -345,6 +390,24 @@ class _AnimatedBoardWidgetState extends State<AnimatedBoardWidget>
   }
 
   /// 构建触摸层
+  Widget _buildCaptureParticles(double boardSize, double cellSize) {
+    return AnimatedBuilder(
+      animation: _captureAnimationController!,
+      builder: (context, child) {
+        return CustomPaint(
+          size: Size(boardSize, boardSize),
+          painter: _ParticlePainter(
+            position: _capturingPosition!,
+            piece: _capturingPiece!,
+            progress: _captureAnimationController!.value,
+            cellSize: cellSize,
+            theme: widget.theme,
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildTouchLayer(double boardSize) {
     return GestureDetector(
       onTapUp: (details) => _handleTap(details, boardSize),
@@ -358,18 +421,29 @@ class _AnimatedBoardWidgetState extends State<AnimatedBoardWidget>
     final maxSize = screenSize.width < screenSize.height
         ? screenSize.width
         : screenSize.height;
-    return (maxSize * 0.8).clamp(200.0, 600.0);
+
+    return (maxSize * UIConstants.boardScreenRatio).clamp(
+      UIConstants.boardMinSize,
+      UIConstants.boardMaxSize,
+    );
   }
 
   /// 处理点击事件
   void _handleTap(TapUpDetails details, double boardSize) {
-    final cellSize = boardSize / 4;
-    final localPos = details.localPosition;
+    final cellSize = boardSize / GameConstants.boardSize;
+    var localPos = details.localPosition;
+
+    if (widget.flipBoard) {
+      localPos = Offset(
+        boardSize - localPos.dx,
+        boardSize - localPos.dy,
+      );
+    }
 
     final x = (localPos.dx / cellSize).floor();
     final y = (localPos.dy / cellSize).floor();
 
-    if (x >= 0 && x < 4 && y >= 0 && y < 4) {
+    if (x >= 0 && x < GameConstants.boardSize && y >= 0 && y < GameConstants.boardSize) {
       final position = Position(x, y);
       widget.onPositionTapped(position);
     }
@@ -377,6 +451,58 @@ class _AnimatedBoardWidgetState extends State<AnimatedBoardWidget>
 }
 
 /// 单个棋子绘制器
+class _ParticlePainter extends CustomPainter {
+  final Position position;
+  final PieceType piece;
+  final double progress;
+  final double cellSize;
+  final BoardTheme? theme;
+
+  _ParticlePainter({
+    required this.position,
+    required this.piece,
+    required this.progress,
+    required this.cellSize,
+    this.theme,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(
+      position.x * cellSize + cellSize / 2,
+      position.y * cellSize + cellSize / 2,
+    );
+    final color = piece == PieceType.black ? Colors.black87 : Colors.white;
+    final accent = theme?.moveHintColor ?? Colors.tealAccent;
+    const particleCount = 8;
+    final maxRadius = cellSize * 0.6;
+    final radius = maxRadius * progress;
+    final alpha = (1.0 - progress).clamp(0.0, 1.0);
+
+    for (var i = 0; i < particleCount; i++) {
+      final angle = (i / particleCount) * math.pi * 2;
+      final offset = Offset(
+        math.cos(angle) * radius,
+        math.sin(angle) * radius,
+      );
+      final paint = Paint()
+        ..color = Color.lerp(color, accent, 0.6)!.withValues(alpha: alpha)
+        ..style = PaintingStyle.fill;
+
+      canvas.drawCircle(center + offset, cellSize * 0.06, paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _ParticlePainter oldDelegate) {
+    return oldDelegate.progress != progress ||
+        oldDelegate.position != position ||
+        oldDelegate.piece != piece ||
+        oldDelegate.cellSize != cellSize ||
+        oldDelegate.theme != theme;
+  }
+}
+
 class _PiecePainter extends CustomPainter {
   final PieceType piece;
   final double cellSize;

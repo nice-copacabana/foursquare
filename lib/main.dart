@@ -7,6 +7,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'ui/screens/home_page.dart';
 import 'ui/screens/onboarding_page.dart';
 import 'services/storage_service.dart';
+import 'services/audio_coordinator.dart';
+import 'services/performance_monitor.dart';
 import 'theme/theme_manager.dart';
 import 'l10n/app_localizations.dart';
 import 'constants/storage_constants.dart';
@@ -17,6 +19,10 @@ void main() async {
   // 初始化存储服务
   final storageService = StorageService();
   await storageService.initialize();
+  await ThemeManager().initialize();
+  await AudioCoordinator().initialize();
+  final settings = await storageService.loadSettings();
+  PerformanceMonitor().setEnabled(settings.performanceMonitoringEnabled);
   
   runApp(const FourSquareGameApp());
 }

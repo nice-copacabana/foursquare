@@ -14,7 +14,7 @@ import '../../bloc/game_event.dart';
 import '../../bloc/game_state.dart';
 import '../../models/position.dart';
 import '../../models/piece_type.dart';
-import '../widgets/board_widget.dart'; // 暂时使用静态棋盘替代动画棋盘
+import '../widgets/themed_board_widget.dart'; // 暂时使用静态棋盘替代动画棋盘
 import '../widgets/game_info_panel.dart';
 import '../widgets/game_over_dialog.dart';
 import '../widgets/first_player_indicator.dart';
@@ -224,12 +224,13 @@ class _GamePageContentState extends State<_GamePageContent> {
       shouldFlipBoard = false;
     }
     
-    return BoardWidget(
+    return ThemedBoardWidget(
       boardState: state.boardState,
       selectedPiece: state.selectedPiece,
       validMoves: state.validMoves,
       lastMoveFrom: state.lastMove?.from,
       lastMoveTo: state.lastMove?.to,
+      capturedPiecePosition: state.lastCapturedPosition,
       flipBoard: shouldFlipBoard,
       onPositionTapped: (position) => _handlePositionTapped(context, state, position),
     );

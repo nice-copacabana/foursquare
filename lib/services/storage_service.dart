@@ -23,6 +23,10 @@ class GameSettings {
   final double musicVolume;
   final String? musicTheme; // 音乐主题: 'main', 'gameplay', 'classic', 'night', 'relaxing'
   final bool vibrationEnabled;
+  final bool animationEnabled;
+  final bool particleEnabled;
+  final bool performanceMonitoringEnabled;
+  final bool resourceWarmupEnabled;
   final String selectedTheme;
   final String difficulty; // 'easy', 'medium', 'hard'
   
@@ -33,6 +37,10 @@ class GameSettings {
     this.musicVolume = 0.5,
     this.musicTheme = 'main',
     this.vibrationEnabled = true,
+    this.animationEnabled = true,
+    this.particleEnabled = true,
+    this.performanceMonitoringEnabled = false,
+    this.resourceWarmupEnabled = true,
     this.selectedTheme = 'default',
     this.difficulty = 'medium',
   });
@@ -44,6 +52,10 @@ class GameSettings {
     'musicVolume': musicVolume,
     'musicTheme': musicTheme,
     'vibrationEnabled': vibrationEnabled,
+    'animationEnabled': animationEnabled,
+    'particleEnabled': particleEnabled,
+    'performanceMonitoringEnabled': performanceMonitoringEnabled,
+    'resourceWarmupEnabled': resourceWarmupEnabled,
     'selectedTheme': selectedTheme,
     'difficulty': difficulty,
   };
@@ -56,6 +68,10 @@ class GameSettings {
       musicVolume: json['musicVolume'] ?? 0.5,
       musicTheme: json['musicTheme'] ?? 'main',
       vibrationEnabled: json['vibrationEnabled'] ?? true,
+      animationEnabled: json['animationEnabled'] ?? true,
+      particleEnabled: json['particleEnabled'] ?? true,
+      performanceMonitoringEnabled: json['performanceMonitoringEnabled'] ?? false,
+      resourceWarmupEnabled: json['resourceWarmupEnabled'] ?? true,
       selectedTheme: json['selectedTheme'] ?? 'default',
       difficulty: json['difficulty'] ?? 'medium',
     );
@@ -68,6 +84,10 @@ class GameSettings {
     double? musicVolume,
     String? musicTheme,
     bool? vibrationEnabled,
+    bool? animationEnabled,
+    bool? particleEnabled,
+    bool? performanceMonitoringEnabled,
+    bool? resourceWarmupEnabled,
     String? selectedTheme,
     String? difficulty,
   }) {
@@ -78,6 +98,10 @@ class GameSettings {
       musicVolume: musicVolume ?? this.musicVolume,
       musicTheme: musicTheme ?? this.musicTheme,
       vibrationEnabled: vibrationEnabled ?? this.vibrationEnabled,
+      animationEnabled: animationEnabled ?? this.animationEnabled,
+      particleEnabled: particleEnabled ?? this.particleEnabled,
+      performanceMonitoringEnabled: performanceMonitoringEnabled ?? this.performanceMonitoringEnabled,
+      resourceWarmupEnabled: resourceWarmupEnabled ?? this.resourceWarmupEnabled,
       selectedTheme: selectedTheme ?? this.selectedTheme,
       difficulty: difficulty ?? this.difficulty,
     );

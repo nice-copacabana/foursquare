@@ -10,7 +10,7 @@ library;
 import 'package:flutter/material.dart';
 import '../../models/move.dart';
 import '../../services/game_replay_service.dart';
-import '../widgets/board_widget.dart';
+import '../widgets/themed_board_widget.dart';
 
 class GameReplayPage extends StatefulWidget {
   /// 移动历史
@@ -77,12 +77,13 @@ class _GameReplayPageState extends State<GameReplayPage> {
                 aspectRatio: 1,
                 child: Padding(
                   padding: const EdgeInsets.all(16),
-                  child: BoardWidget(
+                  child: ThemedBoardWidget(
                     boardState: _replayState.boardState,
                     selectedPiece: null,
                     validMoves: const [],
                     lastMoveFrom: _replayState.currentMove?.from,
                     lastMoveTo: _replayState.currentMove?.to,
+                    capturedPiecePosition: _replayState.currentMove?.capturedPiece,
                     onPositionTapped: (_) {}, // 禁用交互
                   ),
                 ),

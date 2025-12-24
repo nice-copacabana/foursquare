@@ -16,7 +16,7 @@ import '../../../bloc/game_event.dart';
 import '../../../bloc/game_state.dart';
 import '../../../models/piece_type.dart';
 import '../../../models/position.dart';
-import '../../widgets/board_widget.dart';
+import '../../widgets/themed_board_widget.dart';
 
 // Temporary placeholder for WearShape (wear package not available)
 enum _WearShape { round, square }
@@ -168,17 +168,18 @@ class WatchGamePage extends StatelessWidget {
               color: Colors.transparent,
             )
           : null,
-      child: BoardWidget(
+      child: ThemedBoardWidget(
         boardState: state.boardState,
         selectedPiece: state.selectedPosition,
         validMoves: state.validMoves,
+        size: boardSize,
         lastMoveFrom: state.lastMove?.from,
         lastMoveTo: state.lastMove?.to,
+        capturedPiecePosition: state.lastMove?.capturedPiece,
         onPositionTapped: (position) {
           context.read<GameBloc>().add(PositionTappedEvent(position));
         },
         // 手表模式：放大棋子尺寸以便点击
-        pieceRadiusRatio: 0.42, // 比手机版大（手机是0.35）
       ),
     );
   }

@@ -16,6 +16,8 @@ import '../../services/storage_service.dart';
 import '../../services/audio_service.dart';
 import '../../services/music_service.dart';
 import '../../services/audio_coordinator.dart';
+import '../../services/performance_monitor.dart';
+import '../../services/resource_warmup_service.dart';
 import '../../theme/theme_manager.dart';
 import '../../models/audio_settings.dart';
 import '../../models/display_settings.dart';
@@ -35,6 +37,8 @@ class _SettingsPageState extends State<SettingsPage> {
   final StorageService _storageService = StorageService();
   final AudioCoordinator _audioCoordinator = AudioCoordinator();
   final ThemeManager _themeManager = ThemeManager();
+  final PerformanceMonitor _performanceMonitor = PerformanceMonitor();
+  final ResourceWarmupService _resourceWarmupService = ResourceWarmupService();
   
   GameSettings _settings = const GameSettings();
   AudioSettings _audioSettings = AudioSettings.defaultSettings;
@@ -53,6 +57,8 @@ class _SettingsPageState extends State<SettingsPage> {
     _audioSettings = _audioCoordinator.settings;
     _displaySettings = DisplaySettings(
       themeId: _themeManager.currentBoardTheme.id,
+      animationEnabled: settings.animationEnabled,
+      particleEnabled: settings.particleEnabled,
       vibrationEnabled: settings.vibrationEnabled,
     );
     setState(() {
@@ -93,6 +99,8 @@ class _SettingsPageState extends State<SettingsPage> {
                   _buildAIDifficultyGroup(),
                   const SizedBox(height: 16),
                   _buildThemeGroup(),
+                  const SizedBox(height: 16),
+                  _buildPerformanceGroup(),
                   const SizedBox(height: 16),
                   _buildAboutGroup(),
                   const SizedBox(height: 16),
@@ -240,14 +248,58 @@ class _SettingsPageState extends State<SettingsPage> {
           onChanged: (value) {
             setState(() {
               _displaySettings = _displaySettings.copyWith(animationEnabled: value);
+              _settings = _settings.copyWith(animationEnabled: value);
             });
+            _saveSettings();
+          },
+        ),
+        const Divider(),
+        _SettingsSwitch(
+          label: '????????????',
+          subtitle: '?????????????????????',
+          value: _displaySettings.particleEnabled,
+          onChanged: (value) {
+            setState(() {
+              _displaySettings = _displaySettings.copyWith(particleEnabled: value);
+              _settings = _settings.copyWith(particleEnabled: value);
+            });
+            _saveSettings();
           },
         ),
       ],
     );
   }
 
-  Widget _buildAboutGroup() {
+    Widget _buildPerformanceGroup() {
+    return _SettingsGroup(
+      title: '???????????????',
+      children: [
+        _SettingsSwitch(
+          label: '????????????',
+          subtitle: '??????????????????????????????',
+          value: _settings.performanceMonitoringEnabled,
+          onChanged: (value) {
+            _performanceMonitor.setEnabled(value);
+            _updateSetting(_settings.copyWith(performanceMonitoringEnabled: value));
+          },
+        ),
+        const Divider(),
+        _SettingsSwitch(
+          label: '???????????????',
+          subtitle: '??????????????????????????????',
+          value: _settings.resourceWarmupEnabled,
+          onChanged: (value) async {
+            _updateSetting(_settings.copyWith(resourceWarmupEnabled: value));
+            if (value && mounted) {
+              await _resourceWarmupService.warmup(context, force: true);
+            }
+          },
+        ),
+      ],
+    );
+  }
+
+Widget _buildAboutGroup() {
     return _SettingsGroup(
       title: '关于',
       children: [

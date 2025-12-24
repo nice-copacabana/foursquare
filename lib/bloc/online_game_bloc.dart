@@ -12,7 +12,7 @@ import '../models/position.dart';
 import '../models/piece_type.dart';
 import '../engine/game_engine.dart';
 import '../services/websocket_service.dart';
-import '../services/audio_service.dart';
+import '../services/audio_coordinator.dart' as audio;
 import '../services/logger_service.dart';
 import 'online_game_event.dart';
 import 'online_game_state.dart';
@@ -27,7 +27,7 @@ import 'online_game_state.dart';
 class OnlineGameBloc extends Bloc<OnlineGameEvent, OnlineGameState> {
   final WebSocketService _webSocketService;
   final GameEngine _gameEngine;
-  final AudioService _audioService;
+  final audio.AudioCoordinator _audioCoordinator;
   
   StreamSubscription<WebSocketMessage>? _messageSubscription;
   String? _currentPlayerId;
@@ -35,11 +35,12 @@ class OnlineGameBloc extends Bloc<OnlineGameEvent, OnlineGameState> {
   OnlineGameBloc({
     WebSocketService? webSocketService,
     GameEngine? gameEngine,
-    AudioService? audioService,
+    audio.AudioCoordinator? audioCoordinator,
   })  : _webSocketService = webSocketService ?? WebSocketService(),
         _gameEngine = gameEngine ?? GameEngine(),
-        _audioService = audioService ?? AudioService(),
+        _audioCoordinator = audioCoordinator ?? audio.AudioCoordinator(),
         super(const OnlineGameInitial()) {
+    _audioCoordinator.initialize();
     // 注册事件处理器
     on<StartMatchingEvent>(_onStartMatching);
     on<CancelMatchingEvent>(_onCancelMatching);
@@ -170,7 +171,7 @@ class OnlineGameBloc extends Bloc<OnlineGameEvent, OnlineGameState> {
 
     // 发送匹配请求
     await _webSocketService.requestMatch(event.playerId);
-    _audioService.playSound(SoundType.click);
+    _audioCoordinator.onGameEvent(audio.GameEvent.buttonClicked);
   }
 
   /// 处理取消匹配事件
@@ -180,7 +181,7 @@ class OnlineGameBloc extends Bloc<OnlineGameEvent, OnlineGameState> {
   ) async {
     if (state is Matching && _currentPlayerId != null) {
       await _webSocketService.cancelMatch(_currentPlayerId!);
-      _audioService.playSound(SoundType.click);
+      _audioCoordinator.onGameEvent(audio.GameEvent.buttonClicked);
     }
     
     emit(const OnlineGameInitial());
@@ -200,7 +201,7 @@ class OnlineGameBloc extends Bloc<OnlineGameEvent, OnlineGameState> {
       player1Color: PieceType.black, // 先手黑棋
     );
 
-    _audioService.playSound(SoundType.click);
+    _audioCoordinator.onGameEvent(audio.GameEvent.buttonClicked);
 
     emit(MatchFound(
       match: match,
@@ -247,9 +248,12 @@ class OnlineGameBloc extends Bloc<OnlineGameEvent, OnlineGameState> {
 
     // 播放音效
     if (result.captured != null) {
-      _audioService.playSound(SoundType.capture);
+      _audioCoordinator.onGameEvent(
+        audio.GameEvent.pieceCaptured,
+        data: {'player': result.move!.player.getDisplayName()},
+      );
     } else {
-      _audioService.playSound(SoundType.move);
+      _audioCoordinator.onGameEvent(audio.GameEvent.pieceMoved);
     }
 
     // 更新本地状态
@@ -326,9 +330,12 @@ class OnlineGameBloc extends Bloc<OnlineGameEvent, OnlineGameState> {
 
     // 播放音效
     if (result.captured != null) {
-      _audioService.playSound(SoundType.capture);
+      _audioCoordinator.onGameEvent(
+        audio.GameEvent.pieceCaptured,
+        data: {'player': result.move!.player.getDisplayName()},
+      );
     } else {
-      _audioService.playSound(SoundType.move);
+      _audioCoordinator.onGameEvent(audio.GameEvent.pieceMoved);
     }
 
     final newMoveHistory = [...moveHistory, result.move!];
@@ -341,7 +348,7 @@ class OnlineGameBloc extends Bloc<OnlineGameEvent, OnlineGameState> {
 
     // 检查游戏是否结束
     if (result.gameResult != null) {
-      _audioService.playSound(SoundType.lose);
+      _audioCoordinator.onGameEvent(audio.GameEvent.gameLost, data: {'player': 'opponent'});
       emit(OnlineGameOver(
         match: updatedMatch,
         localPlayerId: localPlayerId,
@@ -406,7 +413,7 @@ class OnlineGameBloc extends Bloc<OnlineGameEvent, OnlineGameState> {
       final playing = state as OnlinePlaying;
       
       final isWin = event.winnerId == playing.localPlayerId;
-      _audioService.playSound(isWin ? SoundType.win : SoundType.lose);
+      _audioCoordinator.onGameEvent(isWin ? audio.GameEvent.gameWon : audio.GameEvent.gameLost, data: {'player': isWin ? 'you' : 'opponent'});
       
       emit(OnlineGameOver(
         match: playing.match,
@@ -425,7 +432,7 @@ class OnlineGameBloc extends Bloc<OnlineGameEvent, OnlineGameState> {
     Emitter<OnlineGameState> emit,
   ) async {
     await _webSocketService.disconnect();
-    _audioService.playSound(SoundType.click);
+    _audioCoordinator.onGameEvent(audio.GameEvent.buttonClicked);
     emit(const OnlineGameInitial());
   }
 

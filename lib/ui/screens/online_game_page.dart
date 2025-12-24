@@ -8,7 +8,7 @@ import '../../bloc/online_game_event.dart';
 import '../../bloc/online_game_state.dart';
 import '../../models/piece_type.dart';
 import '../../models/position.dart';
-import '../widgets/board_widget.dart';
+import '../widgets/themed_board_widget.dart';
 
 /// 在线对战游戏页面
 /// 
@@ -18,7 +18,7 @@ import '../widgets/board_widget.dart';
 /// - 处理在线移动逻辑
 /// - 显示游戏结果
 /// 
-/// 注意：这是基础框架版本，实际棋盘组件需要复用现有的BoardWidget
+/// 注意：这是基础框架版本，实际棋盘组件需要复用现有的ThemedBoardWidget
 class OnlineGamePage extends StatelessWidget {
   final String playerId;
 
@@ -83,7 +83,7 @@ class OnlineGamePage extends StatelessWidget {
         
         const Divider(height: 1),
         
-        // 棋盘区域 - 集成真实的BoardWidget组件
+        // 棋盘区域 - 集成真实的ThemedBoardWidget组件
         Expanded(
           child: Center(
             child: LayoutBuilder(
@@ -114,12 +114,14 @@ class OnlineGamePage extends StatelessWidget {
                     SizedBox(
                       width: size,
                       height: size,
-                      child: BoardWidget(
+                      child: ThemedThemedBoardWidget(
                         boardState: state.boardState,
                         selectedPiece: null, // 在线对战不显示选中状态
                         validMoves: const [],
                         lastMoveFrom: state.lastMove?.from,
                         lastMoveTo: state.lastMove?.to,
+                        capturedPiecePosition: state.lastMove?.capturedPiece,
+                        flipBoard: state.localPlayerColor == PieceType.white,
                         onPositionTapped: (position) => _handlePositionTapped(context, state, position),
                       ),
                     ),

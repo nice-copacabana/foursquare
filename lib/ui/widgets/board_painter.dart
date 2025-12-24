@@ -89,9 +89,69 @@ class BoardPainter extends CustomPainter {
       Rect.fromLTWH(0, 0, size.width, size.height),
       paint,
     );
+
+    final texture = theme?.backgroundTexture;
+    if (texture != null && texture.isNotEmpty) {
+      _drawBackgroundTexture(canvas, size, texture, bgColor);
+    }
   }
 
-  /// 绘制网格线
+  void _drawBackgroundTexture(
+    Canvas canvas,
+    Size size,
+    String texture,
+    Color baseColor,
+  ) {
+    switch (texture) {
+      case 'wood':
+        final paint = Paint()
+          ..color = baseColor.withValues(alpha: 0.08)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.0;
+        for (var y = 0.0; y < size.height; y += 6) {
+          final wave = math.sin(y / 12) * 2;
+          canvas.drawLine(
+            Offset(0, y + wave),
+            Offset(size.width, y - wave),
+            paint,
+          );
+        }
+        break;
+      case 'linen':
+        final paint = Paint()
+          ..color = baseColor.withValues(alpha: 0.06)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.0;
+        for (var x = 0.0; x < size.width; x += 8) {
+          canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
+        }
+        for (var y = 0.0; y < size.height; y += 8) {
+          canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
+        }
+        break;
+      case 'night':
+        final paint = Paint()
+          ..color = Colors.white.withValues(alpha: 0.12)
+          ..style = PaintingStyle.fill;
+        for (var i = 0; i < 32; i++) {
+          final dx = (i * 37) % size.width;
+          final dy = (i * 53) % size.height;
+          canvas.drawCircle(Offset(dx, dy), 1.0, paint);
+        }
+        break;
+      default:
+        final paint = Paint()
+          ..color = baseColor.withValues(alpha: 0.05)
+          ..style = PaintingStyle.fill;
+        for (var i = 0; i < 40; i++) {
+          final dx = (i * 29) % size.width;
+          final dy = (i * 47) % size.height;
+          canvas.drawCircle(Offset(dx, dy), 1.0, paint);
+        }
+        break;
+    }
+  }
+
   void _drawGrid(Canvas canvas, Size size, double cellSize) {
     final gridColor = theme?.gridColor ?? UIConstants.boardGridColor;
     final lineWidth = theme?.gridLineWidth ?? UIConstants.gridLineWidth;
@@ -129,39 +189,75 @@ class BoardPainter extends CustomPainter {
       pos.y * cellSize + cellSize / 2,
     );
     final radius = cellSize * UIConstants.pieceRadiusRatio;
+    final style = theme?.pieceStyle ?? PieceStyle.classic;
 
-    // 绘制棋子阴影
-    final shadowPaint = Paint()
-      ..color = Colors.black.withValues(alpha: UIConstants.shadowOpacity)
-      ..maskFilter = MaskFilter.blur(BlurStyle.normal, UIConstants.pieceShadowBlur);
+    if (style != PieceStyle.flat) {
+      final shadowPaint = Paint()
+        ..color = Colors.black.withValues(alpha: UIConstants.shadowOpacity)
+        ..maskFilter = MaskFilter.blur(BlurStyle.normal, UIConstants.pieceShadowBlur);
 
-    canvas.drawCircle(
-      center + UIConstants.pieceShadowOffset,
-      radius,
-      shadowPaint,
-    );
+      canvas.drawCircle(
+        center + UIConstants.pieceShadowOffset,
+        radius,
+        shadowPaint,
+      );
+    }
 
-    // 绘制棋子主体
-    final piecePaint = Paint()
-      ..color = piece == PieceType.black ? Colors.black : Colors.white
-      ..style = PaintingStyle.fill;
+    final baseColor = piece == PieceType.black ? Colors.black : Colors.white;
+    final piecePaint = Paint()..style = PaintingStyle.fill;
+
+    switch (style) {
+      case PieceStyle.flat:
+        piecePaint.color = baseColor;
+        break;
+      case PieceStyle.glowing:
+        final glowColor = (theme?.selectionColor ?? Colors.cyan)
+            .withValues(alpha: 0.35);
+        final glowPaint = Paint()
+          ..color = glowColor
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
+        canvas.drawCircle(center, radius * 1.1, glowPaint);
+        piecePaint.color = baseColor;
+        break;
+      case PieceStyle.ink:
+        piecePaint.color = piece == PieceType.black
+            ? Colors.grey.shade900
+            : Colors.grey.shade200;
+        break;
+      case PieceStyle.classic:
+        final light = piece == PieceType.black
+            ? Colors.grey.shade700
+            : Colors.white;
+        final dark = piece == PieceType.black
+            ? Colors.black
+            : Colors.grey.shade300;
+        piecePaint.shader = RadialGradient(
+          center: const Alignment(-0.3, -0.3),
+          radius: 0.9,
+          colors: [light, dark],
+        ).createShader(Rect.fromCircle(center: center, radius: radius));
+        break;
+    }
 
     canvas.drawCircle(center, radius, piecePaint);
 
-    // 绘制棋子边框
     final borderPaint = Paint()
-      ..color = piece == PieceType.black 
+      ..color = piece == PieceType.black
           ? Colors.white.withValues(alpha: UIConstants.shadowOpacity)
           : Colors.black.withValues(alpha: UIConstants.shadowOpacity)
       ..strokeWidth = UIConstants.pieceBorderWidth
       ..style = PaintingStyle.stroke;
+    if (style == PieceStyle.ink) {
+      borderPaint
+        ..color = Colors.black.withValues(alpha: 0.7)
+        ..strokeWidth = UIConstants.pieceBorderWidth + 0.5;
+    }
 
     canvas.drawCircle(center, radius, borderPaint);
 
-    // 白棋添加高光效果
-    if (piece == PieceType.white) {
+    if (piece == PieceType.white && style != PieceStyle.flat) {
       final highlightPaint = Paint()
-        ..color = Colors.white
+        ..color = Colors.white.withValues(alpha: 0.9)
         ..style = PaintingStyle.fill;
 
       final highlightCenter = Offset(
@@ -169,12 +265,15 @@ class BoardPainter extends CustomPainter {
         center.dy - radius * UIConstants.pieceHighlightOffset,
       );
 
-      canvas.drawCircle(highlightCenter, radius * UIConstants.pieceHighlightRatio, highlightPaint);
+      canvas.drawCircle(
+        highlightCenter,
+        radius * UIConstants.pieceHighlightRatio,
+        highlightPaint,
+      );
     }
   }
 
-  /// 绘制选中高亮
-  void _drawSelection(Canvas canvas, double cellSize, Position pos) {
+  void _drawSelectionvoid _drawSelection(Canvas canvas, double cellSize, Position pos) {
     final center = Offset(
       pos.x * cellSize + cellSize / 2,
       pos.y * cellSize + cellSize / 2,
@@ -325,6 +424,10 @@ class BoardPainter extends CustomPainter {
         selectedPiece != oldDelegate.selectedPiece ||
         validMoves != oldDelegate.validMoves ||
         lastMoveFrom != oldDelegate.lastMoveFrom ||
-        lastMoveTo != oldDelegate.lastMoveTo;
+        lastMoveTo != oldDelegate.lastMoveTo ||
+        hidePiece != oldDelegate.hidePiece ||
+        theme != oldDelegate.theme ||
+        selectionPulse != oldDelegate.selectionPulse;
   }
+
 }
