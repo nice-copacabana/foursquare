@@ -10,6 +10,7 @@ import '../../constants/ui_constants.dart';
 import '../../constants/game_constants.dart';
 import '../../models/board_theme.dart';
 import 'board_painter.dart';
+import 'dart:math' as math;
 
 /// 带动画效果的棋盘Widget
 /// 

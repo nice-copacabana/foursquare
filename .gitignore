@@ -123,6 +123,7 @@ coverage/
 # Log files
 logs/
 *.log.*
+build_log*.txt
 
 # Temporary files
 *.tmp

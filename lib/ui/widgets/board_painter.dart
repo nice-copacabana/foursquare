@@ -273,7 +273,7 @@ class BoardPainter extends CustomPainter {
     }
   }
 
-  void _drawSelectionvoid _drawSelection(Canvas canvas, double cellSize, Position pos) {
+  void _drawSelection(Canvas canvas, double cellSize, Position pos) {
     final center = Offset(
       pos.x * cellSize + cellSize / 2,
       pos.y * cellSize + cellSize / 2,

@@ -205,18 +205,18 @@ class GameBloc extends Bloc<GameEvent, GameState> {
         if (winner == PieceType.black) {
           _audioCoordinator.onGameEvent(
             audio.GameEvent.gameWon,
-            data: {'player': winner.getDisplayName()},
+            data: {'player': winner!.getDisplayName()},
           );
         } else if (winner == PieceType.white) {
           _audioCoordinator.onGameEvent(
             audio.GameEvent.gameLost,
-            data: {'player': winner.getDisplayName()},
+            data: {'player': winner!.getDisplayName()},
           );
         }
       } else if (winner != null) {
         _audioCoordinator.onGameEvent(
           audio.GameEvent.gameWon,
-          data: {'player': winner.getDisplayName()},
+          data: {'player': winner!.getDisplayName()},
         );
       }
 
