@@ -1,0 +1,29 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  username  String   @unique
+  createdAt DateTime @default(now())
+  matchesResult AsPlayer1 Match[] @relation("Player1")
+  matchesResult2 AsPlayer2 Match[] @relation("Player2")
+}
+
+model Match {
+  id            String   @id @default(uuid())
+  player1Id     String
+  player2Id     String
+  player1       User     @relation("Player1", fields: [player1Id], references: [id])
+  player2       User     @relation("Player2", fields: [player2Id], references: [id])
+  winnerId      String?
+  status        String   @default("finished") // playing, finished
+  movesJson     String   @default("[]") // Store moves as JSON string for now
+  createdAt     DateTime @default(now())
+  finishedAt    DateTime?
+}
