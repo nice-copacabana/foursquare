@@ -165,9 +165,25 @@ class WebSocketService {
       _messageController.add(msg);
     });
     
-    // 游戏结束 (Optional, derived from moves usually, but if server enforces)
-    // Server currently doesn't emit explicit game_over except via move result or logic
-    // But we might add it later.
+    // 游戏结束
+    _socket!.on('game_over', (data) {
+       // Server: { matchId, winnerId, reason }
+       try {
+         final map = data as Map<String, dynamic>;
+         final msg = WebSocketMessage(
+            type: MessageType.gameOver,
+            matchId: map['matchId'],
+            payload: {
+              'winnerId': map['winnerId'],
+              'reason': map['reason'] ?? 'server_decision',
+            },
+            timestamp: DateTime.now()
+         );
+         _messageController.add(msg);
+       } catch (e) {
+         print('Error parsing game_over: $e');
+       }
+    });
     
     // 心跳/系统消息
     _socket!.on('message', (data) {

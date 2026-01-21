@@ -46,7 +46,7 @@ export class RoomManager extends EventEmitter {
             spectators: [],
             gameState: {
                 board: GameRules.getInitialBoard(), // Initialize board
-                currentTurn: p1.id, // P1 starts
+                currentTurn: 'black', // P1 starts (Black)
                 status: 'playing',
                 moveHistory: []
             },
@@ -68,7 +68,7 @@ export class RoomManager extends EventEmitter {
         return this.rooms.get(roomId);
     }
 
-    public handleMove(socketId: string, moveData: MoveData): { success: boolean; room?: Room; error?: string } {
+    public handleMove(socketId: string, moveData: MoveData): { success: boolean; room?: Room; error?: string; captured?: any[]; gameEnded?: boolean; winner?: string } {
         const room = this.getRoomBySocketId(socketId);
         if (!room) return { success: false, error: 'Room not found' };
 
@@ -79,16 +79,24 @@ export class RoomManager extends EventEmitter {
         }
 
         // Apply
-        new GameRules().applyMove(room.gameState, moveData);
+        const { newState, captured } = new GameRules().applyMove(room.gameState, moveData);
+        room.gameState = newState;
 
-        // Switch turn
-        const p1 = room.players[0];
-        const p2 = room.players[1];
-        room.gameState.currentTurn = room.gameState.currentTurn === p1.id ? p2.id : p1.id;
+        // Check Game Over
+        if (room.gameState.status === 'finished') {
+            if (room.turnTimer) clearTimeout(room.turnTimer);
+            return {
+                success: true,
+                room,
+                captured,
+                gameEnded: true,
+                winner: room.gameState.winner
+            };
+        }
 
         this.resetTurnTimer(room.id);
 
-        return { success: true, room };
+        return { success: true, room, captured };
     }
 
     private resetTurnTimer(roomId: string) {

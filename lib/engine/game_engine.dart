@@ -99,10 +99,14 @@ class GameEngine {
   /// 执行移动
   /// 
   /// 验证移动合法性，执行移动，检测吃子，更新状态
+  /// 执行移动
+  /// 
+  /// 验证移动合法性，执行移动，检测吃子，更新状态
   MoveResult executeMove(
     BoardState board,
     Position from,
     Position to,
+    {Position? capturedPieceOverride}
   ) {
     // 1. 验证移动合法性
     if (!_validator.isValidMove(board, from, to)) {
@@ -113,12 +117,17 @@ class GameEngine {
     var newBoard = board.movePiece(from, to);
     final player = board.currentPlayer;
 
-    // 3. 检测吃子
-    final capturedPos = _captureDetector.detectCapture(
-      newBoard,
-      to,
-      player,
-    );
+    // 3. 检测吃子 (如果有Override则优先使用)
+    Position? capturedPos;
+    if (capturedPieceOverride != null) {
+      capturedPos = capturedPieceOverride;
+    } else {
+      capturedPos = _captureDetector.detectCapture(
+        newBoard,
+        to,
+        player,
+      );
+    }
 
     // 4. 如果有吃子，移除被吃棋子
     if (capturedPos != null) {
@@ -155,7 +164,7 @@ class GameEngine {
   /// 检查游戏是否结束
   /// 
   /// 判定规则：
-  /// - 某方棋子数 <= 1：对方获胜
+  /// - 某方棋子数 == 0：对方获胜
   /// - 某方无合法移动：对方获胜（可选规则）
   GameResult? checkGameOver(BoardState board) {
     final blackCount = board.getPieceCount(PieceType.black);
@@ -165,19 +174,19 @@ class GameEngine {
         ? DateTime.now().difference(_startTime!)
         : Duration.zero;
 
-    // 黑方棋子不足
-    if (blackCount <= 1) {
+    // 黑方棋子被吃完
+    if (blackCount == 0) {
       return GameResult.whiteWin(
-        reason: '黑方棋子数量不足',
+        reason: '黑方棋子全部被吃',
         moveCount: _moveHistory.length,
         duration: duration,
       );
     }
 
-    // 白方棋子不足
-    if (whiteCount <= 1) {
+    // 白方棋子被吃完
+    if (whiteCount == 0) {
       return GameResult.blackWin(
-        reason: '白方棋子数量不足',
+        reason: '白方棋子全部被吃',
         moveCount: _moveHistory.length,
         duration: duration,
       );

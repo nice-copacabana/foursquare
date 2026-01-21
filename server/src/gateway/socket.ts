@@ -95,16 +95,49 @@ const handleSocketConnection = (io: Server, socket: Socket) => {
         const room = result.room;
         console.log(`Move validated in room ${room.id}:`, data);
 
+        // Prepare data to send to opponent
+        // Inject server-validated capture info
+        const serverCaptured = (result.captured && result.captured.length > 0) ? result.captured[0] : undefined;
+
+        const moveUpdate = {
+            ...data,
+            capturedPiece: serverCaptured
+        };
+
         // Find opponent
         const opponent = room.players.find(p => p.socketId !== socket.id);
 
         if (opponent) {
-            // Forward move to opponent
-            // We use 'opponent_move' event directly mapped to what client expects
-            io.to(opponent.socketId).emit('opponent_move', data);
+            // Forward move to opponent with validated capture info
+            io.to(opponent.socketId).emit('opponent_move', moveUpdate);
+        }
 
-            // Optional: consistency sync (if we wanted to send full board)
-            // io.to(room.id).emit('game_state', room.gameState);
+        // Handle Game Over
+        if (result.gameEnded) {
+            const p1 = room.players[0]; // Black
+            const p2 = room.players[1]; // White
+
+            let winnerId: string | null = null;
+            if (result.winner === 'black') winnerId = p1.id;
+            else if (result.winner === 'white') winnerId = p2.id;
+
+            // Broadcast Game Over
+            io.to(room.id).emit('game_over', {
+                matchId: room.id,
+                winnerId: winnerId, // Send UUID to client? Or color? Client likely wants to know 'who won'. Sending UUID is safer.
+                winnerColor: result.winner,
+                reason: result.winner === 'draw' ? 'draw' : 'checkmate'
+            });
+
+            console.log(`Game Over in room ${room.id}. Winner: ${result.winner} (${winnerId})`);
+
+            // Save to DB
+            dbService.saveMatchResult(
+                p1.id,
+                p2.id,
+                winnerId,
+                room.gameState.moveHistory || []
+            ).catch(err => console.error('Failed to save match result:', err));
         }
     });
 

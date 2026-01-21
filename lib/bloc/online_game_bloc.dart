@@ -323,6 +323,7 @@ class OnlineGameBloc extends Bloc<OnlineGameEvent, OnlineGameState> {
       boardState,
       event.move.from,
       event.move.to,
+      capturedPieceOverride: event.move.capturedPiece,
     );
 
     if (!result.success || result.newBoard == null) {
