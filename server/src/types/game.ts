@@ -4,11 +4,14 @@ export type Player = {
     name: string;
 };
 
+export type BoardState = (string | null)[][]; // 8x8 grid, null = empty, string = pieceId/type
+
 export type GameState = {
-    board: any; // We can refine this later to match client's structure or keep it opaque
+    board: BoardState;
     currentTurn: string; // playerId
     status: 'playing' | 'finished';
     winner?: string;
+    moveHistory: any[]; // Store moves for replay/validation
 };
 
 export type Room = {
@@ -17,4 +20,5 @@ export type Room = {
     spectators: Player[];
     gameState: GameState;
     createdAt: number;
+    turnTimer?: NodeJS.Timeout; // Server-side timer
 };

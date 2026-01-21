@@ -86,8 +86,11 @@
 
 3. **运行项目**
    ```bash
-   # 运行在连接的设备上
+   # 运行在连接的设备上 (本地开发环境)
    flutter run
+   
+   # 运行在连接的设备上 (连接到远程服务器)
+   flutter run --release
    
    # 运行在Chrome浏览器（Web）
    flutter run -d chrome
@@ -96,6 +99,10 @@
    flutter devices
    flutter run -d [device_id]
    ```
+   
+   > **注意**: 
+   > - `debug` 模式默认连接本地服务器 (`http://localhost:3000`)
+   > - `release` 模式默认连接远程服务器 (`http://212.227.166.131:11630`)
 
 ### 构建发布版本
 

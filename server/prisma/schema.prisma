@@ -11,8 +11,8 @@ model User {
   id        String   @id @default(uuid())
   username  String   @unique
   createdAt DateTime @default(now())
-  matchesResult AsPlayer1 Match[] @relation("Player1")
-  matchesResult2 AsPlayer2 Match[] @relation("Player2")
+  matchesAsPlayer1 Match[] @relation("Player1")
+  matchesAsPlayer2 Match[] @relation("Player2")
 }
 
 model Match {

@@ -3,6 +3,7 @@
 
 import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../models/board_state.dart';
 import '../models/online_match.dart';
 import '../models/websocket_message.dart';
@@ -153,16 +154,17 @@ class OnlineGameBloc extends Bloc<OnlineGameEvent, OnlineGameState> {
   ) async {
     _currentPlayerId = event.playerId;
     
-    // NOTE: 在线对战功能需要服务器支持，当前处于演示状态
-    // 部署服务器后取消以下代码注释：
-    // final connected = await _webSocketService.connect('ws://your-server.com/game');
-    // if (!connected) {
-    //   emit(OnlineGameError(
-    //     message: '无法连接到服务器',
-    //     timestamp: DateTime.now(),
-    //   ));
-    //   return;
-    // }
+    // 连接服务器
+    final wsUrl = dotenv.env['WS_URL'] ?? 'http://localhost:3000';
+    final connected = await _webSocketService.connect(wsUrl);
+    
+    if (!connected) {
+      emit(OnlineGameError(
+        message: '无法连接到服务器',
+        timestamp: DateTime.now(),
+      ));
+      return;
+    }
 
     emit(Matching(
       playerId: event.playerId,

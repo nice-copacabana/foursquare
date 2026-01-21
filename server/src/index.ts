@@ -3,7 +3,7 @@ import http from 'http';
 import { Server } from 'socket.io';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { handleSocketConnection } from './gateway/socket';
+import { initGameServer } from './gateway/socket';
 
 dotenv.config();
 
@@ -25,9 +25,7 @@ app.get('/', (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 
-io.on('connection', (socket) => {
-    handleSocketConnection(io, socket);
-});
+initGameServer(io);
 
 server.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);

@@ -1,12 +1,19 @@
 import { Player, Room } from '../types/game';
 import { v4 as uuidv4 } from 'uuid';
+import { GameRules } from './rules';
+import { MoveData } from '../types/move';
+import { EventEmitter } from 'events';
 
-export class RoomManager {
+const TURN_TIMEOUT = 30000; // 30 seconds
+
+export class RoomManager extends EventEmitter {
     private rooms: Map<string, Room> = new Map();
     private playerRoomMap: Map<string, string> = new Map(); // socketId -> roomId
     private matchmakingQueue: Player[] = [];
 
-    constructor() { }
+    constructor() {
+        super();
+    }
 
     // Add player to matchmaking queue
     public queuePlayer(player: Player): Room | null {
@@ -38,9 +45,10 @@ export class RoomManager {
             players: [p1, p2],
             spectators: [],
             gameState: {
-                board: null, // Initial state
+                board: GameRules.getInitialBoard(), // Initialize board
                 currentTurn: p1.id, // P1 starts
-                status: 'playing'
+                status: 'playing',
+                moveHistory: []
             },
             createdAt: Date.now()
         };
@@ -48,6 +56,8 @@ export class RoomManager {
         this.rooms.set(roomId, room);
         this.playerRoomMap.set(p1.socketId, roomId);
         this.playerRoomMap.set(p2.socketId, roomId);
+
+        this.resetTurnTimer(roomId);
 
         return room;
     }
@@ -57,6 +67,60 @@ export class RoomManager {
         if (!roomId) return undefined;
         return this.rooms.get(roomId);
     }
+
+    public handleMove(socketId: string, moveData: MoveData): { success: boolean; room?: Room; error?: string } {
+        const room = this.getRoomBySocketId(socketId);
+        if (!room) return { success: false, error: 'Room not found' };
+
+        // Validate
+        const validation = new GameRules().validateMove(room.gameState, moveData);
+        if (!validation.valid) {
+            return { success: false, error: validation.message };
+        }
+
+        // Apply
+        new GameRules().applyMove(room.gameState, moveData);
+
+        // Switch turn
+        const p1 = room.players[0];
+        const p2 = room.players[1];
+        room.gameState.currentTurn = room.gameState.currentTurn === p1.id ? p2.id : p1.id;
+
+        this.resetTurnTimer(room.id);
+
+        return { success: true, room };
+    }
+
+    private resetTurnTimer(roomId: string) {
+        const room = this.rooms.get(roomId);
+        if (!room || room.gameState.status !== 'playing') return;
+
+        if (room.turnTimer) {
+            clearTimeout(room.turnTimer);
+        }
+
+        room.turnTimer = setTimeout(() => {
+            this.handleTimeout(roomId);
+        }, TURN_TIMEOUT);
+    }
+
+    private handleTimeout(roomId: string) {
+        const room = this.rooms.get(roomId);
+        if (!room) return;
+
+        // Force switch turn
+        const p1 = room.players[0];
+        const p2 = room.players[1];
+        // Toggle turn
+        room.gameState.currentTurn = room.gameState.currentTurn === p1.id ? p2.id : p1.id;
+
+        // Emit event so socket can notify
+        this.emit('turn_timeout', { roomId, currentTurn: room.gameState.currentTurn });
+
+        // Restart timer for next player
+        this.resetTurnTimer(roomId);
+    }
+
 
     public removePlayer(socketId: string): Room | undefined {
         const roomId = this.playerRoomMap.get(socketId);

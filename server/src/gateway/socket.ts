@@ -6,7 +6,22 @@ import { dbService } from '../services/database';
 
 const roomManager = new RoomManager();
 
-export const handleSocketConnection = (io: Server, socket: Socket) => {
+export const initGameServer = (io: Server) => {
+    // Global Event Listeners
+    roomManager.on('turn_timeout', (data: { roomId: string; currentTurn: Player['id'] }) => {
+        console.log(`Turn timeout in room ${data.roomId}, new turn: ${data.currentTurn}`);
+        io.to(data.roomId).emit('turn_change', {
+            currentTurn: data.currentTurn,
+            reason: 'timeout'
+        });
+    });
+
+    io.on('connection', (socket: Socket) => {
+        handleSocketConnection(io, socket);
+    });
+};
+
+const handleSocketConnection = (io: Server, socket: Socket) => {
     console.log(`User connected: ${socket.id}`);
 
     // Send initial welcome message
@@ -68,15 +83,17 @@ export const handleSocketConnection = (io: Server, socket: Socket) => {
     // Handle Move
     // Expected data: { matchId, from, to, player, capturedPiece? }
     socket.on('submit_move', (data: MoveData) => {
-        const room = roomManager.getRoomBySocketId(socket.id);
-        if (!room) {
-            console.warn(`Move received from ${socket.id} but no room found`);
+        // Use RoomManager to validate and apply move
+        const result = roomManager.handleMove(socket.id, data);
+
+        if (!result.success || !result.room) {
+            console.warn(`Invalid move from ${socket.id}: ${result.error}`);
+            socket.emit('move_rejected', { message: result.error || 'Invalid move' });
             return;
         }
 
-        // Verification (Optional: Verify matchId matches room.id)
-
-        console.log(`Move in room ${room.id}:`, data);
+        const room = result.room;
+        console.log(`Move validated in room ${room.id}:`, data);
 
         // Find opponent
         const opponent = room.players.find(p => p.socketId !== socket.id);
@@ -85,6 +102,9 @@ export const handleSocketConnection = (io: Server, socket: Socket) => {
             // Forward move to opponent
             // We use 'opponent_move' event directly mapped to what client expects
             io.to(opponent.socketId).emit('opponent_move', data);
+
+            // Optional: consistency sync (if we wanted to send full board)
+            // io.to(room.id).emit('game_state', room.gameState);
         }
     });
 
@@ -128,7 +148,7 @@ export const handleSocketConnection = (io: Server, socket: Socket) => {
                         leaver.id,
                         opponent.id,
                         opponent.id, // Winner is opponent
-                        []
+                        room.gameState.moveHistory || []
                     );
                 }
             }
