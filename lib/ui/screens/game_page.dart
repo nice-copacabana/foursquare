@@ -271,7 +271,10 @@ class _GamePageContentState extends State<_GamePageContent> {
   }
 
   void _handlePositionTapped(
-      BuildContext context, GameState state, Position position,) {
+    BuildContext context,
+    GameState state,
+    Position position,
+  ) {
     if (state is! GamePlaying) return;
     if (state.isAIThinking) return;
 

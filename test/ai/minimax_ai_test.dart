@@ -195,7 +195,9 @@ void main() {
       final hardResult = await hardAI.selectMove(board);
 
       expect(
-          easyResult!.nodesEvaluated, lessThan(mediumResult!.nodesEvaluated),);
+        easyResult!.nodesEvaluated,
+        lessThan(mediumResult!.nodesEvaluated),
+      );
       expect(mediumResult.nodesEvaluated, lessThan(hardResult!.nodesEvaluated));
     });
   });

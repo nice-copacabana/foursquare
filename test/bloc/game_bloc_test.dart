@@ -94,14 +94,17 @@ void main() {
       expect: () => [
         isA<GamePlaying>()
             .having((s) => s.mode, 'mode', GameMode.pvp)
-            .having((s) => s.boardState.currentPlayer, 'currentPlayer',
-                PieceType.black,)
+            .having(
+              (s) => s.boardState.currentPlayer,
+              'currentPlayer',
+              PieceType.black,
+            )
             .having((s) => s.moveHistory.length, 'moveHistory', 0),
       ],
       verify: (_) {
-        verify(() =>
-                audioCoordinator.onGameEvent(audio.GameEvent.buttonClicked),)
-            .called(1);
+        verify(
+          () => audioCoordinator.onGameEvent(audio.GameEvent.buttonClicked),
+        ).called(1);
         verify(() => audioCoordinator.onSceneChange(audio.GameScene.gameplay))
             .called(1);
       },
@@ -137,9 +140,9 @@ void main() {
             .having((s) => s.moveHistory.length, 'moveHistory', 0),
       ],
       verify: (_) {
-        verify(() =>
-                audioCoordinator.onGameEvent(audio.GameEvent.buttonClicked),)
-            .called(1);
+        verify(
+          () => audioCoordinator.onGameEvent(audio.GameEvent.buttonClicked),
+        ).called(1);
         verify(() => audioCoordinator.onSceneChange(audio.GameScene.gameplay))
             .called(1);
       },
@@ -169,13 +172,16 @@ void main() {
       expect: () => [
         isA<GamePlaying>()
             .having(
-                (s) => s.selectedPiece, 'selectedPiece', const Position(0, 0),)
+              (s) => s.selectedPiece,
+              'selectedPiece',
+              const Position(0, 0),
+            )
             .having((s) => s.validMoves.length, 'validMoves', 2),
       ],
       verify: (_) {
-        verify(() =>
-                audioCoordinator.onGameEvent(audio.GameEvent.pieceSelected),)
-            .called(1);
+        verify(
+          () => audioCoordinator.onGameEvent(audio.GameEvent.pieceSelected),
+        ).called(1);
         verify(() => moveValidator.getValidMoves(any(), const Position(0, 0)))
             .called(1);
       },
@@ -269,14 +275,27 @@ void main() {
             .having((s) => s.selectedPiece, 'selectedPiece', null)
             .having((s) => s.moveHistory.length, 'moveHistory', 1)
             .having(
-                (s) => s.lastMove?.from, 'lastMove.from', const Position(0, 0),)
+              (s) => s.lastMove?.from,
+              'lastMove.from',
+              const Position(0, 0),
+            )
             .having((s) => s.lastMove?.to, 'lastMove.to', const Position(0, 1)),
       ],
       verify: (_) {
-        verify(() => moveValidator.isValidMove(
-            any(), const Position(0, 0), const Position(0, 1),),).called(1);
-        verify(() => gameEngine.executeMove(
-            any(), const Position(0, 0), const Position(0, 1),),).called(1);
+        verify(
+          () => moveValidator.isValidMove(
+            any(),
+            const Position(0, 0),
+            const Position(0, 1),
+          ),
+        ).called(1);
+        verify(
+          () => gameEngine.executeMove(
+            any(),
+            const Position(0, 0),
+            const Position(0, 1),
+          ),
+        ).called(1);
         verify(() => audioCoordinator.onGameEvent(audio.GameEvent.pieceMoved))
             .called(1);
       },
@@ -357,10 +376,12 @@ void main() {
       ),
       skip: 0,
       verify: (_) {
-        verify(() => audioCoordinator.onGameEvent(
-              audio.GameEvent.pieceCaptured,
-              data: any(named: 'data'),
-            ),).called(1);
+        verify(
+          () => audioCoordinator.onGameEvent(
+            audio.GameEvent.pieceCaptured,
+            data: any(named: 'data'),
+          ),
+        ).called(1);
       },
     );
 
@@ -417,9 +438,9 @@ void main() {
             .having((s) => s.moveHistory.length, 'moveHistory', 0),
       ],
       verify: (_) {
-        verify(() =>
-                audioCoordinator.onGameEvent(audio.GameEvent.buttonClicked),)
-            .called(1);
+        verify(
+          () => audioCoordinator.onGameEvent(audio.GameEvent.buttonClicked),
+        ).called(1);
       },
     );
 

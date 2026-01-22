@@ -283,7 +283,10 @@ class RulesPage extends StatelessWidget {
   }
 
   Widget _buildCaptureExample(
-      String title, String pattern, String description,) {
+    String title,
+    String pattern,
+    String description,
+  ) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(

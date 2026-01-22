@@ -152,7 +152,8 @@ class VoiceSynthesisService {
 
       print('[VoiceSynthesisService] 播报: $text');
       print(
-          '[VoiceSynthesisService] 参数: volume=$_volume, pitch=$_pitch, rate=$_rate',);
+        '[VoiceSynthesisService] 参数: volume=$_volume, pitch=$_pitch, rate=$_rate',
+      );
     } catch (e) {
       print('[VoiceSynthesisService] 播报失败: $e');
       _status = VoiceSynthesisStatus.error;

@@ -114,7 +114,9 @@ class GameBloc extends Bloc<GameEvent, GameState> {
 
   /// 处理重新开始事件
   Future<void> _onRestartGame(
-      RestartGameEvent event, Emitter<GameState> emit,) async {
+    RestartGameEvent event,
+    Emitter<GameState> emit,
+  ) async {
     _audioCoordinator.onGameEvent(audio.GameEvent.buttonClicked);
 
     final currentMode = state.mode;
@@ -143,7 +145,9 @@ class GameBloc extends Bloc<GameEvent, GameState> {
 
   /// 处理选中棋子事件
   Future<void> _onSelectPiece(
-      SelectPieceEvent event, Emitter<GameState> emit,) async {
+    SelectPieceEvent event,
+    Emitter<GameState> emit,
+  ) async {
     // 只在游戏进行中且不是AI回合时处理
     if (state is! GamePlaying) return;
     final playing = state as GamePlaying;
@@ -173,7 +177,9 @@ class GameBloc extends Bloc<GameEvent, GameState> {
 
   /// 处理移动棋子事件
   Future<void> _onMovePiece(
-      MovePieceEvent event, Emitter<GameState> emit,) async {
+    MovePieceEvent event,
+    Emitter<GameState> emit,
+  ) async {
     if (state is! GamePlaying) return;
     final playing = state as GamePlaying;
 
@@ -232,7 +238,10 @@ class GameBloc extends Bloc<GameEvent, GameState> {
       }
 
       await _updateStatistics(
-          result.gameResult!, newMoveHistory.length, playing,);
+        result.gameResult!,
+        newMoveHistory.length,
+        playing,
+      );
 
       emit(
         GameOver(
@@ -289,7 +298,9 @@ class GameBloc extends Bloc<GameEvent, GameState> {
 
   /// 处理取消选中事件
   Future<void> _onDeselectPiece(
-      DeselectPieceEvent event, Emitter<GameState> emit,) async {
+    DeselectPieceEvent event,
+    Emitter<GameState> emit,
+  ) async {
     if (state is! GamePlaying) return;
     final playing = state as GamePlaying;
 
@@ -543,7 +554,9 @@ class GameBloc extends Bloc<GameEvent, GameState> {
 
   /// 处理设置变更事件
   Future<void> _onSettingsChanged(
-      SettingsChangedEvent event, Emitter<GameState> emit,) async {
+    SettingsChangedEvent event,
+    Emitter<GameState> emit,
+  ) async {
     // 更新音效设置
     var newSettings = _audioCoordinator.settings;
     var updated = false;

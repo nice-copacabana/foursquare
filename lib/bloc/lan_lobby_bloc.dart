@@ -29,10 +29,12 @@ class LanLobbyBloc extends Bloc<LanLobbyEvent, LanLobbyState> {
       final isHost = _networkService.role == LocalNetworkRole.host;
 
       // Map service state to bloc event
-      add(LanConnectionStatusChanged(
-        isConnected: isConnected,
-        isHost: isHost,
-      ),);
+      add(
+        LanConnectionStatusChanged(
+          isConnected: isConnected,
+          isHost: isHost,
+        ),
+      );
     });
   }
 
@@ -52,10 +54,12 @@ class LanLobbyBloc extends Bloc<LanLobbyEvent, LanLobbyState> {
 
       await _networkService.startDiscovery();
     } catch (e) {
-      emit(state.copyWith(
-        status: LanLobbyStatus.failure,
-        errorMessage: 'Start Discovery failed: $e',
-      ),);
+      emit(
+        state.copyWith(
+          status: LanLobbyStatus.failure,
+          errorMessage: 'Start Discovery failed: $e',
+        ),
+      );
     }
   }
 
@@ -72,19 +76,23 @@ class LanLobbyBloc extends Bloc<LanLobbyEvent, LanLobbyState> {
     StartHosting event,
     Emitter<LanLobbyState> emit,
   ) async {
-    emit(state.copyWith(
-      status: LanLobbyStatus.hosting,
-      isHost: true,
-      errorMessage: null,
-    ),);
+    emit(
+      state.copyWith(
+        status: LanLobbyStatus.hosting,
+        isHost: true,
+        errorMessage: null,
+      ),
+    );
     try {
       await _networkService.startHost(roomName: event.roomName);
     } catch (e) {
-      emit(state.copyWith(
-        status: LanLobbyStatus.failure,
-        errorMessage: 'Hosting failed: $e',
-        isHost: false,
-      ),);
+      emit(
+        state.copyWith(
+          status: LanLobbyStatus.failure,
+          errorMessage: 'Hosting failed: $e',
+          isHost: false,
+        ),
+      );
     }
   }
 
@@ -103,10 +111,12 @@ class LanLobbyBloc extends Bloc<LanLobbyEvent, LanLobbyState> {
     try {
       await _networkService.connectToHost(event.service);
     } catch (e) {
-      emit(state.copyWith(
-        status: LanLobbyStatus.failure,
-        errorMessage: 'Connection failed: $e',
-      ),);
+      emit(
+        state.copyWith(
+          status: LanLobbyStatus.failure,
+          errorMessage: 'Connection failed: $e',
+        ),
+      );
     }
   }
 
@@ -130,10 +140,12 @@ class LanLobbyBloc extends Bloc<LanLobbyEvent, LanLobbyState> {
     Emitter<LanLobbyState> emit,
   ) {
     if (event.isConnected) {
-      emit(state.copyWith(
-        status: LanLobbyStatus.connected,
-        isHost: event.isHost,
-      ),);
+      emit(
+        state.copyWith(
+          status: LanLobbyStatus.connected,
+          isHost: event.isHost,
+        ),
+      );
     } else {
       // If we were connected/hosting and now disconnected, revert to initial found state
       // Provide logic based on previous state if needed

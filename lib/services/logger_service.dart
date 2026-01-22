@@ -68,8 +68,12 @@ class Logger {
   }
 
   /// 错误日志
-  void error(String message,
-      [String? tag, Object? error, StackTrace? stackTrace,]) {
+  void error(
+    String message, [
+    String? tag,
+    Object? error,
+    StackTrace? stackTrace,
+  ]) {
     final fullMessage = error != null
         ? '$message: $error${stackTrace != null ? '\n$stackTrace' : ''}'
         : message;
@@ -135,7 +139,8 @@ class Logger {
   List<String> getHistory({LogLevel? minLevel}) {
     return _history
         .where(
-            (entry) => minLevel == null || entry.level.index >= minLevel.index,)
+          (entry) => minLevel == null || entry.level.index >= minLevel.index,
+        )
         .map((entry) => _formatLog(entry))
         .toList();
   }

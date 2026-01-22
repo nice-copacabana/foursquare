@@ -207,8 +207,10 @@ void main() {
       final service = MusicService();
 
       expect(
-        () => service.fadeIn(MusicTheme.main,
-            duration: const Duration(milliseconds: 100),),
+        () => service.fadeIn(
+          MusicTheme.main,
+          duration: const Duration(milliseconds: 100),
+        ),
         returnsNormally,
       );
     });

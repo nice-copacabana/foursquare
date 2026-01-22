@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../bloc/lan_lobby_bloc.dart';
 import '../../../bloc/lan_lobby_event.dart';
 import '../../../bloc/lan_lobby_state.dart';
+import 'lan_game_page.dart';
 
 class LanLobbyPage extends StatelessWidget {
   const LanLobbyPage({super.key});
@@ -64,11 +65,15 @@ class _LanLobbyViewState extends State<LanLobbyView>
             );
           }
           if (state.status == LanLobbyStatus.connected) {
-            // Navigate to Game Page (Placeholder for now)
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('已连接! 准备开始游戏...')),
-            );
-            // TODO: Navigate to Game Page
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => LanGamePage(isHost: state.isHost),
+              ),
+            ).then((_) {
+              // When coming back, disconnect?
+              context.read<LanLobbyBloc>().add(DisconnectLan());
+            });
           }
         },
         builder: (context, state) {
@@ -108,8 +113,9 @@ class _LanLobbyViewState extends State<LanLobbyView>
                       context.read<LanLobbyBloc>().add(StopHosting());
                     },
                     style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.redAccent,
-                        foregroundColor: Colors.white,),
+                      backgroundColor: Colors.redAccent,
+                      foregroundColor: Colors.white,
+                    ),
                     child: const Text('取消创建'),
                   ),
                 ],
@@ -126,8 +132,11 @@ class _LanLobbyViewState extends State<LanLobbyView>
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.wifi_tethering,
-                        size: 80, color: Colors.blueAccent,),
+                    const Icon(
+                      Icons.wifi_tethering,
+                      size: 80,
+                      color: Colors.blueAccent,
+                    ),
                     const SizedBox(height: 32),
                     TextField(
                       controller: _roomNameController,
@@ -145,7 +154,8 @@ class _LanLobbyViewState extends State<LanLobbyView>
                         onPressed: () {
                           context.read<LanLobbyBloc>().add(
                                 StartHosting(
-                                    roomName: _roomNameController.text,),
+                                  roomName: _roomNameController.text,
+                                ),
                               );
                         },
                         child:
@@ -164,9 +174,13 @@ class _LanLobbyViewState extends State<LanLobbyView>
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text('附近的房间',
-                            style: TextStyle(
-                                fontSize: 18, fontWeight: FontWeight.bold,),),
+                        const Text(
+                          '附近的房间',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                         if (state.status == LanLobbyStatus.scanning)
                           IconButton(
                             icon: const SizedBox(
@@ -207,7 +221,8 @@ class _LanLobbyViewState extends State<LanLobbyView>
                                 leading: const Icon(Icons.computer),
                                 title: Text(service.name ?? 'Unknown Room'),
                                 subtitle: Text(
-                                    '${service.host ?? "Unknown IP"}:${service.port}',),
+                                  '${service.host ?? "Unknown IP"}:${service.port}',
+                                ),
                                 trailing: ElevatedButton(
                                   onPressed: () {
                                     context

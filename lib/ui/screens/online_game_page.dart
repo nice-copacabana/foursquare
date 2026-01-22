@@ -186,14 +186,19 @@ class OnlineGamePage extends StatelessWidget {
         ),
         const Divider(height: 1),
         _buildLocalPlayerInfoFromMatch(
-            context, state.match, state.localPlayerId,),
+          context,
+          state.match,
+          state.localPlayerId,
+        ),
       ],
     );
   }
 
   /// 构建断线视图
   Widget _buildDisconnectedView(
-      BuildContext context, OpponentDisconnected state,) {
+    BuildContext context,
+    OpponentDisconnected state,
+  ) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -466,7 +471,10 @@ class OnlineGamePage extends StatelessWidget {
 
   /// 处理棋盘点击事件
   void _handlePositionTapped(
-      BuildContext context, OnlinePlaying state, Position position,) {
+    BuildContext context,
+    OnlinePlaying state,
+    Position position,
+  ) {
     // 如果不是本地玩家回合，忽略点击
     if (!state.isLocalPlayerTurn) {
       return;

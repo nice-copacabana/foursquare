@@ -198,9 +198,10 @@ class AudioCoordinator {
         if (_settings.voiceEnabled) {
           final player = data?['player'] as String?;
           _enqueueAnnouncement(
-              player != null && player.isNotEmpty ? '$player??' : '????',
-              priority: 3,
-              interrupt: true,);
+            player != null && player.isNotEmpty ? '$player??' : '????',
+            priority: 3,
+            interrupt: true,
+          );
         }
         break;
 

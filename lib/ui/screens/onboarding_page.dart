@@ -499,8 +499,10 @@ class _InfoCard extends StatelessWidget {
     this.customIcon,
     required this.title,
     required this.description,
-  }) : assert(icon != null || customIcon != null,
-            'Either icon or customIcon must be provided',);
+  }) : assert(
+          icon != null || customIcon != null,
+          'Either icon or customIcon must be provided',
+        );
 
   @override
   Widget build(BuildContext context) {

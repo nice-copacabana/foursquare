@@ -25,7 +25,8 @@ void main() async {
 
   // 加载环境变量
   await dotenv.load(
-      fileName: kReleaseMode ? ".env.production" : ".env.development",);
+    fileName: kReleaseMode ? ".env.production" : ".env.development",
+  );
 
   await ThemeManager().initialize();
   await AudioCoordinator().initialize();

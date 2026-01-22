@@ -159,8 +159,10 @@ class MusicService {
   bool isPlaying() => _isPlaying;
 
   /// 淡入效果播放
-  Future<void> fadeIn(MusicTheme theme,
-      {Duration duration = const Duration(seconds: 2),}) async {
+  Future<void> fadeIn(
+    MusicTheme theme, {
+    Duration duration = const Duration(seconds: 2),
+  }) async {
     if (!_enabled) return;
 
     final targetVolume = _volume;

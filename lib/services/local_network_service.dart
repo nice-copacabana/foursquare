@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:io';
-import 'package:flutter/foundation.dart';
 import 'package:nsd/nsd.dart';
 import 'package:shelf/shelf_io.dart' as shelf_io;
 import 'package:shelf_web_socket/shelf_web_socket.dart';
@@ -35,6 +34,12 @@ class LocalNetworkService {
       StreamController<LocalNetworkConnectionState>.broadcast();
   Stream<LocalNetworkConnectionState> get connectionStateStream =>
       _connectionStateController.stream;
+
+  final _messageController = StreamController<WebSocketMessage>.broadcast();
+  Stream<WebSocketMessage> get messageStream => _messageController.stream;
+
+  final _servicesController = StreamController<List<Service>>.broadcast();
+  Stream<List<Service>> get foundServices => _servicesController.stream;
 
   static const String _serviceType = '_foursquare._tcp';
   static const int _port = 4040;
@@ -75,7 +80,9 @@ class LocalNetworkService {
 
       _server = await shelf_io.serve(handler, InternetAddress.anyIPv4, _port);
       logger.info(
-          'Server running on port $_server.port', 'LocalNetworkService',);
+        'Server running on port $_server.port',
+        'LocalNetworkService',
+      );
       _updateConnectionState(LocalNetworkConnectionState.hosting);
 
       // 2. Register mDNS Service
@@ -110,8 +117,10 @@ class LocalNetworkService {
         _foundServices.clear();
         _foundServices.addAll(_discovery!.services);
         _servicesController.add(List.from(_foundServices));
-        logger.info('Services updated: ${_foundServices.length}',
-            'LocalNetworkService',);
+        logger.info(
+          'Services updated: ${_foundServices.length}',
+          'LocalNetworkService',
+        );
       });
       logger.info('Discovery started', 'LocalNetworkService');
     } catch (e) {
@@ -172,7 +181,8 @@ class LocalNetworkService {
       // In a real app we might want to send a handshake here.
       logger.info('WebSocket connection initiated', 'LocalNetworkService');
       _updateConnectionState(
-          LocalNetworkConnectionState.connected,); // Optimistic connected
+        LocalNetworkConnectionState.connected,
+      ); // Optimistic connected
     } catch (e) {
       logger.error('Failed to connect to host', 'LocalNetworkService', e);
       _cleanupClient();
@@ -180,11 +190,28 @@ class LocalNetworkService {
     }
   }
 
+  /// Send a message to the connected peer
+  void send(WebSocketMessage message) {
+    final jsonString = message.toJsonString();
+
+    if (_role == LocalNetworkRole.host && _connectedClient != null) {
+      _connectedClient!.sink.add(jsonString);
+    } else if (_role == LocalNetworkRole.client && _clientChannel != null) {
+      _clientChannel!.sink.add(jsonString);
+    } else {
+      logger.warning(
+          'Cannot send message: Not connected', 'LocalNetworkService',);
+    }
+  }
+
   void _onMessageReceived(dynamic data) {
     try {
-      // logger.info('Message received: $data', 'LocalNetworkService');
+      if (data is String) {
+        final message = WebSocketMessage.fromJsonString(data);
+        _messageController.add(message);
+      }
     } catch (e) {
-      print('Error parsing message: $e');
+      logger.error('Error parsing message: $data', 'LocalNetworkService', e);
     }
   }
 

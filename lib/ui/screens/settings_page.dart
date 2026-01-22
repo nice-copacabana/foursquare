@@ -234,8 +234,10 @@ class _SettingsPageState extends State<SettingsPage> {
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                    content: Text(
-                        '已切换到${allThemes.firstWhere((t) => t.id == value).name}主题',),),
+                  content: Text(
+                    '已切换到${allThemes.firstWhere((t) => t.id == value).name}主题',
+                  ),
+                ),
               );
             }
           },
@@ -283,7 +285,8 @@ class _SettingsPageState extends State<SettingsPage> {
           onChanged: (value) {
             _performanceMonitor.setEnabled(value);
             _updateSetting(
-                _settings.copyWith(performanceMonitoringEnabled: value),);
+              _settings.copyWith(performanceMonitoringEnabled: value),
+            );
           },
         ),
         const Divider(),

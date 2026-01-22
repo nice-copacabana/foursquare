@@ -184,7 +184,11 @@ class BoardPainter extends CustomPainter {
 
   /// 绘制棋子
   void _drawPiece(
-      Canvas canvas, double cellSize, Position pos, PieceType piece,) {
+    Canvas canvas,
+    double cellSize,
+    Position pos,
+    PieceType piece,
+  ) {
     final center = Offset(
       pos.x * cellSize + cellSize / 2,
       pos.y * cellSize + cellSize / 2,
@@ -196,7 +200,9 @@ class BoardPainter extends CustomPainter {
       final shadowPaint = Paint()
         ..color = Colors.black.withValues(alpha: UIConstants.shadowOpacity)
         ..maskFilter = const MaskFilter.blur(
-            BlurStyle.normal, UIConstants.pieceShadowBlur,);
+          BlurStyle.normal,
+          UIConstants.pieceShadowBlur,
+        );
 
       canvas.drawCircle(
         center + UIConstants.pieceShadowOffset,
@@ -329,7 +335,11 @@ class BoardPainter extends CustomPainter {
 
   /// 绘制最后移动标记
   void _drawLastMove(
-      Canvas canvas, double cellSize, Position from, Position to,) {
+    Canvas canvas,
+    double cellSize,
+    Position from,
+    Position to,
+  ) {
     final paint = Paint()
       ..color = UIConstants.lastMoveColor
           .withValues(alpha: UIConstants.lastMoveBackgroundOpacity)

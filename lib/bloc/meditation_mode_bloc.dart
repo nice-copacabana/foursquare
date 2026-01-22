@@ -577,7 +577,10 @@ class MeditationModeBloc
       },
       onError: (error) {
         logger.error(
-            '[MeditationModeBloc] 语音识别错误', 'MeditationModeBloc', error,);
+          '[MeditationModeBloc] 语音识别错误',
+          'MeditationModeBloc',
+          error,
+        );
       },
     );
   }

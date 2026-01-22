@@ -92,7 +92,10 @@ class WatchGamePage extends StatelessWidget {
 
   /// 构建游戏内容（适配圆形/方形屏幕）
   Widget _buildGameContent(
-      BuildContext context, GameInProgress state, bool isRound,) {
+    BuildContext context,
+    GameInProgress state,
+    bool isRound,
+  ) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -158,7 +161,10 @@ class WatchGamePage extends StatelessWidget {
 
   /// 手表优化棋盘（放大触控区域）
   Widget _buildWatchBoard(
-      BuildContext context, GameInProgress state, bool isRound,) {
+    BuildContext context,
+    GameInProgress state,
+    bool isRound,
+  ) {
     final screenSize = MediaQuery.of(context).size;
     final boardSize = screenSize.width * 0.85; // 占屏幕85%
 
@@ -240,7 +246,10 @@ class WatchGamePage extends StatelessWidget {
 
   /// 游戏结束界面
   Widget _buildGameOverScreen(
-      BuildContext context, GameOver state, bool isRound,) {
+    BuildContext context,
+    GameOver state,
+    bool isRound,
+  ) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,

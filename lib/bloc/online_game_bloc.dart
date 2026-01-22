@@ -439,8 +439,9 @@ class OnlineGameBloc extends Bloc<OnlineGameEvent, OnlineGameState> {
 
       final isWin = event.winnerId == playing.localPlayerId;
       _audioCoordinator.onGameEvent(
-          isWin ? audio.GameEvent.gameWon : audio.GameEvent.gameLost,
-          data: {'player': isWin ? 'you' : 'opponent'},);
+        isWin ? audio.GameEvent.gameWon : audio.GameEvent.gameLost,
+        data: {'player': isWin ? 'you' : 'opponent'},
+      );
 
       emit(
         OnlineGameOver(

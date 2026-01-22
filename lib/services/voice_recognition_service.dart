@@ -165,7 +165,8 @@ class VoiceRecognitionService {
           );
 
           print(
-              '[VoiceRecognitionService] 识别结果: ${result.recognizedWords} (置信度: ${result.confidence})',);
+            '[VoiceRecognitionService] 识别结果: ${result.recognizedWords} (置信度: ${result.confidence})',
+          );
           _onResult?.call(voiceResult);
 
           // 如果是最终结果，自动停止监听
