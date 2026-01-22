@@ -4,14 +4,14 @@
 import 'package:equatable/equatable.dart';
 
 /// 棋盘位置模型
-/// 
+///
 /// 表示4x4棋盘上的坐标位置
 /// x: 列索引 (0-3)
 /// y: 行索引 (0-3)
 class Position extends Equatable {
   /// 列索引 (0-3)
   final int x;
-  
+
   /// 行索引 (0-3)
   final int y;
 
@@ -27,9 +27,9 @@ class Position extends Equatable {
   List<Position> getAdjacentPositions() {
     final directions = [
       const Position(0, -1), // 上
-      const Position(0, 1),  // 下
+      const Position(0, 1), // 下
       const Position(-1, 0), // 左
-      const Position(1, 0),  // 右
+      const Position(1, 0), // 右
     ];
 
     return directions

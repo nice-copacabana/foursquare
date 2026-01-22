@@ -5,10 +5,10 @@
 enum PieceType {
   /// 空位
   empty,
-  
+
   /// 黑方棋子
   black,
-  
+
   /// 白方棋子
   white,
 }

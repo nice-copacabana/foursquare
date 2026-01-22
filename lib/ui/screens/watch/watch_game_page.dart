@@ -20,7 +20,9 @@ import '../../widgets/themed_board_widget.dart';
 
 // Temporary placeholder for WearShape (wear package not available)
 enum _WearShape { round, square }
+
 typedef _WatchShapeBuilder = Widget Function(BuildContext, _WearShape, Widget?);
+
 class _WatchShape extends StatelessWidget {
   final _WatchShapeBuilder builder;
   const _WatchShape({required this.builder});
@@ -31,14 +33,14 @@ class _WatchShape extends StatelessWidget {
 }
 
 /// 手表专用游戏页面
-/// 
+///
 /// 适配设备：
 /// - 小米手表（Wear OS）
 /// - OPPO Watch（ColorOS Watch基于Wear OS）
 /// - vivo Watch（Wear OS）
 /// - TicWatch系列
 /// - 华为手表（需HarmonyOS特殊处理）
-/// 
+///
 /// 特性：
 /// - 自动检测圆形/方形屏幕
 /// - 优化触控区域（≥44dp）
@@ -59,7 +61,7 @@ class WatchGamePage extends StatelessWidget {
       builder: (BuildContext context, _WearShape shape, Widget? child) {
         // 检测屏幕形状
         final isRound = shape == _WearShape.round;
-        
+
         return Scaffold(
           backgroundColor: Colors.black,
           body: SafeArea(
@@ -89,24 +91,25 @@ class WatchGamePage extends StatelessWidget {
   }
 
   /// 构建游戏内容（适配圆形/方形屏幕）
-  Widget _buildGameContent(BuildContext context, GameInProgress state, bool isRound) {
+  Widget _buildGameContent(
+      BuildContext context, GameInProgress state, bool isRound,) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         // 当前玩家指示器（紧凑型）
         _buildCompactPlayerIndicator(state),
-        
+
         const SizedBox(height: 8),
-        
+
         // 棋盘（自动缩放至适合手表屏幕）
         Expanded(
           child: Center(
             child: _buildWatchBoard(context, state, isRound),
           ),
         ),
-        
+
         const SizedBox(height: 8),
-        
+
         // 操作按钮（撤销/重新开始）
         _buildCompactActions(context),
       ],
@@ -154,10 +157,11 @@ class WatchGamePage extends StatelessWidget {
   }
 
   /// 手表优化棋盘（放大触控区域）
-  Widget _buildWatchBoard(BuildContext context, GameInProgress state, bool isRound) {
+  Widget _buildWatchBoard(
+      BuildContext context, GameInProgress state, bool isRound,) {
     final screenSize = MediaQuery.of(context).size;
     final boardSize = screenSize.width * 0.85; // 占屏幕85%
-    
+
     return Container(
       width: boardSize,
       height: boardSize,
@@ -235,7 +239,8 @@ class WatchGamePage extends StatelessWidget {
   }
 
   /// 游戏结束界面
-  Widget _buildGameOverScreen(BuildContext context, GameOver state, bool isRound) {
+  Widget _buildGameOverScreen(
+      BuildContext context, GameOver state, bool isRound,) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -249,7 +254,7 @@ class WatchGamePage extends StatelessWidget {
                 : Colors.amber,
           ),
           const SizedBox(height: 16),
-          
+
           // 结果文字
           Text(
             state.winner == null
@@ -264,7 +269,7 @@ class WatchGamePage extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 24),
-          
+
           // 重新开始按钮
           ElevatedButton(
             onPressed: () {

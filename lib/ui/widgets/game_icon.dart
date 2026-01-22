@@ -4,7 +4,7 @@
 import 'package:flutter/material.dart';
 
 /// 四子游戏图标组件
-/// 
+///
 /// 绘制5条横线×5条竖线，形成4×4格子的棋盘
 /// 棋子放置在格子中心而非交叉点
 class GameIcon extends StatelessWidget {
@@ -60,7 +60,7 @@ class _GameIconPainter extends CustomPainter {
     final margin = size.width * 0.1;
     final gridSize = size.width - 2 * margin;
     final cellSize = gridSize / 4; // 4个格子
-    
+
     final gridPaint = Paint()
       ..color = gridColor
       ..strokeWidth = size.width / 40
@@ -70,14 +70,14 @@ class _GameIconPainter extends CustomPainter {
     // 绘制5条横线和5条竖线（形成4×4格子）
     for (var i = 0; i < 5; i++) {
       final offset = margin + i * cellSize;
-      
+
       // 横线
       canvas.drawLine(
         Offset(margin, offset),
         Offset(size.width - margin, offset),
         gridPaint,
       );
-      
+
       // 竖线
       canvas.drawLine(
         Offset(offset, margin),
@@ -89,24 +89,27 @@ class _GameIconPainter extends CustomPainter {
     // 绘制示例棋子（放在格子中心）
     if (showPieces) {
       final pieceRadius = cellSize * 0.3;
-      
+
       // 黑色棋子（顶部行）
       final blackPositions = [
-        (0, 0), (0, 1), (0, 2), (0, 3),
+        (0, 0),
+        (0, 1),
+        (0, 2),
+        (0, 3),
       ];
-      
+
       for (final (row, col) in blackPositions) {
         final center = Offset(
           margin + (col + 0.5) * cellSize,
           margin + (row + 0.5) * cellSize,
         );
-        
+
         // 绘制黑色棋子
         final blackPaint = Paint()
           ..color = Colors.black
           ..style = PaintingStyle.fill;
         canvas.drawCircle(center, pieceRadius, blackPaint);
-        
+
         // 绘制边框
         final borderPaint = Paint()
           ..color = Colors.white.withValues(alpha: 0.5)
@@ -114,24 +117,27 @@ class _GameIconPainter extends CustomPainter {
           ..style = PaintingStyle.stroke;
         canvas.drawCircle(center, pieceRadius, borderPaint);
       }
-      
+
       // 白色棋子（底部行）
       final whitePositions = [
-        (3, 0), (3, 1), (3, 2), (3, 3),
+        (3, 0),
+        (3, 1),
+        (3, 2),
+        (3, 3),
       ];
-      
+
       for (final (row, col) in whitePositions) {
         final center = Offset(
           margin + (col + 0.5) * cellSize,
           margin + (row + 0.5) * cellSize,
         );
-        
+
         // 绘制白色棋子
         final whitePaint = Paint()
           ..color = Colors.white
           ..style = PaintingStyle.fill;
         canvas.drawCircle(center, pieceRadius, whitePaint);
-        
+
         // 绘制边框
         final borderPaint = Paint()
           ..color = Colors.black.withValues(alpha: 0.3)

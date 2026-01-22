@@ -1,5 +1,5 @@
 /// Game Replay Service - 游戏回放服务
-/// 
+///
 /// 职责：
 /// - 管理游戏历史记录的回放
 /// - 提供前进/后退导航功能
@@ -14,16 +14,16 @@ import '../models/move.dart';
 class ReplayState {
   /// 当前步骤索引（-1表示初始状态）
   final int currentStep;
-  
+
   /// 总步数
   final int totalSteps;
-  
+
   /// 当前棋盘状态
   final BoardState boardState;
-  
+
   /// 当前移动
   final Move? currentMove;
-  
+
   /// 是否在回放模式
   final bool isReplaying;
 
@@ -37,16 +37,16 @@ class ReplayState {
 
   /// 是否在初始状态
   bool get isAtStart => currentStep < 0;
-  
+
   /// 是否在最后一步
   bool get isAtEnd => currentStep >= totalSteps - 1;
-  
+
   /// 是否可以前进
   bool get canGoForward => !isAtEnd && totalSteps > 0;
-  
+
   /// 是否可以后退
   bool get canGoBackward => !isAtStart;
-  
+
   /// 当前步骤描述
   String get stepDescription {
     if (isAtStart) {
@@ -77,7 +77,7 @@ class ReplayState {
 class GameReplayService {
   /// 完整的移动历史
   List<Move> _moveHistory = [];
-  
+
   /// 当前回放状态
   ReplayState _state = ReplayState(
     currentStep: -1,
@@ -109,21 +109,21 @@ class GameReplayService {
 
     final nextStep = _state.currentStep + 1;
     final move = _moveHistory[nextStep];
-    
+
     // 基于当前棋盘执行移动
     BoardState newBoard = _state.boardState.movePiece(move.from, move.to);
-    
+
     // 如果有吃子，移除被吃的棋子
     if (move.hasCapture && move.capturedPiece != null) {
       newBoard = newBoard.removePiece(move.capturedPiece!);
     }
-    
+
     _state = _state.copyWith(
       currentStep: nextStep,
       boardState: newBoard,
       currentMove: move,
     );
-    
+
     return _state;
   }
 
@@ -134,31 +134,31 @@ class GameReplayService {
     }
 
     final prevStep = _state.currentStep - 1;
-    
+
     // 重新构建到prevStep的棋盘状态
     BoardState newBoard = BoardState.initial();
     Move? currentMove;
-    
+
     for (int i = 0; i <= prevStep; i++) {
       final move = _moveHistory[i];
       newBoard = newBoard.movePiece(move.from, move.to);
-      
+
       if (move.hasCapture && move.capturedPiece != null) {
         newBoard = newBoard.removePiece(move.capturedPiece!);
       }
-      
+
       if (i == prevStep) {
         currentMove = move;
       }
     }
-    
+
     _state = _state.copyWith(
       currentStep: prevStep,
       boardState: newBoard,
       currentMove: currentMove,
       clearCurrentMove: prevStep < 0,
     );
-    
+
     return _state;
   }
 
@@ -180,21 +180,21 @@ class GameReplayService {
 
     // 重新构建整个游戏到最后
     BoardState newBoard = BoardState.initial();
-    
+
     for (final move in _moveHistory) {
       newBoard = newBoard.movePiece(move.from, move.to);
-      
+
       if (move.hasCapture && move.capturedPiece != null) {
         newBoard = newBoard.removePiece(move.capturedPiece!);
       }
     }
-    
+
     _state = _state.copyWith(
       currentStep: _moveHistory.length - 1,
       boardState: newBoard,
       currentMove: _moveHistory.last,
     );
-    
+
     return _state;
   }
 
@@ -210,22 +210,22 @@ class GameReplayService {
 
     // 重新构建到step的棋盘状态
     BoardState newBoard = BoardState.initial();
-    
+
     for (int i = 0; i <= step; i++) {
       final move = _moveHistory[i];
       newBoard = newBoard.movePiece(move.from, move.to);
-      
+
       if (move.hasCapture && move.capturedPiece != null) {
         newBoard = newBoard.removePiece(move.capturedPiece!);
       }
     }
-    
+
     _state = _state.copyWith(
       currentStep: step,
       boardState: newBoard,
       currentMove: _moveHistory[step],
     );
-    
+
     return _state;
   }
 

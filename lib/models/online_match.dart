@@ -9,39 +9,39 @@ import 'match_status.dart';
 import 'game_save.dart'; // For BoardStateData and MoveData
 
 /// 在线匹配模型
-/// 
+///
 /// 表示一场在线对战的完整信息
 class OnlineMatch extends Equatable {
   /// 匹配ID
   final String matchId;
-  
+
   /// 玩家1 ID
   final String player1Id;
-  
+
   /// 玩家2 ID
   final String player2Id;
-  
+
   /// 玩家1颜色
   final PieceType player1Color;
-  
+
   /// 玩家2颜色
   final PieceType player2Color;
-  
+
   /// 当前回合玩家ID
   final String currentTurn;
-  
+
   /// 当前棋盘状态
   final BoardState boardState;
-  
+
   /// 移动历史
   final List<Move> moveHistory;
-  
+
   /// 匹配状态
   final MatchStatus status;
-  
+
   /// 创建时间
   final DateTime createdAt;
-  
+
   /// 最后更新时间
   final DateTime lastUpdateAt;
 
@@ -61,21 +61,18 @@ class OnlineMatch extends Equatable {
 
   /// 从JSON创建匹配
   factory OnlineMatch.fromJson(Map<String, dynamic> json) {
-    final player1Color = json['player1Color'] == 'black' 
-        ? PieceType.black 
-        : PieceType.white;
-    final player2Color = json['player2Color'] == 'black' 
-        ? PieceType.black 
-        : PieceType.white;
-    
+    final player1Color =
+        json['player1Color'] == 'black' ? PieceType.black : PieceType.white;
+    final player2Color =
+        json['player2Color'] == 'black' ? PieceType.black : PieceType.white;
+
     // 解析棋盘状态
     final boardData = json['boardState'] as Map<String, dynamic>;
-    final currentPlayer = json['currentTurn'] == json['player1Id']
-        ? player1Color
-        : player2Color;
+    final currentPlayer =
+        json['currentTurn'] == json['player1Id'] ? player1Color : player2Color;
     final boardStateData = BoardStateData.fromJson(boardData);
     final boardState = boardStateData.toBoardState(currentPlayer);
-    
+
     // 解析移动历史
     final moveList = json['moveHistory'] as List<dynamic>? ?? [];
     final moveHistory = moveList
@@ -107,9 +104,8 @@ class OnlineMatch extends Equatable {
       'player2Color': player2Color == PieceType.black ? 'black' : 'white',
       'currentTurn': currentTurn,
       'boardState': BoardStateData.fromBoardState(boardState).toJson(),
-      'moveHistory': moveHistory
-          .map((m) => MoveData.fromMove(m).toJson())
-          .toList(),
+      'moveHistory':
+          moveHistory.map((m) => MoveData.fromMove(m).toJson()).toList(),
       'status': status.toJson(),
       'createdAt': createdAt.toIso8601String(),
       'lastUpdateAt': lastUpdateAt.toIso8601String(),
@@ -124,7 +120,8 @@ class OnlineMatch extends Equatable {
     PieceType? player1Color,
   }) {
     final p1Color = player1Color ?? PieceType.black;
-    final p2Color = p1Color == PieceType.black ? PieceType.white : PieceType.black;
+    final p2Color =
+        p1Color == PieceType.black ? PieceType.white : PieceType.black;
     final now = DateTime.now();
 
     return OnlineMatch(

@@ -2,7 +2,8 @@ import 'package:flutter/widgets.dart';
 import 'logger_service.dart';
 
 class ResourceWarmupService {
-  static final ResourceWarmupService _instance = ResourceWarmupService._internal();
+  static final ResourceWarmupService _instance =
+      ResourceWarmupService._internal();
   factory ResourceWarmupService() => _instance;
   ResourceWarmupService._internal();
 

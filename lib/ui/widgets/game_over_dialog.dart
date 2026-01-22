@@ -1,5 +1,5 @@
 /// Game Over Dialog - 游戏结束对话框
-/// 
+///
 /// 职责：
 /// - 显示游戏结束信息
 /// - 显示胜负结果和原因
@@ -54,7 +54,7 @@ class GameOverDialog extends StatelessWidget {
               color: Colors.white,
             ),
             const SizedBox(height: 16),
-            
+
             // 结果标题
             Text(
               _getResultTitle(),
@@ -65,7 +65,7 @@ class GameOverDialog extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 8),
-            
+
             // 结果详情
             Text(
               gameResult.reason,
@@ -76,7 +76,7 @@ class GameOverDialog extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 24),
-            
+
             // 按钮组
             Column(
               children: [
@@ -91,7 +91,7 @@ class GameOverDialog extends StatelessWidget {
                       onPressed: onExit,
                       backgroundColor: Colors.white.withValues(alpha: 0.2),
                     ),
-                    
+
                     // 重新开始按钮
                     _DialogButton(
                       icon: Icons.refresh,
@@ -101,10 +101,9 @@ class GameOverDialog extends StatelessWidget {
                     ),
                   ],
                 ),
-                
+
                 // 第二行：查看回放（如果可用）
-                if (onReplay != null)
-                  const SizedBox(height: 12),
+                if (onReplay != null) const SizedBox(height: 12),
                 if (onReplay != null)
                   SizedBox(
                     width: double.infinity,

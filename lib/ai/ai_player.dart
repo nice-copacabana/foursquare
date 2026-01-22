@@ -1,5 +1,5 @@
 /// AI Player - AI接口定义
-/// 
+///
 /// 职责：
 /// - 定义AI接口
 /// - AI难度级别枚举
@@ -29,11 +29,11 @@ enum AIDifficulty {
   String get description {
     switch (this) {
       case AIDifficulty.easy:
-        return 'AI会略有失误，适合新手练习';  // 从"会犯一些错误"修改
+        return 'AI会略有失误，适合新手练习'; // 从"会犯一些错误"修改
       case AIDifficulty.medium:
-        return 'AI会认真思考，有一定挑战性';  // 从"会认真思考"修改
+        return 'AI会认真思考，有一定挑战性'; // 从"会认真思考"修改
       case AIDifficulty.hard:
-        return 'AI使用最优策略，难以战胜';  // 从"会使用最优策略"修改
+        return 'AI使用最优策略，难以战胜'; // 从"会使用最优策略"修改
     }
   }
 
@@ -79,7 +79,7 @@ abstract class AIPlayer {
   const AIPlayer(this.difficulty);
 
   /// 选择最佳移动
-  /// 
+  ///
   /// 返回null表示无法移动
   Future<AIMoveResult?> selectMove(BoardState board);
 

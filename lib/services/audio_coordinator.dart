@@ -13,28 +13,28 @@ import '../services/logger_service.dart';
 enum GameEvent {
   /// 选中棋子
   pieceSelected,
-  
+
   /// 移动棋子
   pieceMoved,
-  
+
   /// 吃子
   pieceCaptured,
-  
+
   /// 游戏胜利
   gameWon,
-  
+
   /// 游戏失败
   gameLost,
-  
+
   /// 轮次切换
   turnChanged,
-  
+
   /// AI思考中
   aiThinking,
-  
+
   /// 非法操作
   invalidOperation,
-  
+
   /// 按钮点击
   buttonClicked,
 }
@@ -43,25 +43,25 @@ enum GameEvent {
 enum GameScene {
   /// 主菜单
   mainMenu,
-  
+
   /// 普通对弈
   gameplay,
-  
+
   /// 冥想模式
   meditationMode,
-  
+
   /// AI对弈
   aiGame,
-  
+
   /// 回放模式
   replayMode,
-  
+
   /// 设置页面
   settings,
 }
 
 /// 音频总控制器
-/// 
+///
 /// 职责:
 /// - 协调音效、音乐、语音三个服务
 /// - 管理音频冲突和优先级
@@ -95,7 +95,7 @@ class AudioCoordinator {
     try {
       // 初始化SharedPreferences
       _prefs = await SharedPreferences.getInstance();
-      
+
       // 加载设置
       await _loadSettings();
 
@@ -197,7 +197,10 @@ class AudioCoordinator {
         _audioService.playSound(SoundType.lose);
         if (_settings.voiceEnabled) {
           final player = data?['player'] as String?;
-          _enqueueAnnouncement(player != null && player.isNotEmpty ? '$player??' : '????', priority: 3, interrupt: true);
+          _enqueueAnnouncement(
+              player != null && player.isNotEmpty ? '$player??' : '????',
+              priority: 3,
+              interrupt: true,);
         }
         break;
 

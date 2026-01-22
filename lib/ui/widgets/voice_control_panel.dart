@@ -8,7 +8,7 @@ import '../../bloc/game_event.dart';
 import '../../bloc/game_state.dart';
 
 /// 语音控制面板组件
-/// 
+///
 /// 功能：
 /// - 语音控制开关按钮
 /// - 麦克风状态指示器
@@ -54,8 +54,8 @@ class VoiceControlPanel extends StatelessWidget {
                       value: state.isVoiceControlEnabled,
                       onChanged: (value) {
                         context.read<GameBloc>().add(
-                          VoiceControlToggledEvent(value),
-                        );
+                              VoiceControlToggledEvent(value),
+                            );
                       },
                     ),
                   ],
@@ -247,12 +247,11 @@ class VoiceControlFloatingButton extends StatelessWidget {
           heroTag: 'voice_control',
           onPressed: () {
             context.read<GameBloc>().add(
-              VoiceControlToggledEvent(!state.isVoiceControlEnabled),
-            );
+                  VoiceControlToggledEvent(!state.isVoiceControlEnabled),
+                );
           },
-          backgroundColor: state.isVoiceControlEnabled
-              ? Colors.blue
-              : Colors.grey,
+          backgroundColor:
+              state.isVoiceControlEnabled ? Colors.blue : Colors.grey,
           child: Icon(
             state.isVoiceControlEnabled ? Icons.mic : Icons.mic_off,
           ),

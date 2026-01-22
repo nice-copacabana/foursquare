@@ -6,7 +6,7 @@ import 'position.dart';
 import 'piece_type.dart';
 
 /// 移动记录
-/// 
+///
 /// 记录一次移动操作的完整信息，包括：
 /// - 起始位置
 /// - 目标位置
@@ -16,16 +16,16 @@ import 'piece_type.dart';
 class Move extends Equatable {
   /// 起始位置
   final Position from;
-  
+
   /// 目标位置
   final Position to;
-  
+
   /// 移动方
   final PieceType player;
-  
+
   /// 被吃棋子位置（可选）
   final Position? capturedPiece;
-  
+
   /// 移动时间
   final DateTime timestamp;
 

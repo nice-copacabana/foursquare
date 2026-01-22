@@ -8,48 +8,48 @@ import 'package:equatable/equatable.dart';
 enum PieceStyle {
   /// 经典立体风格
   classic,
-  
+
   /// 扁平化风格
   flat,
-  
+
   /// 发光风格
   glowing,
-  
+
   /// 水墨风格
   ink,
 }
 
 /// 棋盘主题
-/// 
+///
 /// 定义棋盘的视觉风格,包括颜色、样式等
 class BoardTheme extends Equatable {
   /// 主题唯一标识
   final String id;
-  
+
   /// 主题名称
   final String name;
-  
+
   /// 棋盘背景色
   final Color backgroundColor;
-  
+
   /// 网格线颜色
   final Color gridColor;
-  
+
   /// 网格线宽度
   final double gridLineWidth;
-  
+
   /// 棋子绘制风格
   final PieceStyle pieceStyle;
-  
+
   /// 选中高亮颜色
   final Color selectionColor;
-  
+
   /// 移动提示颜色
   final Color moveHintColor;
-  
+
   /// 最后移动标记颜色
   final Color lastMoveColor;
-  
+
   /// 背景纹理路径(可选)
   final String? backgroundTexture;
 

@@ -1,5 +1,5 @@
 /// Home Page - 主菜单页面
-/// 
+///
 /// 职责：
 /// - 显示游戏标题和Logo
 /// - 提供游戏模式选择入口
@@ -19,6 +19,7 @@ import 'statistics_page.dart';
 import 'rules_page.dart';
 import 'settings_page.dart';
 import 'meditation_game_page.dart';
+import 'lan/lan_lobby_page.dart';
 
 /// 主菜单页面
 class HomePage extends StatefulWidget {
@@ -73,11 +74,11 @@ class _HomePageState extends State<HomePage> {
                   // 游戏Logo和标题
                   _buildHeader(),
                   const SizedBox(height: 60),
-                  
+
                   // 主菜单按钮
                   _buildMenuButtons(context),
                   const SizedBox(height: 40),
-                  
+
                   // 版本信息
                   _buildFooter(),
                 ],
@@ -117,7 +118,7 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
         const SizedBox(height: 24),
-        
+
         // 游戏标题
         const Text(
           '四子游戏',
@@ -168,7 +169,6 @@ class _HomePageState extends State<HomePage> {
           },
         ),
         const SizedBox(height: 16),
-        
         _MenuButton(
           icon: Icons.computer,
           label: '人机对战',
@@ -181,7 +181,6 @@ class _HomePageState extends State<HomePage> {
           },
         ),
         const SizedBox(height: 16),
-        
         _MenuButton(
           icon: Icons.self_improvement,
           label: '冥想模式',
@@ -194,8 +193,8 @@ class _HomePageState extends State<HomePage> {
               context,
               MaterialPageRoute(
                 builder: (context) => BlocProvider(
-                  create: (context) => MeditationModeBloc()
-                    ..add(const StartMeditationGame()),
+                  create: (context) =>
+                      MeditationModeBloc()..add(const StartMeditationGame()),
                   child: const MeditationGamePage(),
                 ),
               ),
@@ -203,7 +202,23 @@ class _HomePageState extends State<HomePage> {
           },
         ),
         const SizedBox(height: 16),
-        
+        _MenuButton(
+          icon: Icons.wifi,
+          label: '局域网对战',
+          subtitle: '面对面联机',
+          gradient: LinearGradient(
+            colors: [Colors.teal.shade400, Colors.green.shade600],
+          ),
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const LanLobbyPage(),
+              ),
+            );
+          },
+        ),
+        const SizedBox(height: 16),
         Row(
           children: [
             Expanded(
@@ -368,7 +383,6 @@ class _HomePageState extends State<HomePage> {
               SizedBox(height: 8),
               Text('吃掉对方的所有棋子，或使对方无子可走。'),
               SizedBox(height: 16),
-              
               Text(
                 '基本规则',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
@@ -379,7 +393,6 @@ class _HomePageState extends State<HomePage> {
                   '3. 每次只能移动一个棋子到相邻空位\n'
                   '4. 不能斜向移动'),
               SizedBox(height: 16),
-              
               Text(
                 '吃子规则',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
@@ -389,7 +402,6 @@ class _HomePageState extends State<HomePage> {
                   '可以吃掉最远端的敌方棋子。\n\n'
                   '注意：移动的棋子必须参与连线。'),
               SizedBox(height: 16),
-              
               Text(
                 '胜负判定',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),

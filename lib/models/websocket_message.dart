@@ -5,18 +5,18 @@ import 'package:equatable/equatable.dart';
 import 'message_type.dart';
 
 /// WebSocket消息模型
-/// 
+///
 /// 用于在线对战中客户端与服务器之间的通信
 class WebSocketMessage extends Equatable {
   /// 消息类型
   final MessageType type;
-  
+
   /// 匹配ID（可选）
   final String? matchId;
-  
+
   /// 消息内容
   final Map<String, dynamic> payload;
-  
+
   /// 时间戳
   final DateTime timestamp;
 

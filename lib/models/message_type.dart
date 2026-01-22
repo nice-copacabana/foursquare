@@ -5,28 +5,28 @@
 enum MessageType {
   /// 匹配请求
   matchRequest,
-  
+
   /// 匹配成功
   matchFound,
-  
+
   /// 匹配取消
   matchCanceled,
-  
+
   /// 移动指令
   move,
-  
+
   /// 游戏结束
   gameOver,
-  
+
   /// 断开连接
   disconnect,
-  
+
   /// 重新连接
   reconnect,
-  
+
   /// 心跳包
   heartbeat,
-  
+
   /// 错误消息
   error,
 }
@@ -36,7 +36,7 @@ extension MessageTypeExtension on MessageType {
   String toJson() {
     return toString().split('.').last;
   }
-  
+
   /// 从JSON字符串创建
   static MessageType fromJson(String json) {
     return MessageType.values.firstWhere(
@@ -44,7 +44,7 @@ extension MessageTypeExtension on MessageType {
       orElse: () => MessageType.error,
     );
   }
-  
+
   /// 获取显示名称
   String get displayName {
     switch (this) {
@@ -68,7 +68,7 @@ extension MessageTypeExtension on MessageType {
         return '错误';
     }
   }
-  
+
   /// 是否需要响应
   bool get requiresResponse {
     switch (this) {

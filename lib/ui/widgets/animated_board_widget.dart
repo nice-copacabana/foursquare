@@ -13,7 +13,7 @@ import 'board_painter.dart';
 import 'dart:math' as math;
 
 /// 带动画效果的棋盘Widget
-/// 
+///
 /// 支持：
 /// - 棋子移动动画（300ms平滑过渡）
 /// - 吃子动画（缩放消失效果）
@@ -116,10 +116,12 @@ class _AnimatedBoardWidgetState extends State<AnimatedBoardWidget>
     _captureOpacityAnimation = Tween<double>(
       begin: 1.0,
       end: 0.0,
-    ).animate(CurvedAnimation(
-      parent: _captureAnimationController!,
-      curve: const Interval(0.25, 1.0, curve: Curves.easeOut),
-    ),);
+    ).animate(
+      CurvedAnimation(
+        parent: _captureAnimationController!,
+        curve: const Interval(0.25, 1.0, curve: Curves.easeOut),
+      ),
+    );
 
     // 选中呼吸动画：1.5s循环
     _selectionAnimationController = AnimationController(
@@ -134,10 +136,12 @@ class _AnimatedBoardWidgetState extends State<AnimatedBoardWidget>
     _selectionPulseAnimation = Tween<double>(
       begin: 1.0,
       end: 1.15,
-    ).animate(CurvedAnimation(
-      parent: _selectionAnimationController!,
-      curve: Curves.easeInOut,
-    ),);
+    ).animate(
+      CurvedAnimation(
+        parent: _selectionAnimationController!,
+        curve: Curves.easeInOut,
+      ),
+    );
   }
 
   @override
@@ -187,7 +191,7 @@ class _AnimatedBoardWidgetState extends State<AnimatedBoardWidget>
         widget.boardState.getPiece(widget.lastMoveTo!),
       );
     } else if (widget.lastMoveFrom != oldWidget.lastMoveFrom ||
-               widget.lastMoveTo != oldWidget.lastMoveTo) {
+        widget.lastMoveTo != oldWidget.lastMoveTo) {
       // lastMove变化但为空（如撤销到初始状态），清除动画状态
       setState(() {
         _animatingTo = null;
@@ -218,10 +222,12 @@ class _AnimatedBoardWidgetState extends State<AnimatedBoardWidget>
     _moveAnimation = Tween<Offset>(
       begin: Offset(from.x.toDouble(), from.y.toDouble()),
       end: Offset(to.x.toDouble(), to.y.toDouble()),
-    ).animate(CurvedAnimation(
-      parent: _moveAnimationController!,
-      curve: Curves.easeOutBack, // 使用easeOutBack实现微弹效果
-    ),);
+    ).animate(
+      CurvedAnimation(
+        parent: _moveAnimationController!,
+        curve: Curves.easeOutBack, // 使用easeOutBack实现微弹效果
+      ),
+    );
 
     _moveAnimationController!.forward(from: 0.0).then((_) {
       // 确保动画完成后立即显示棋子
@@ -274,18 +280,24 @@ class _AnimatedBoardWidgetState extends State<AnimatedBoardWidget>
           ),
 
           // Moving piece
-          if (widget.animationEnabled && _animatingPiece != null && _moveAnimation != null)
+          if (widget.animationEnabled &&
+              _animatingPiece != null &&
+              _moveAnimation != null)
             RepaintBoundary(
               child: _buildAnimatingPiece(cellSize),
             ),
 
           // Captured piece
-          if (widget.animationEnabled && _capturingPiece != null && _capturingPosition != null)
+          if (widget.animationEnabled &&
+              _capturingPiece != null &&
+              _capturingPosition != null)
             RepaintBoundary(
               child: _buildCapturingPiece(cellSize),
             ),
 
-          if (widget.animationEnabled && widget.particleEnabled && _capturingPosition != null)
+          if (widget.animationEnabled &&
+              widget.particleEnabled &&
+              _capturingPosition != null)
             RepaintBoundary(
               child: _buildCaptureParticles(boardSize, cellSize),
             ),
@@ -330,7 +342,8 @@ class _AnimatedBoardWidgetState extends State<AnimatedBoardWidget>
           lastMoveTo: widget.lastMoveTo,
           hidePiece: _animatingTo, // 隐藏目标位置的棋子，显示动画棋子
           theme: widget.theme,
-          selectionPulse: widget.animationEnabled ? _selectionPulseAnimation?.value : null,
+          selectionPulse:
+              widget.animationEnabled ? _selectionPulseAnimation?.value : null,
         ),
         size: Size(boardSize, boardSize),
       ),
@@ -444,7 +457,10 @@ class _AnimatedBoardWidgetState extends State<AnimatedBoardWidget>
     final x = (localPos.dx / cellSize).floor();
     final y = (localPos.dy / cellSize).floor();
 
-    if (x >= 0 && x < GameConstants.boardSize && y >= 0 && y < GameConstants.boardSize) {
+    if (x >= 0 &&
+        x < GameConstants.boardSize &&
+        y >= 0 &&
+        y < GameConstants.boardSize) {
       final position = Position(x, y);
       widget.onPositionTapped(position);
     }
@@ -539,7 +555,8 @@ class _PiecePainter extends CustomPainter {
     // 绘制高光
     final highlightPaint = Paint()
       ..style = PaintingStyle.fill
-      ..color = Colors.white.withValues(alpha: piece == PieceType.black ? 0.2 : 0.4);
+      ..color =
+          Colors.white.withValues(alpha: piece == PieceType.black ? 0.2 : 0.4);
 
     canvas.drawCircle(
       center - Offset(radius * 0.3, radius * 0.3),
@@ -550,9 +567,8 @@ class _PiecePainter extends CustomPainter {
     // 绘制边框
     final borderPaint = Paint()
       ..style = PaintingStyle.stroke
-      ..color = piece == PieceType.black
-          ? Colors.grey.shade800
-          : Colors.grey.shade300
+      ..color =
+          piece == PieceType.black ? Colors.grey.shade800 : Colors.grey.shade300
       ..strokeWidth = 2;
 
     canvas.drawCircle(center, radius, borderPaint);

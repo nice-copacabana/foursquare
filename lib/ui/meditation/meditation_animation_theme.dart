@@ -8,34 +8,34 @@ import '../../models/board_state.dart';
 import '../../models/position.dart';
 
 /// 冥想模式动画主题抽象基类
-/// 
+///
 /// 定义冥想模式视觉动画的接口规范
 /// 所有主题必须实现该接口
 abstract class MeditationAnimationTheme {
   /// 主题名称
   String get name;
-  
+
   /// 主题描述
   String get description;
-  
+
   /// 主题标识符
   String get identifier;
-  
+
   /// 主色调
   Color get primaryColor;
-  
+
   /// 背景色
   Color get backgroundColor;
 
   /// 绘制静态背景
-  /// 
+  ///
   /// [canvas] 画布
   /// [size] 绘制区域大小
   /// [animation] 动画进度（0.0-1.0，用于持续动画）
   void paintBackground(Canvas canvas, Size size, double animation);
 
   /// 播放落子动画
-  /// 
+  ///
   /// [canvas] 画布
   /// [size] 绘制区域大小
   /// [position] 落子位置
@@ -50,7 +50,7 @@ abstract class MeditationAnimationTheme {
   );
 
   /// 播放吃子动画
-  /// 
+  ///
   /// [canvas] 画布
   /// [size] 绘制区域大小
   /// [position] 被吃棋子位置
@@ -63,14 +63,14 @@ abstract class MeditationAnimationTheme {
   );
 
   /// 播放胜利动画
-  /// 
+  ///
   /// [canvas] 画布
   /// [size] 绘制区域大小
   /// [progress] 动画进度（0.0-1.0）
   void animateVictory(Canvas canvas, Size size, double progress);
 
   /// 绘制当前游戏状态
-  /// 
+  ///
   /// [canvas] 画布
   /// [size] 绘制区域大小
   /// [board] 棋盘状态
@@ -84,16 +84,16 @@ abstract class MeditationAnimationTheme {
 class ThemeConfig {
   /// 粒子/图形数量
   final int elementCount;
-  
+
   /// 动画速度倍率
   final double animationSpeed;
-  
+
   /// 视觉强度（0.0-1.0）
   final double intensity;
-  
+
   /// 是否启用拖尾效果
   final bool trailEnabled;
-  
+
   /// 是否启用模糊效果
   final bool blurEnabled;
 
@@ -130,28 +130,28 @@ class ThemeConfig {
 class ThemeElement {
   /// 位置X (0.0-1.0)
   double x;
-  
+
   /// 位置Y (0.0-1.0)
   double y;
-  
+
   /// 速度X
   double vx;
-  
+
   /// 速度Y
   double vy;
-  
+
   /// 大小
   double size;
-  
+
   /// 透明度 (0.0-1.0)
   double opacity;
-  
+
   /// 颜色
   Color color;
-  
+
   /// 生命周期 (0.0-1.0)
   double life;
-  
+
   /// 旋转角度
   double rotation;
 
@@ -173,7 +173,7 @@ class ThemeElement {
     y += vy * deltaTime;
     rotation += 0.01;
     life -= deltaTime * 0.1;
-    
+
     // 边界检查
     if (x < 0) x += 1.0;
     if (x > 1) x -= 1.0;

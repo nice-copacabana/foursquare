@@ -6,9 +6,9 @@ import '../models/position.dart';
 import '../models/piece_type.dart';
 
 /// 吃子检测器
-/// 
+///
 /// 负责检测移动后是否可以吃子
-/// 
+///
 /// 吃子规则：
 /// 移动后，如果在某个方向（上/下/左/右）形成"己-己-敌"的连续三子，则吃掉敌方棋子
 /// 移动的棋子必须参与这个三子连线
@@ -16,23 +16,23 @@ class CaptureDetector {
   /// 四个方向的偏移量：上、下、左、右
   static const List<Position> _directions = [
     Position(0, -1), // 上
-    Position(0, 1),  // 下
+    Position(0, 1), // 下
     Position(-1, 0), // 左
-    Position(1, 0),  // 右
+    Position(1, 0), // 右
   ];
 
   /// 检测移动后是否可以吃子
-  /// 
+  ///
   /// 参数：
   /// - board: 当前棋盘状态
   /// - movedPiece: 刚移动到的棋子位置
   /// - player: 移动方
-  /// 
+  ///
   /// 返回：被吃棋子的位置，如果没有吃子则返回null
-  /// 
+  ///
   /// 吃子规则：
   /// 1. 必须形成"己-己-敌"的连续三子
-  /// 2. 移动的棋子必须是前两个"己"之一  
+  /// 2. 移动的棋子必须是前两个"己"之一
   /// 3. 不能形成"敌-己-己"模式(敌方在己方之前)
   Position? detectCapture(
     BoardState board,
@@ -54,19 +54,21 @@ class CaptureDetector {
 
       if (_isValidCapture(board, pos1, pos2, pos3, player, enemy)) {
         // 检查是否形成了"敌-己-己"模式(不允许)
-        final posBeforeEnemy = Position(pos3.x + direction.x, pos3.y + direction.y);
-        if (posBeforeEnemy.isValid() && board.getPiece(posBeforeEnemy) == enemy) {
-          // 形成了"己-己-敌-敌"模式,不应吃子  
+        final posBeforeEnemy =
+            Position(pos3.x + direction.x, pos3.y + direction.y);
+        if (posBeforeEnemy.isValid() &&
+            board.getPiece(posBeforeEnemy) == enemy) {
+          // 形成了"己-己-敌-敌"模式,不应吃子
           continue;
         }
-        
+
         // 检查反方向是否有敌方棋子
         final posBack = Position(pos1.x - direction.x, pos1.y - direction.y);
         if (posBack.isValid() && board.getPiece(posBack) == enemy) {
           // 形成了"敌-己-己-敌"模式,不应吃子
           continue;
         }
-        
+
         return pos3;
       }
 
@@ -82,7 +84,7 @@ class CaptureDetector {
   }
 
   /// 验证是否形成有效的吃子情况
-  /// 
+  ///
   /// 检查三个位置是否形成"己-己-敌"的模式
   bool _isValidCapture(
     BoardState board,
@@ -104,7 +106,7 @@ class CaptureDetector {
   }
 
   /// 检测所有可能的吃子机会
-  /// 
+  ///
   /// 返回所有可以吃子的移动
   /// Map的key是起始位置，value是一个Map，其中key是目标位置，value是被吃棋子位置
   Map<Position, Map<Position, Position>> getAllCaptureOpportunities(
@@ -117,17 +119,16 @@ class CaptureDetector {
     for (final piece in pieces) {
       // 获取该棋子的所有相邻空位
       final adjacentPositions = piece.getAdjacentPositions();
-      final emptyPositions = adjacentPositions
-          .where((pos) => board.isEmpty(pos))
-          .toList();
+      final emptyPositions =
+          adjacentPositions.where((pos) => board.isEmpty(pos)).toList();
 
       for (final target in emptyPositions) {
         // 模拟移动
         final newBoard = board.movePiece(piece, target);
-        
+
         // 检测是否能吃子
         final captured = detectCapture(newBoard, target, player);
-        
+
         if (captured != null) {
           result[piece] ??= {};
           result[piece]![target] = captured;
@@ -139,7 +140,7 @@ class CaptureDetector {
   }
 
   /// 检查指定位置的棋子是否有被吃的风险
-  /// 
+  ///
   /// 返回可能吃掉该棋子的对手移动
   List<CaptureRisk> getCaptureRisks(
     BoardState board,
@@ -165,25 +166,29 @@ class CaptureDetector {
             board.getPiece(pos1) == pieceType &&
             board.getPiece(pos2) == pieceType) {
           // 如果敌方棋子能移动到pos0，就能吃掉pos2
-          risks.add(CaptureRisk(
-            threatenedPiece: pos2,
-            enemyTarget: pos0,
-          ),);
+          risks.add(
+            CaptureRisk(
+              threatenedPiece: pos2,
+              enemyTarget: pos0,
+            ),
+          );
         }
       }
 
       // 检查"己-己-敌"的情况（piece可能被吃）
       final back1 = Position(piece.x - direction.x, piece.y - direction.y);
-      final back2 = Position(piece.x - 2 * direction.x, piece.y - 2 * direction.y);
+      final back2 =
+          Position(piece.x - 2 * direction.x, piece.y - 2 * direction.y);
 
       if (back1.isValid() && back2.isValid()) {
-        if (board.getPiece(back2) == enemy &&
-            board.getPiece(back1) == enemy) {
+        if (board.getPiece(back2) == enemy && board.getPiece(back1) == enemy) {
           // 当前piece有被吃的风险
-          risks.add(CaptureRisk(
-            threatenedPiece: piece,
-            enemyTarget: null, // 已经形成威胁
-          ),);
+          risks.add(
+            CaptureRisk(
+              threatenedPiece: piece,
+              enemyTarget: null, // 已经形成威胁
+            ),
+          );
         }
       }
     }
@@ -196,7 +201,7 @@ class CaptureDetector {
 class CaptureRisk {
   /// 受威胁的棋子位置
   final Position threatenedPiece;
-  
+
   /// 敌方需要移动到的目标位置（如果为null表示已形成威胁）
   final Position? enemyTarget;
 

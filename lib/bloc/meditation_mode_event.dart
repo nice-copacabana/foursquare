@@ -19,7 +19,7 @@ sealed class MeditationModeEvent extends Equatable {
 class StartMeditationGame extends MeditationModeEvent {
   /// 对手类型：true为AI，false为双人
   final bool isAiOpponent;
-  
+
   /// AI难度（仅在isAiOpponent为true时有效）
   /// 1-简单，2-中等，3-困难
   final int aiDifficulty;
@@ -37,7 +37,7 @@ class StartMeditationGame extends MeditationModeEvent {
 class VoiceInputReceived extends MeditationModeEvent {
   /// 识别的文本
   final String recognizedText;
-  
+
   /// 置信度（0.0-1.0）
   final double confidence;
 
@@ -54,10 +54,10 @@ class VoiceInputReceived extends MeditationModeEvent {
 class VoiceCommandParsed extends MeditationModeEvent {
   /// 解析出的位置
   final Position? position;
-  
+
   /// 是否为查询指令
   final bool isQuery;
-  
+
   /// 查询类型（如果是查询指令）
   /// 1-我的棋子在哪，2-对方棋子在哪，3-还剩几个，4-可以走哪，5-重复一遍
   final int? queryType;

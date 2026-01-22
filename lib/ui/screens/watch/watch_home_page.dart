@@ -14,7 +14,7 @@ import 'package:flutter/material.dart';
 import 'watch_game_page.dart';
 
 /// 手表专用主页
-/// 
+///
 /// 支持设备：
 /// - 小米手表（Wear OS）
 /// - OPPO Watch（ColorOS Watch）
@@ -28,7 +28,7 @@ class WatchHomePage extends StatelessWidget {
     return WatchShape(
       builder: (BuildContext context, WearShape shape, Widget? child) {
         final isRound = shape == WearShape.round;
-        
+
         return Scaffold(
           backgroundColor: Colors.black,
           body: SafeArea(
@@ -49,7 +49,7 @@ class WatchHomePage extends StatelessWidget {
                         color: Colors.amber,
                       ),
                       const SizedBox(height: 8),
-                      
+
                       // 标题
                       const Text(
                         '四子游戏',
@@ -60,7 +60,7 @@ class WatchHomePage extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 24),
-                      
+
                       // 双人对战按钮
                       _buildGameModeButton(
                         context: context,
@@ -79,7 +79,7 @@ class WatchHomePage extends StatelessWidget {
                         },
                       ),
                       const SizedBox(height: 12),
-                      
+
                       // 人机对战按钮
                       _buildGameModeButton(
                         context: context,

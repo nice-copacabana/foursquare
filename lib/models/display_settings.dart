@@ -4,18 +4,18 @@
 import 'package:equatable/equatable.dart';
 
 /// 显示设置
-/// 
+///
 /// 包含主题、动画、粒子效果等视觉配置
 class DisplaySettings extends Equatable {
   /// 棋盘主题ID
   final String themeId;
-  
+
   /// 是否启用动画
   final bool animationEnabled;
-  
+
   /// 是否启用粒子效果
   final bool particleEnabled;
-  
+
   /// 是否启用震动反馈
   final bool vibrationEnabled;
 

@@ -213,23 +213,29 @@ void main() {
       test('应返回所有黑方棋子位置', () {
         final pieces = board.getAllPieces(PieceType.black);
         expect(pieces.length, 4);
-        expect(pieces, containsAll([
-          const Position(0, 0),
-          const Position(1, 0),
-          const Position(2, 0),
-          const Position(3, 0),
-        ]),);
+        expect(
+          pieces,
+          containsAll([
+            const Position(0, 0),
+            const Position(1, 0),
+            const Position(2, 0),
+            const Position(3, 0),
+          ]),
+        );
       });
 
       test('应返回所有白方棋子位置', () {
         final pieces = board.getAllPieces(PieceType.white);
         expect(pieces.length, 4);
-        expect(pieces, containsAll([
-          const Position(0, 3),
-          const Position(1, 3),
-          const Position(2, 3),
-          const Position(3, 3),
-        ]),);
+        expect(
+          pieces,
+          containsAll([
+            const Position(0, 3),
+            const Position(1, 3),
+            const Position(2, 3),
+            const Position(3, 3),
+          ]),
+        );
       });
 
       test('应返回所有空位', () {
@@ -281,7 +287,7 @@ void main() {
       test('应生成可读的调试字符串', () {
         final board = BoardState.initial();
         final debugStr = board.toDebugString();
-        
+
         expect(debugStr.contains('●'), true);
         expect(debugStr.contains('○'), true);
         expect(debugStr.contains('·'), true);

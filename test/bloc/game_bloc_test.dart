@@ -1,5 +1,5 @@
 /// Game BLoC 单元测试
-/// 
+///
 /// 测试覆盖：
 /// - 新游戏事件
 /// - 重新开始事件
@@ -28,8 +28,11 @@ import 'package:foursquare/models/audio_settings.dart';
 
 // Mock classes
 class MockGameEngine extends Mock implements GameEngine {}
+
 class MockMoveValidator extends Mock implements MoveValidator {}
+
 class MockAudioCoordinator extends Mock implements audio.AudioCoordinator {}
+
 class MockStorageService extends Mock implements StorageService {}
 
 void main() {
@@ -56,10 +59,14 @@ void main() {
 
       // 设置默认的mock行为
       when(() => audioCoordinator.initialize()).thenAnswer((_) async {});
-      when(() => audioCoordinator.onGameEvent(any(), data: any(named: 'data'))).thenReturn(null);
-      when(() => audioCoordinator.onSceneChange(any())).thenAnswer((_) async {});
-      when(() => audioCoordinator.updateSettings(any())).thenAnswer((_) async {});
-      when(() => audioCoordinator.settings).thenReturn(AudioSettings.defaultSettings);
+      when(() => audioCoordinator.onGameEvent(any(), data: any(named: 'data')))
+          .thenReturn(null);
+      when(() => audioCoordinator.onSceneChange(any()))
+          .thenAnswer((_) async {});
+      when(() => audioCoordinator.updateSettings(any()))
+          .thenAnswer((_) async {});
+      when(() => audioCoordinator.settings)
+          .thenReturn(AudioSettings.defaultSettings);
     });
 
     test('初始状态应该是 GameInitial', () {
@@ -71,7 +78,7 @@ void main() {
       );
 
       expect(bloc.state, isA<GameInitial>());
-      
+
       bloc.close();
     });
 
@@ -87,12 +94,16 @@ void main() {
       expect: () => [
         isA<GamePlaying>()
             .having((s) => s.mode, 'mode', GameMode.pvp)
-            .having((s) => s.boardState.currentPlayer, 'currentPlayer', PieceType.black)
+            .having((s) => s.boardState.currentPlayer, 'currentPlayer',
+                PieceType.black,)
             .having((s) => s.moveHistory.length, 'moveHistory', 0),
       ],
       verify: (_) {
-        verify(() => audioCoordinator.onGameEvent(audio.GameEvent.buttonClicked)).called(1);
-        verify(() => audioCoordinator.onSceneChange(audio.GameScene.gameplay)).called(1);
+        verify(() =>
+                audioCoordinator.onGameEvent(audio.GameEvent.buttonClicked),)
+            .called(1);
+        verify(() => audioCoordinator.onSceneChange(audio.GameScene.gameplay))
+            .called(1);
       },
     );
 
@@ -126,20 +137,22 @@ void main() {
             .having((s) => s.moveHistory.length, 'moveHistory', 0),
       ],
       verify: (_) {
-        verify(() => audioCoordinator.onGameEvent(audio.GameEvent.buttonClicked)).called(1);
-        verify(() => audioCoordinator.onSceneChange(audio.GameScene.gameplay)).called(1);
+        verify(() =>
+                audioCoordinator.onGameEvent(audio.GameEvent.buttonClicked),)
+            .called(1);
+        verify(() => audioCoordinator.onSceneChange(audio.GameScene.gameplay))
+            .called(1);
       },
     );
 
     blocTest<GameBloc, GameState>(
       '选中己方棋子应该更新选中状态和合法移动',
       build: () {
-        when(() => moveValidator.getValidMoves(any(), any()))
-            .thenReturn([
+        when(() => moveValidator.getValidMoves(any(), any())).thenReturn([
           const Position(0, 1),
           const Position(1, 0),
         ]);
-        
+
         return GameBloc(
           gameEngine: gameEngine,
           moveValidator: moveValidator,
@@ -155,12 +168,16 @@ void main() {
       act: (bloc) => bloc.add(const SelectPieceEvent(Position(0, 0))),
       expect: () => [
         isA<GamePlaying>()
-            .having((s) => s.selectedPiece, 'selectedPiece', const Position(0, 0))
+            .having(
+                (s) => s.selectedPiece, 'selectedPiece', const Position(0, 0),)
             .having((s) => s.validMoves.length, 'validMoves', 2),
       ],
       verify: (_) {
-        verify(() => audioCoordinator.onGameEvent(audio.GameEvent.pieceSelected)).called(1);
-        verify(() => moveValidator.getValidMoves(any(), const Position(0, 0))).called(1);
+        verify(() =>
+                audioCoordinator.onGameEvent(audio.GameEvent.pieceSelected),)
+            .called(1);
+        verify(() => moveValidator.getValidMoves(any(), const Position(0, 0)))
+            .called(1);
       },
     );
 
@@ -209,22 +226,23 @@ void main() {
       build: () {
         when(() => moveValidator.isValidMove(any(), any(), any()))
             .thenReturn(true);
-        
+
         final newBoard = BoardState.initial().movePiece(
           const Position(0, 0),
           const Position(0, 1),
         );
-        
-        when(() => gameEngine.executeMove(any(), any(), any()))
-            .thenReturn(MoveResult(
-          success: true,
-          move: Move.now(
-            from: const Position(0, 0),
-            to: const Position(0, 1),
-            player: PieceType.black,
+
+        when(() => gameEngine.executeMove(any(), any(), any())).thenReturn(
+          MoveResult(
+            success: true,
+            move: Move.now(
+              from: const Position(0, 0),
+              to: const Position(0, 1),
+              player: PieceType.black,
+            ),
+            newBoard: newBoard,
           ),
-          newBoard: newBoard,
-        ),);
+        );
 
         return GameBloc(
           gameEngine: gameEngine,
@@ -250,13 +268,17 @@ void main() {
         isA<GamePlaying>()
             .having((s) => s.selectedPiece, 'selectedPiece', null)
             .having((s) => s.moveHistory.length, 'moveHistory', 1)
-            .having((s) => s.lastMove?.from, 'lastMove.from', const Position(0, 0))
+            .having(
+                (s) => s.lastMove?.from, 'lastMove.from', const Position(0, 0),)
             .having((s) => s.lastMove?.to, 'lastMove.to', const Position(0, 1)),
       ],
       verify: (_) {
-        verify(() => moveValidator.isValidMove(any(), const Position(0, 0), const Position(0, 1))).called(1);
-        verify(() => gameEngine.executeMove(any(), const Position(0, 0), const Position(0, 1))).called(1);
-        verify(() => audioCoordinator.onGameEvent(audio.GameEvent.pieceMoved)).called(1);
+        verify(() => moveValidator.isValidMove(
+            any(), const Position(0, 0), const Position(0, 1),),).called(1);
+        verify(() => gameEngine.executeMove(
+            any(), const Position(0, 0), const Position(0, 1),),).called(1);
+        verify(() => audioCoordinator.onGameEvent(audio.GameEvent.pieceMoved))
+            .called(1);
       },
     );
 
@@ -300,17 +322,18 @@ void main() {
           const Position(0, 1),
         );
 
-        when(() => gameEngine.executeMove(any(), any(), any()))
-            .thenReturn(MoveResult(
-          success: true,
-          move: Move.now(
-            from: const Position(0, 0),
-            to: const Position(0, 1),
-            player: PieceType.black,
+        when(() => gameEngine.executeMove(any(), any(), any())).thenReturn(
+          MoveResult(
+            success: true,
+            move: Move.now(
+              from: const Position(0, 0),
+              to: const Position(0, 1),
+              player: PieceType.black,
+            ),
+            newBoard: newBoard,
+            captured: const Position(3, 3),
           ),
-          newBoard: newBoard,
-          captured: const Position(3, 3),
-        ),);
+        );
 
         return GameBloc(
           gameEngine: gameEngine,
@@ -335,9 +358,9 @@ void main() {
       skip: 0,
       verify: (_) {
         verify(() => audioCoordinator.onGameEvent(
-          audio.GameEvent.pieceCaptured, 
-          data: any(named: 'data'),
-        )).called(1);
+              audio.GameEvent.pieceCaptured,
+              data: any(named: 'data'),
+            ),).called(1);
       },
     );
 
@@ -350,7 +373,7 @@ void main() {
           final board = invocation.positionalArguments[0] as BoardState;
           final from = invocation.positionalArguments[1] as Position;
           final to = invocation.positionalArguments[2] as Position;
-          
+
           return MoveResult(
             success: true,
             move: Move.now(
@@ -394,7 +417,9 @@ void main() {
             .having((s) => s.moveHistory.length, 'moveHistory', 0),
       ],
       verify: (_) {
-        verify(() => audioCoordinator.onGameEvent(audio.GameEvent.buttonClicked)).called(1);
+        verify(() =>
+                audioCoordinator.onGameEvent(audio.GameEvent.buttonClicked),)
+            .called(1);
       },
     );
 

@@ -43,60 +43,75 @@ void main() {
       test('中心位置应返回4个相邻位置', () {
         const pos = Position(1, 1);
         final adjacent = pos.getAdjacentPositions();
-        
+
         expect(adjacent.length, 4);
-        expect(adjacent, containsAll([
-          const Position(1, 0), // 上
-          const Position(1, 2), // 下
-          const Position(0, 1), // 左
-          const Position(2, 1), // 右
-        ]),);
+        expect(
+          adjacent,
+          containsAll([
+            const Position(1, 0), // 上
+            const Position(1, 2), // 下
+            const Position(0, 1), // 左
+            const Position(2, 1), // 右
+          ]),
+        );
       });
 
       test('左上角位置应返回2个相邻位置', () {
         const pos = Position(0, 0);
         final adjacent = pos.getAdjacentPositions();
-        
+
         expect(adjacent.length, 2);
-        expect(adjacent, containsAll([
-          const Position(0, 1), // 下
-          const Position(1, 0), // 右
-        ]),);
+        expect(
+          adjacent,
+          containsAll([
+            const Position(0, 1), // 下
+            const Position(1, 0), // 右
+          ]),
+        );
       });
 
       test('右下角位置应返回2个相邻位置', () {
         const pos = Position(3, 3);
         final adjacent = pos.getAdjacentPositions();
-        
+
         expect(adjacent.length, 2);
-        expect(adjacent, containsAll([
-          const Position(3, 2), // 上
-          const Position(2, 3), // 左
-        ]),);
+        expect(
+          adjacent,
+          containsAll([
+            const Position(3, 2), // 上
+            const Position(2, 3), // 左
+          ]),
+        );
       });
 
       test('左边缘位置应返回3个相邻位置', () {
         const pos = Position(0, 2);
         final adjacent = pos.getAdjacentPositions();
-        
+
         expect(adjacent.length, 3);
-        expect(adjacent, containsAll([
-          const Position(0, 1), // 上
-          const Position(0, 3), // 下
-          const Position(1, 2), // 右
-        ]),);
+        expect(
+          adjacent,
+          containsAll([
+            const Position(0, 1), // 上
+            const Position(0, 3), // 下
+            const Position(1, 2), // 右
+          ]),
+        );
       });
 
       test('上边缘位置应返回3个相邻位置', () {
         const pos = Position(2, 0);
         final adjacent = pos.getAdjacentPositions();
-        
+
         expect(adjacent.length, 3);
-        expect(adjacent, containsAll([
-          const Position(2, 1), // 下
-          const Position(1, 0), // 左
-          const Position(3, 0), // 右
-        ]),);
+        expect(
+          adjacent,
+          containsAll([
+            const Position(2, 1), // 下
+            const Position(1, 0), // 左
+            const Position(3, 0), // 右
+          ]),
+        );
       });
     });
 

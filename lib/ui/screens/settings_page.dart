@@ -2,7 +2,7 @@
 // Task: 实现游戏设置页面，包含音效、震动、AI难度、主题等配置选项
 
 /// Settings Page - 游戏设置页面
-/// 
+///
 /// 职责：
 /// - 提供游戏设置入口
 /// - 支持音效、震动、主题等配置
@@ -37,7 +37,7 @@ class _SettingsPageState extends State<SettingsPage> {
   final ThemeManager _themeManager = ThemeManager();
   final PerformanceMonitor _performanceMonitor = PerformanceMonitor();
   final ResourceWarmupService _resourceWarmupService = ResourceWarmupService();
-  
+
   GameSettings _settings = const GameSettings();
   AudioSettings _audioSettings = AudioSettings.defaultSettings;
   DisplaySettings _displaySettings = DisplaySettings.defaultSettings;
@@ -233,7 +233,9 @@ class _SettingsPageState extends State<SettingsPage> {
             });
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('已切换到${allThemes.firstWhere((t) => t.id == value).name}主题')),
+                SnackBar(
+                    content: Text(
+                        '已切换到${allThemes.firstWhere((t) => t.id == value).name}主题',),),
               );
             }
           },
@@ -245,7 +247,8 @@ class _SettingsPageState extends State<SettingsPage> {
           value: _displaySettings.animationEnabled,
           onChanged: (value) {
             setState(() {
-              _displaySettings = _displaySettings.copyWith(animationEnabled: value);
+              _displaySettings =
+                  _displaySettings.copyWith(animationEnabled: value);
               _settings = _settings.copyWith(animationEnabled: value);
             });
             _saveSettings();
@@ -258,7 +261,8 @@ class _SettingsPageState extends State<SettingsPage> {
           value: _displaySettings.particleEnabled,
           onChanged: (value) {
             setState(() {
-              _displaySettings = _displaySettings.copyWith(particleEnabled: value);
+              _displaySettings =
+                  _displaySettings.copyWith(particleEnabled: value);
               _settings = _settings.copyWith(particleEnabled: value);
             });
             _saveSettings();
@@ -268,7 +272,7 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-    Widget _buildPerformanceGroup() {
+  Widget _buildPerformanceGroup() {
     return _SettingsGroup(
       title: '???????????????',
       children: [
@@ -278,7 +282,8 @@ class _SettingsPageState extends State<SettingsPage> {
           value: _settings.performanceMonitoringEnabled,
           onChanged: (value) {
             _performanceMonitor.setEnabled(value);
-            _updateSetting(_settings.copyWith(performanceMonitoringEnabled: value));
+            _updateSetting(
+                _settings.copyWith(performanceMonitoringEnabled: value),);
           },
         ),
         const Divider(),
@@ -297,7 +302,7 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-Widget _buildAboutGroup() {
+  Widget _buildAboutGroup() {
     return _SettingsGroup(
       title: '关于',
       children: [
@@ -430,7 +435,7 @@ Widget _buildAboutGroup() {
     // 重置首次启动标记，然后跳转到引导页
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(StorageConstants.keyFirstLaunch, true);
-    
+
     if (mounted) {
       Navigator.push(
         context,

@@ -7,21 +7,21 @@ import 'package:flutter/foundation.dart';
 enum LogLevel {
   /// 调试信息
   debug,
-  
+
   /// 一般信息
   info,
-  
+
   /// 警告信息
   warning,
-  
+
   /// 错误信息
   error,
 }
 
 /// 日志服务
-/// 
+///
 /// 提供统一的日志记录接口，替换所有print()调用
-/// 
+///
 /// 功能：
 /// - 分级日志（debug, info, warning, error）
 /// - 开发/发布模式切换
@@ -34,10 +34,10 @@ class Logger {
 
   /// 是否启用日志
   bool _enabled = kDebugMode;
-  
+
   /// 最小日志级别
   LogLevel _minLevel = LogLevel.debug;
-  
+
   /// 日志历史（保留最近100条）
   final List<_LogEntry> _history = [];
   static const int _maxHistorySize = 100;
@@ -68,8 +68,9 @@ class Logger {
   }
 
   /// 错误日志
-  void error(String message, [String? tag, Object? error, StackTrace? stackTrace]) {
-    final fullMessage = error != null 
+  void error(String message,
+      [String? tag, Object? error, StackTrace? stackTrace,]) {
+    final fullMessage = error != null
         ? '$message: $error${stackTrace != null ? '\n$stackTrace' : ''}'
         : message;
     _log(LogLevel.error, fullMessage, tag);
@@ -100,11 +101,11 @@ class Logger {
   /// 格式化日志输出
   String _formatLog(_LogEntry entry) {
     final time = '${entry.timestamp.hour.toString().padLeft(2, '0')}:'
-                 '${entry.timestamp.minute.toString().padLeft(2, '0')}:'
-                 '${entry.timestamp.second.toString().padLeft(2, '0')}';
+        '${entry.timestamp.minute.toString().padLeft(2, '0')}:'
+        '${entry.timestamp.second.toString().padLeft(2, '0')}';
     final levelStr = _getLevelString(entry.level);
     final tag = entry.tag != null ? '[${entry.tag}] ' : '';
-    
+
     return '$time $levelStr $tag${entry.message}';
   }
 
@@ -133,7 +134,8 @@ class Logger {
   /// 获取日志历史
   List<String> getHistory({LogLevel? minLevel}) {
     return _history
-        .where((entry) => minLevel == null || entry.level.index >= minLevel.index)
+        .where(
+            (entry) => minLevel == null || entry.level.index >= minLevel.index,)
         .map((entry) => _formatLog(entry))
         .toList();
   }

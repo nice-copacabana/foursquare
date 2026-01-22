@@ -222,7 +222,7 @@ void main() {
 
       test('越界情况应返回null', () {
         var board = BoardState.initial();
-        
+
         final captured = detector.detectCapture(
           board,
           const Position(4, 4),

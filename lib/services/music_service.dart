@@ -1,5 +1,5 @@
 /// Music Service - 游戏音乐服务
-/// 
+///
 /// 职责：
 /// - 管理背景音乐播放
 /// - 支持多种音乐主题切换
@@ -13,25 +13,25 @@ import 'package:audioplayers/audioplayers.dart';
 enum MusicTheme {
   /// 主菜单音乐
   main,
-  
+
   /// 游戏进行中音乐
   gameplay,
-  
+
   /// 胜利音乐
   victory,
-  
+
   /// 经典主题
   classic,
-  
+
   /// 夜间主题
   night,
-  
+
   /// 轻松主题
   relaxing,
 }
 
 /// 音乐服务
-/// 
+///
 /// 负责游戏背景音乐的播放和管理
 class MusicService {
   static final MusicService _instance = MusicService._internal();
@@ -39,7 +39,7 @@ class MusicService {
   MusicService._internal();
 
   final AudioPlayer _player = AudioPlayer();
-  
+
   bool _enabled = true;
   double _volume = 0.4;
   MusicTheme? _currentTheme;
@@ -49,19 +49,19 @@ class MusicService {
   final Map<MusicTheme, String> _musicFiles = {
     MusicTheme.main: 'sounds/music/main.wav',
     MusicTheme.gameplay: 'sounds/music/gameplay.wav',
-    MusicTheme.victory: 'sounds/music/main.wav',  // 暂时复用
-    MusicTheme.classic: 'sounds/music/gameplay.wav',  // 暂时复用
-    MusicTheme.night: 'sounds/music/gameplay.wav',  // 暂时复用
-    MusicTheme.relaxing: 'sounds/music/main.wav',  // 暂时复用
+    MusicTheme.victory: 'sounds/music/main.wav', // 暂时复用
+    MusicTheme.classic: 'sounds/music/gameplay.wav', // 暂时复用
+    MusicTheme.night: 'sounds/music/gameplay.wav', // 暂时复用
+    MusicTheme.relaxing: 'sounds/music/main.wav', // 暂时复用
   };
 
   /// 初始化音乐服务
   Future<void> initialize() async {
     await _player.setVolume(_volume);
-    
+
     // 设置循环播放
     await _player.setReleaseMode(ReleaseMode.loop);
-    
+
     // 监听播放完成事件
     _player.onPlayerComplete.listen((_) {
       _isPlaying = false;
@@ -88,13 +88,13 @@ class MusicService {
     try {
       // 停止当前播放
       await _player.stop();
-      
+
       // 设置新的音乐源
       await _player.setSource(AssetSource(musicFile));
-      
+
       // 开始播放
       await _player.resume();
-      
+
       _currentTheme = theme;
       _isPlaying = true;
     } catch (e) {
@@ -132,7 +132,7 @@ class MusicService {
   /// 设置音乐开关
   Future<void> setEnabled(bool enabled) async {
     _enabled = enabled;
-    
+
     if (!enabled && _isPlaying) {
       await pauseMusic();
     } else if (enabled && _currentTheme != null) {
@@ -159,7 +159,8 @@ class MusicService {
   bool isPlaying() => _isPlaying;
 
   /// 淡入效果播放
-  Future<void> fadeIn(MusicTheme theme, {Duration duration = const Duration(seconds: 2)}) async {
+  Future<void> fadeIn(MusicTheme theme,
+      {Duration duration = const Duration(seconds: 2),}) async {
     if (!_enabled) return;
 
     final targetVolume = _volume;
@@ -183,7 +184,7 @@ class MusicService {
     if (!_isPlaying) return;
 
     final currentVolume = _volume;
-    
+
     // 逐渐减小音量
     const steps = 20;
     final stepDuration = duration.inMilliseconds ~/ steps;

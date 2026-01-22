@@ -8,29 +8,29 @@ import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_recognition_error.dart';
 
 /// 语音识别服务
-/// 
+///
 /// 负责语音转文字功能，支持：
 /// - 语音识别初始化
 /// - 开始/停止监听
 /// - 权限管理
 /// - 多语言支持（中文/英文/日文）
-/// 
+///
 /// 注意：需要添加依赖 speech_to_text: ^6.3.0
 
 /// 语音识别状态
 enum VoiceRecognitionStatus {
   /// 未初始化
   notInitialized,
-  
+
   /// 就绪
   ready,
-  
+
   /// 监听中
   listening,
-  
+
   /// 处理中
   processing,
-  
+
   /// 错误
   error,
 }
@@ -39,13 +39,13 @@ enum VoiceRecognitionStatus {
 class VoiceRecognitionResult {
   /// 识别文本
   final String text;
-  
+
   /// 置信度 (0.0-1.0)
   final double confidence;
-  
+
   /// 是否为最终结果
   final bool isFinal;
-  
+
   /// 时间戳
   final DateTime timestamp;
 
@@ -72,34 +72,35 @@ class VoiceRecognitionResult {
 }
 
 /// 语音识别服务
-/// 
+///
 /// 使用 speech_to_text 实现语音转文字功能
 class VoiceRecognitionService {
-  static final VoiceRecognitionService _instance = VoiceRecognitionService._internal();
+  static final VoiceRecognitionService _instance =
+      VoiceRecognitionService._internal();
   factory VoiceRecognitionService() => _instance;
   VoiceRecognitionService._internal();
 
   // 当前状态
   VoiceRecognitionStatus _status = VoiceRecognitionStatus.notInitialized;
-  
+
   // 当前语言
   String _locale = 'zh-CN';
-  
+
   // 回调函数
   Function(VoiceRecognitionResult)? _onResult;
   Function(String)? _onError;
-  
+
   // 语音识别引擎
   final SpeechToText _speech = SpeechToText();
-  
+
   /// 获取当前状态
   VoiceRecognitionStatus get status => _status;
-  
+
   /// 是否正在监听
   bool get isListening => _status == VoiceRecognitionStatus.listening;
 
   /// 初始化语音识别
-  /// 
+  ///
   /// 返回是否初始化成功
   Future<bool> initialize() async {
     if (_status == VoiceRecognitionStatus.ready) {
@@ -119,7 +120,7 @@ class VoiceRecognitionService {
           _handleStatus(status);
         },
       );
-      
+
       if (available) {
         _status = VoiceRecognitionStatus.ready;
         print('[VoiceRecognitionService] 初始化成功');
@@ -137,7 +138,7 @@ class VoiceRecognitionService {
   }
 
   /// 开始监听
-  /// 
+  ///
   /// [onResult] 识别结果回调
   /// [onError] 错误回调
   Future<void> startListening({
@@ -162,10 +163,11 @@ class VoiceRecognitionService {
             isFinal: result.finalResult,
             timestamp: DateTime.now(),
           );
-          
-          print('[VoiceRecognitionService] 识别结果: ${result.recognizedWords} (置信度: ${result.confidence})');
+
+          print(
+              '[VoiceRecognitionService] 识别结果: ${result.recognizedWords} (置信度: ${result.confidence})',);
           _onResult?.call(voiceResult);
-          
+
           // 如果是最终结果，自动停止监听
           if (result.finalResult) {
             _status = VoiceRecognitionStatus.processing;
@@ -178,7 +180,7 @@ class VoiceRecognitionService {
           partialResults: true,
         ),
       );
-      
+
       _status = VoiceRecognitionStatus.listening;
       print('[VoiceRecognitionService] 开始监听（语言: $_locale）');
     } catch (e) {
@@ -196,7 +198,7 @@ class VoiceRecognitionService {
     try {
       // 停止监听
       await _speech.stop();
-      
+
       _status = VoiceRecognitionStatus.ready;
       print('[VoiceRecognitionService] 停止监听');
     } catch (e) {
@@ -213,7 +215,7 @@ class VoiceRecognitionService {
     try {
       // 取消监听
       await _speech.cancel();
-      
+
       _status = VoiceRecognitionStatus.ready;
       print('[VoiceRecognitionService] 取消监听');
     } catch (e) {
@@ -229,7 +231,7 @@ class VoiceRecognitionService {
   }
 
   /// 设置语言
-  /// 
+  ///
   /// [locale] 语言代码
   /// - zh-CN: 中文（简体）
   /// - en-US: 英文（美国）
@@ -239,7 +241,7 @@ class VoiceRecognitionService {
       print('[VoiceRecognitionService] 警告：监听中不能切换语言');
       return;
     }
-    
+
     _locale = locale;
     print('[VoiceRecognitionService] 切换语言: $locale');
   }
@@ -251,7 +253,7 @@ class VoiceRecognitionService {
     print('[VoiceRecognitionService] 支持的语言: ${localeIds.length} 种');
     return localeIds;
   }
-  
+
   /// 处理状态变化
   void _handleStatus(String status) {
     switch (status) {

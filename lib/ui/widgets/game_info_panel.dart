@@ -1,5 +1,5 @@
 /// Game Info Panel - 游戏信息面板
-/// 
+///
 /// 职责：
 /// - 显示当前玩家
 /// - 显示双方棋子数量
@@ -67,7 +67,7 @@ class GameInfoPanel extends StatelessWidget {
             isAIThinking: isAIThinking,
           ),
           const SizedBox(height: 16),
-          
+
           // AI思考指示器
           if (isAIThinking)
             _AIThinkingIndicator(
@@ -75,20 +75,20 @@ class GameInfoPanel extends StatelessWidget {
               status: aiThinkingStatus,
             ),
           if (isAIThinking) const SizedBox(height: 16),
-          
+
           // 棋子数量统计
           _PieceCountSection(
             blackCount: blackPieceCount,
             whiteCount: whitePieceCount,
           ),
           const SizedBox(height: 16),
-          
+
           // 移动历史
           _MoveHistorySection(
             moveHistory: moveHistory,
           ),
           const SizedBox(height: 16),
-          
+
           // 操作按钮
           _ActionButtons(
             canUndo: canUndo,

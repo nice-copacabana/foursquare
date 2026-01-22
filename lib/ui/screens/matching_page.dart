@@ -9,7 +9,7 @@ import '../../bloc/online_game_state.dart';
 import '../../models/piece_type.dart';
 
 /// 在线对战匹配页面
-/// 
+///
 /// 功能：
 /// - 显示匹配进度动画
 /// - 显示等待时间
@@ -76,7 +76,7 @@ class MatchingPage extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 40),
-                    
+
                     // 状态文本
                     const Text(
                       '正在寻找对手...',
@@ -86,7 +86,7 @@ class MatchingPage extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    
+
                     // 等待时间
                     Text(
                       '已等待 $seconds 秒',
@@ -96,7 +96,7 @@ class MatchingPage extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 60),
-                    
+
                     // 提示信息
                     Container(
                       padding: const EdgeInsets.symmetric(
@@ -127,7 +127,7 @@ class MatchingPage extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 40),
-                    
+
                     // 取消按钮
                     ElevatedButton(
                       onPressed: () {

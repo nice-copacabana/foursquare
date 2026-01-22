@@ -1,5 +1,5 @@
 /// Statistics Chart Widgets - 统计图表组件
-/// 
+///
 /// 职责：
 /// - 提供胜率趋势图
 /// - 提供时间分布图
@@ -13,7 +13,7 @@ import 'package:fl_chart/fl_chart.dart';
 class WinRateTrendChart extends StatelessWidget {
   /// 历史胜率数据 (日期 -> 胜率)
   final Map<DateTime, double> winRateData;
-  
+
   const WinRateTrendChart({
     super.key,
     required this.winRateData,
@@ -154,7 +154,7 @@ class WinRateTrendChart extends StatelessWidget {
 class GameTimeDistributionChart extends StatelessWidget {
   /// 时间段游戏数据 (小时 -> 游戏数)
   final Map<int, int> timeDistribution;
-  
+
   const GameTimeDistributionChart({
     super.key,
     required this.timeDistribution,
@@ -180,7 +180,8 @@ class GameTimeDistributionChart extends StatelessWidget {
               toY: count.toDouble(),
               color: _getColorForHour(hour),
               width: 8,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(4)),
             ),
           ],
         ),
@@ -255,7 +256,8 @@ class GameTimeDistributionChart extends StatelessWidget {
           gridData: FlGridData(
             show: true,
             drawVerticalLine: false,
-            horizontalInterval: maxCount > 10 ? (maxCount / 5).ceilToDouble() : 2,
+            horizontalInterval:
+                maxCount > 10 ? (maxCount / 5).ceilToDouble() : 2,
             getDrawingHorizontalLine: (value) {
               return FlLine(
                 color: Colors.grey.shade300,
@@ -311,7 +313,7 @@ class GameTimeDistributionChart extends StatelessWidget {
 class DifficultyPieChart extends StatelessWidget {
   /// 难度战绩数据 (难度 -> 胜利次数)
   final Map<String, int> difficultyWins;
-  
+
   const DifficultyPieChart({
     super.key,
     required this.difficultyWins,
@@ -325,7 +327,7 @@ class DifficultyPieChart extends StatelessWidget {
 
     final total = difficultyWins.values.reduce((a, b) => a + b);
     final sections = <PieChartSectionData>[];
-    
+
     final colors = {
       'easy': Colors.green,
       'medium': Colors.orange,

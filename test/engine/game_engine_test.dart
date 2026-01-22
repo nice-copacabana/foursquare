@@ -179,7 +179,7 @@ void main() {
 
       test('模拟移动不应影响原棋盘', () {
         final originalBlackCount = board.getPieceCount(PieceType.black);
-        
+
         engine.simulateMove(
           board,
           const Position(0, 0),
@@ -266,9 +266,9 @@ void main() {
           const Position(0, 0),
           const Position(0, 1),
         );
-        
+
         expect(engine.moveHistory.length, 1);
-        
+
         engine.undoLastMove(currentBoard);
         expect(engine.moveHistory.length, 0);
       });
@@ -325,9 +325,9 @@ void main() {
 
         expect(result.success, true);
         expect(result.newBoard, isNotNull);
-        
+
         var currentBoard = result.newBoard!;
-        
+
         // 再设置吃子吃掉最后一个黑方棋子
         currentBoard = currentBoard
             .setPiece(const Position(1, 2), PieceType.white)
@@ -343,7 +343,7 @@ void main() {
 
         expect(finalResult.success, true);
         expect(finalResult.newBoard, isNotNull);
-        
+
         // 检查是否结束（黑方只剩1个棋子）
         final gameResult = engine.checkGameOver(finalResult.newBoard!);
         if (gameResult != null) {
@@ -376,7 +376,7 @@ void main() {
           const Position(0, 0),
           const Position(0, 1),
         );
-        
+
         engine.reset();
         expect(engine.moveHistory, isEmpty);
       });
@@ -385,13 +385,13 @@ void main() {
     group('性能测试', () {
       test('executeMove应在10ms内完成', () {
         final stopwatch = Stopwatch()..start();
-        
+
         engine.executeMove(
           board,
           const Position(0, 0),
           const Position(0, 1),
         );
-        
+
         stopwatch.stop();
         expect(stopwatch.elapsedMilliseconds, lessThan(10));
       });

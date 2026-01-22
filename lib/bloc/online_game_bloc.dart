@@ -19,7 +19,7 @@ import 'online_game_event.dart';
 import 'online_game_state.dart';
 
 /// 在线对战BLoC
-/// 
+///
 /// 负责管理在线对战的状态和逻辑，包括：
 /// - 匹配流程
 /// - 游戏进行
@@ -29,7 +29,7 @@ class OnlineGameBloc extends Bloc<OnlineGameEvent, OnlineGameState> {
   final WebSocketService _webSocketService;
   final GameEngine _gameEngine;
   final audio.AudioCoordinator _audioCoordinator;
-  
+
   StreamSubscription<WebSocketMessage>? _messageSubscription;
   String? _currentPlayerId;
 
@@ -75,12 +75,15 @@ class OnlineGameBloc extends Bloc<OnlineGameEvent, OnlineGameState> {
       case MessageType.matchFound:
         final matchId = message.matchId ?? '';
         final opponentId = message.payload['opponentId'] as String? ?? '';
-        final isFirstPlayer = message.payload['isFirstPlayer'] as bool? ?? false;
-        add(MatchFoundEvent(
-          matchId: matchId,
-          opponentId: opponentId,
-          isFirstPlayer: isFirstPlayer,
-        ),);
+        final isFirstPlayer =
+            message.payload['isFirstPlayer'] as bool? ?? false;
+        add(
+          MatchFoundEvent(
+            matchId: matchId,
+            opponentId: opponentId,
+            isFirstPlayer: isFirstPlayer,
+          ),
+        );
         break;
 
       case MessageType.move:
@@ -114,11 +117,11 @@ class OnlineGameBloc extends Bloc<OnlineGameEvent, OnlineGameState> {
       final fromData = payload['from'] as Map<String, dynamic>;
       final toData = payload['to'] as Map<String, dynamic>;
       final playerStr = payload['player'] as String;
-      
+
       final from = Position(fromData['x'] as int, fromData['y'] as int);
       final to = Position(toData['x'] as int, toData['y'] as int);
       final player = playerStr == 'black' ? PieceType.black : PieceType.white;
-      
+
       Position? capturedPiece;
       if (payload['capturedPiece'] != null) {
         final capturedData = payload['capturedPiece'] as Map<String, dynamic>;
@@ -141,7 +144,7 @@ class OnlineGameBloc extends Bloc<OnlineGameEvent, OnlineGameState> {
   }
 
   /// 处理开始匹配事件
-  /// 
+  ///
   /// 注意：在线对战功能需要WebSocket服务器支持。
   /// 当前版本暂未连接实际服务器，此功能处于演示状态。
   /// 生产环境部署时需要：
@@ -153,23 +156,27 @@ class OnlineGameBloc extends Bloc<OnlineGameEvent, OnlineGameState> {
     Emitter<OnlineGameState> emit,
   ) async {
     _currentPlayerId = event.playerId;
-    
+
     // 连接服务器
     final wsUrl = dotenv.env['WS_URL'] ?? 'http://localhost:3000';
     final connected = await _webSocketService.connect(wsUrl);
-    
+
     if (!connected) {
-      emit(OnlineGameError(
-        message: '无法连接到服务器',
-        timestamp: DateTime.now(),
-      ),);
+      emit(
+        OnlineGameError(
+          message: '无法连接到服务器',
+          timestamp: DateTime.now(),
+        ),
+      );
       return;
     }
 
-    emit(Matching(
-      playerId: event.playerId,
-      startTime: DateTime.now(),
-    ),);
+    emit(
+      Matching(
+        playerId: event.playerId,
+        startTime: DateTime.now(),
+      ),
+    );
 
     // 发送匹配请求
     await _webSocketService.requestMatch(event.playerId);
@@ -185,7 +192,7 @@ class OnlineGameBloc extends Bloc<OnlineGameEvent, OnlineGameState> {
       await _webSocketService.cancelMatch(_currentPlayerId!);
       _audioCoordinator.onGameEvent(audio.GameEvent.buttonClicked);
     }
-    
+
     emit(const OnlineGameInitial());
   }
 
@@ -205,21 +212,25 @@ class OnlineGameBloc extends Bloc<OnlineGameEvent, OnlineGameState> {
 
     _audioCoordinator.onGameEvent(audio.GameEvent.buttonClicked);
 
-    emit(MatchFound(
-      match: match,
-      localPlayerId: _currentPlayerId!,
-    ),);
+    emit(
+      MatchFound(
+        match: match,
+        localPlayerId: _currentPlayerId!,
+      ),
+    );
 
     // 延迟后自动进入游戏状态
     await Future.delayed(const Duration(seconds: 2));
-    
+
     if (state is MatchFound) {
-      emit(OnlinePlaying(
-        match: match,
-        localPlayerId: _currentPlayerId!,
-        boardState: match.boardState,
-        moveHistory: match.moveHistory,
-      ),);
+      emit(
+        OnlinePlaying(
+          match: match,
+          localPlayerId: _currentPlayerId!,
+          boardState: match.boardState,
+          moveHistory: match.moveHistory,
+        ),
+      );
     }
   }
 
@@ -272,23 +283,27 @@ class OnlineGameBloc extends Bloc<OnlineGameEvent, OnlineGameState> {
 
     // 检查游戏是否结束
     if (result.gameResult != null) {
-      emit(OnlineGameOver(
-        match: updatedMatch,
-        localPlayerId: playing.localPlayerId,
-        winnerId: playing.localPlayerId,
-        reason: result.gameResult!.reason,
-        finalBoardState: result.newBoard!,
-        moveHistory: newMoveHistory,
-      ),);
+      emit(
+        OnlineGameOver(
+          match: updatedMatch,
+          localPlayerId: playing.localPlayerId,
+          winnerId: playing.localPlayerId,
+          reason: result.gameResult!.reason,
+          finalBoardState: result.newBoard!,
+          moveHistory: newMoveHistory,
+        ),
+      );
       return;
     }
 
-    emit(WaitingOpponent(
-      match: updatedMatch,
-      localPlayerId: playing.localPlayerId,
-      boardState: result.newBoard!,
-      moveHistory: newMoveHistory,
-    ),);
+    emit(
+      WaitingOpponent(
+        match: updatedMatch,
+        localPlayerId: playing.localPlayerId,
+        boardState: result.newBoard!,
+        moveHistory: newMoveHistory,
+      ),
+    );
   }
 
   /// 处理对手移动事件
@@ -297,7 +312,7 @@ class OnlineGameBloc extends Bloc<OnlineGameEvent, OnlineGameState> {
     Emitter<OnlineGameState> emit,
   ) async {
     if (state is! WaitingOpponent && state is! OnlinePlaying) return;
-    
+
     final currentState = state;
     late final OnlineMatch match;
     late final String localPlayerId;
@@ -351,25 +366,30 @@ class OnlineGameBloc extends Bloc<OnlineGameEvent, OnlineGameState> {
 
     // 检查游戏是否结束
     if (result.gameResult != null) {
-      _audioCoordinator.onGameEvent(audio.GameEvent.gameLost, data: {'player': 'opponent'});
-      emit(OnlineGameOver(
-        match: updatedMatch,
-        localPlayerId: localPlayerId,
-        winnerId: match.getOpponentId(localPlayerId)!,
-        reason: result.gameResult!.reason,
-        finalBoardState: result.newBoard!,
-        moveHistory: newMoveHistory,
-      ),);
+      _audioCoordinator
+          .onGameEvent(audio.GameEvent.gameLost, data: {'player': 'opponent'});
+      emit(
+        OnlineGameOver(
+          match: updatedMatch,
+          localPlayerId: localPlayerId,
+          winnerId: match.getOpponentId(localPlayerId)!,
+          reason: result.gameResult!.reason,
+          finalBoardState: result.newBoard!,
+          moveHistory: newMoveHistory,
+        ),
+      );
       return;
     }
 
-    emit(OnlinePlaying(
-      match: updatedMatch,
-      localPlayerId: localPlayerId,
-      boardState: result.newBoard!,
-      moveHistory: newMoveHistory,
-      lastMove: result.move,
-    ),);
+    emit(
+      OnlinePlaying(
+        match: updatedMatch,
+        localPlayerId: localPlayerId,
+        boardState: result.newBoard!,
+        moveHistory: newMoveHistory,
+        lastMove: result.move,
+      ),
+    );
   }
 
   /// 处理对手断线事件
@@ -379,16 +399,18 @@ class OnlineGameBloc extends Bloc<OnlineGameEvent, OnlineGameState> {
   ) async {
     if (state is OnlinePlaying) {
       final playing = state as OnlinePlaying;
-      emit(OpponentDisconnected(
-        match: playing.match,
-        localPlayerId: playing.localPlayerId,
-        disconnectedAt: DateTime.now(),
-      ),);
+      emit(
+        OpponentDisconnected(
+          match: playing.match,
+          localPlayerId: playing.localPlayerId,
+          disconnectedAt: DateTime.now(),
+        ),
+      );
     }
   }
 
   /// 处理重连事件
-  /// 
+  ///
   /// 注意：重连功能需要服务器支持会话恢复。
   /// 实现重连逻辑时需要：
   /// 1. 保存断线前的matchId和playerId
@@ -414,18 +436,22 @@ class OnlineGameBloc extends Bloc<OnlineGameEvent, OnlineGameState> {
   ) async {
     if (state is OnlinePlaying) {
       final playing = state as OnlinePlaying;
-      
+
       final isWin = event.winnerId == playing.localPlayerId;
-      _audioCoordinator.onGameEvent(isWin ? audio.GameEvent.gameWon : audio.GameEvent.gameLost, data: {'player': isWin ? 'you' : 'opponent'});
-      
-      emit(OnlineGameOver(
-        match: playing.match,
-        localPlayerId: playing.localPlayerId,
-        winnerId: event.winnerId,
-        reason: event.reason,
-        finalBoardState: playing.boardState,
-        moveHistory: playing.moveHistory,
-      ),);
+      _audioCoordinator.onGameEvent(
+          isWin ? audio.GameEvent.gameWon : audio.GameEvent.gameLost,
+          data: {'player': isWin ? 'you' : 'opponent'},);
+
+      emit(
+        OnlineGameOver(
+          match: playing.match,
+          localPlayerId: playing.localPlayerId,
+          winnerId: event.winnerId,
+          reason: event.reason,
+          finalBoardState: playing.boardState,
+          moveHistory: playing.moveHistory,
+        ),
+      );
     }
   }
 

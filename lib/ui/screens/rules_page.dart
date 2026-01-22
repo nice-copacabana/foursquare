@@ -2,7 +2,7 @@
 // Task: 实现游戏规则页面，包含游戏目标、基本规则、移动规则、吃子规则示例
 
 /// Rules Page - 游戏规则页面
-/// 
+///
 /// 职责：
 /// - 显示完整的游戏规则说明
 /// - 包含图示和示例
@@ -282,7 +282,8 @@ class RulesPage extends StatelessWidget {
     );
   }
 
-  Widget _buildCaptureExample(String title, String pattern, String description) {
+  Widget _buildCaptureExample(
+      String title, String pattern, String description,) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -342,13 +343,15 @@ class RulesPage extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 8),
-        ...items.map((item) => Padding(
-          padding: const EdgeInsets.only(left: 28, bottom: 4),
-          child: Text(
-            item,
-            style: const TextStyle(fontSize: 15, height: 1.4),
+        ...items.map(
+          (item) => Padding(
+            padding: const EdgeInsets.only(left: 28, bottom: 4),
+            child: Text(
+              item,
+              style: const TextStyle(fontSize: 15, height: 1.4),
+            ),
           ),
-        ),),
+        ),
       ],
     );
   }

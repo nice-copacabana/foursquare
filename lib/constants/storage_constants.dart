@@ -6,47 +6,47 @@ class StorageConstants {
   StorageConstants._();
 
   // ========== SharedPreferences键名 ==========
-  
+
   /// 音效开关
   static const String keySoundEnabled = 'sound_enabled';
-  
+
   /// 背景音乐开关
   static const String keyMusicEnabled = 'music_enabled';
-  
+
   /// 音乐主题
   static const String keyMusicTheme = 'music_theme';
-  
+
   /// 主题模式
   static const String keyThemeMode = 'theme_mode';
-  
+
   /// 语言设置
   static const String keyLocale = 'locale';
-  
+
   /// 首次启动标记
   static const String keyFirstLaunch = 'first_launch';
-  
+
   /// AI难度
   static const String keyAIDifficulty = 'ai_difficulty';
 
   // ========== Hive Box名称 ==========
-  
+
   /// 游戏存档Box
   static const String boxGameSaves = 'game_saves';
-  
+
   /// 统计数据Box
   static const String boxStatistics = 'statistics';
-  
+
   /// 设置Box
   static const String boxSettings = 'settings';
 
   // ========== 存储限制 ==========
-  
+
   /// 最大保存游戏数量
   static const int maxGameSaves = 50;
-  
+
   /// 最大历史记录数量
   static const int maxHistoryRecords = 100;
-  
+
   /// 统计数据分页大小
   static const int statisticsPageSize = 20;
 }

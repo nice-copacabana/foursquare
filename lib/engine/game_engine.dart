@@ -13,22 +13,22 @@ import 'capture_detector.dart';
 class MoveResult {
   /// 移动是否成功
   final bool success;
-  
+
   /// 移动记录（如果成功）
   final Move? move;
-  
+
   /// 被吃棋子位置（如果有）
   final Position? captured;
-  
+
   /// 游戏是否结束
   final bool gameOver;
-  
+
   /// 游戏结果（如果结束）
   final GameResult? gameResult;
-  
+
   /// 错误信息（如果失败）
   final String? error;
-  
+
   /// 新的棋盘状态
   final BoardState? newBoard;
 
@@ -70,7 +70,7 @@ class MoveResult {
 }
 
 /// 游戏引擎
-/// 
+///
 /// 负责游戏核心流程：
 /// - 移动执行
 /// - 吃子检测
@@ -79,10 +79,10 @@ class MoveResult {
 class GameEngine {
   final MoveValidator _validator;
   final CaptureDetector _captureDetector;
-  
+
   /// 移动历史记录
   final List<Move> _moveHistory = [];
-  
+
   /// 游戏开始时间
   DateTime? _startTime;
 
@@ -97,17 +97,17 @@ class GameEngine {
   }
 
   /// 执行移动
-  /// 
+  ///
   /// 验证移动合法性，执行移动，检测吃子，更新状态
   /// 执行移动
-  /// 
+  ///
   /// 验证移动合法性，执行移动，检测吃子，更新状态
   MoveResult executeMove(
     BoardState board,
     Position from,
-    Position to,
-    {Position? capturedPieceOverride,}
-  ) {
+    Position to, {
+    Position? capturedPieceOverride,
+  }) {
     // 1. 验证移动合法性
     if (!_validator.isValidMove(board, from, to)) {
       return MoveResult.failure('移动不合法');
@@ -162,7 +162,7 @@ class GameEngine {
   }
 
   /// 检查游戏是否结束
-  /// 
+  ///
   /// 判定规则：
   /// - 某方棋子数 == 0：对方获胜
   /// - 某方无合法移动：对方获胜（可选规则）
@@ -197,7 +197,7 @@ class GameEngine {
   }
 
   /// 获取所有可能的移动
-  /// 
+  ///
   /// 返回当前玩家所有合法移动
   Map<Position, List<Position>> getPossibleMoves(
     BoardState board,
@@ -216,7 +216,7 @@ class GameEngine {
   }
 
   /// 模拟移动（不改变实际状态，用于AI）
-  /// 
+  ///
   /// 返回移动后的棋盘状态
   BoardState? simulateMove(
     BoardState board,
@@ -248,20 +248,20 @@ class GameEngine {
   }
 
   /// 评估棋盘局面（简单版本，用于AI）
-  /// 
+  ///
   /// 返回分数，正数表示对player有利
   int evaluateBoard(BoardState board, PieceType player) {
     final opponent = player.getOpponent();
-    
+
     // 棋子数量差
     final myPieces = board.getPieceCount(player);
     final opponentPieces = board.getPieceCount(opponent);
-    
+
     return (myPieces - opponentPieces) * 100;
   }
 
   /// 撤销上一步移动（用于悔棋功能）
-  /// 
+  ///
   /// 返回撤销后的棋盘状态，如果无法撤销则返回null
   BoardState? undoLastMove(BoardState currentBoard) {
     if (_moveHistory.isEmpty) {
@@ -285,7 +285,7 @@ class GameEngine {
   }
 
   /// 获取吃子机会
-  /// 
+  ///
   /// 返回所有可以吃子的移动
   Map<Position, Map<Position, Position>> getCaptureOpportunities(
     BoardState board,

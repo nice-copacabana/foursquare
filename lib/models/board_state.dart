@@ -6,7 +6,7 @@ import 'position.dart';
 import 'piece_type.dart';
 
 /// 棋盘状态
-/// 
+///
 /// 维护棋盘当前状态，包括：
 /// - 4x4棋盘网格
 /// - 黑方和白方棋子位置列表
@@ -14,13 +14,13 @@ import 'piece_type.dart';
 class BoardState extends Equatable {
   /// 4x4棋盘网格
   final List<List<PieceType>> grid;
-  
+
   /// 黑方棋子位置列表
   final List<Position> blackPieces;
-  
+
   /// 白方棋子位置列表
   final List<Position> whitePieces;
-  
+
   /// 当前玩家
   final PieceType currentPlayer;
 
@@ -32,7 +32,7 @@ class BoardState extends Equatable {
   });
 
   /// 创建初始棋盘状态
-  /// 
+  ///
   /// 黑方初始位置: (0,0), (0,1), (0,2), (0,3)
   /// 白方初始位置: (3,0), (3,1), (3,2), (3,3)
   /// 当前玩家: 黑方（先手）

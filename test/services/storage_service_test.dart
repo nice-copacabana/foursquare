@@ -2,7 +2,7 @@
 // Task: 为StorageService编写完整单元测试，覆盖设置、统计数据和游戏存档功能
 
 /// StorageService 单元测试
-/// 
+///
 /// 测试覆盖：
 /// - 服务初始化
 /// - 游戏设置保存/加载
@@ -20,7 +20,7 @@ void main() {
   group('GameSettings模型', () {
     test('应该创建默认设置', () {
       const settings = GameSettings();
-      
+
       expect(settings.soundEnabled, true);
       expect(settings.soundVolume, 0.7);
       expect(settings.musicEnabled, true);
@@ -42,10 +42,10 @@ void main() {
         selectedTheme: 'dark',
         difficulty: 'hard',
       );
-      
+
       final json = original.toJson();
       final restored = GameSettings.fromJson(json);
-      
+
       expect(restored.soundEnabled, original.soundEnabled);
       expect(restored.soundVolume, original.soundVolume);
       expect(restored.musicEnabled, original.musicEnabled);
@@ -58,12 +58,12 @@ void main() {
 
     test('copyWith应该正确复制并修改属性', () {
       const original = GameSettings();
-      
+
       final modified = original.copyWith(
         soundEnabled: false,
         difficulty: 'hard',
       );
-      
+
       expect(modified.soundEnabled, false);
       expect(modified.difficulty, 'hard');
       expect(modified.soundVolume, original.soundVolume);
@@ -74,7 +74,7 @@ void main() {
   group('GameStatistics模型', () {
     test('应该创建默认统计数据', () {
       const stats = GameStatistics();
-      
+
       expect(stats.totalGames, 0);
       expect(stats.wins, 0);
       expect(stats.losses, 0);
@@ -94,13 +94,13 @@ void main() {
         totalGames: 10,
         wins: 7,
       );
-      
+
       expect(stats.winRate, 0.7);
     });
 
     test('零场游戏时胜率应为0', () {
       const stats = GameStatistics();
-      
+
       expect(stats.winRate, 0.0);
     });
 
@@ -120,10 +120,10 @@ void main() {
         dailyWinRate: {'2025-10-22': 0.75},
         hourlyGames: {'14': 10, '15': 10},
       );
-      
+
       final json = original.toJson();
       final restored = GameStatistics.fromJson(json);
-      
+
       expect(restored.totalGames, original.totalGames);
       expect(restored.wins, original.wins);
       expect(restored.losses, original.losses);
@@ -132,19 +132,21 @@ void main() {
       expect(restored.maxWinStreak, original.maxWinStreak);
       expect(restored.totalMoves, original.totalMoves);
       expect(restored.totalCaptures, original.totalCaptures);
-      expect(restored.lastPlayedAt?.toIso8601String(), 
-             original.lastPlayedAt?.toIso8601String(),);
+      expect(
+        restored.lastPlayedAt?.toIso8601String(),
+        original.lastPlayedAt?.toIso8601String(),
+      );
       expect(restored.difficultyWins, original.difficultyWins);
     });
 
     test('copyWith应该正确复制并修改属性', () {
       const original = GameStatistics(totalGames: 5, wins: 3);
-      
+
       final modified = original.copyWith(
         totalGames: 6,
         wins: 4,
       );
-      
+
       expect(modified.totalGames, 6);
       expect(modified.wins, 4);
       expect(modified.losses, original.losses);
@@ -156,7 +158,7 @@ void main() {
     test('应该创建单例实例', () {
       final service1 = StorageService();
       final service2 = StorageService();
-      
+
       expect(identical(service1, service2), true);
     });
   });

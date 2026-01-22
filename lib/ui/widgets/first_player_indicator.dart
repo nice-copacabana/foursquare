@@ -5,15 +5,15 @@ import 'package:flutter/material.dart';
 import '../../models/piece_type.dart';
 
 /// 先手方指示器组件
-/// 
+///
 /// 在双人对战开始时显示先手方信息的动画提示
 class FirstPlayerIndicator extends StatefulWidget {
   /// 先手方（黑方或白方）
   final PieceType firstPlayer;
-  
+
   /// 动画完成回调
   final VoidCallback? onAnimationComplete;
-  
+
   /// 动画持续时间（毫秒）
   final int duration;
 
@@ -37,7 +37,7 @@ class _FirstPlayerIndicatorState extends State<FirstPlayerIndicator>
   @override
   void initState() {
     super.initState();
-    
+
     _controller = AnimationController(
       duration: Duration(milliseconds: widget.duration),
       vsync: this,

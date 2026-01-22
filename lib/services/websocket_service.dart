@@ -11,13 +11,13 @@ import '../models/move.dart';
 enum ConnectionState {
   /// 已断开
   disconnected,
-  
+
   /// 连接中
   connecting,
-  
+
   /// 已连接
   connected,
-  
+
   /// 重连中
   reconnecting,
 }
@@ -30,26 +30,26 @@ class WebSocketService {
 
   IO.Socket? _socket;
   ConnectionState _state = ConnectionState.disconnected;
-  
+
   final StreamController<WebSocketMessage> _messageController =
       StreamController<WebSocketMessage>.broadcast();
-  
+
   final StreamController<ConnectionState> _stateController =
       StreamController<ConnectionState>.broadcast();
 
   // Socket.io has built-in reconnection, but we keep this for UI state syncing
-  Timer? _reconnectTimer; 
+  Timer? _reconnectTimer;
   String? _serverUrl;
 
   /// 获取消息流
   Stream<WebSocketMessage> get messageStream => _messageController.stream;
-  
+
   /// 获取连接状态流
   Stream<ConnectionState> get stateStream => _stateController.stream;
-  
+
   /// 获取当前连接状态
   ConnectionState get state => _state;
-  
+
   /// 是否已连接
   bool get isConnected => _state == ConnectionState.connected;
 
@@ -65,10 +65,13 @@ class WebSocketService {
 
     try {
       // Initialize Socket.io
-      _socket = IO.io(serverUrl, IO.OptionBuilder()
-          .setTransports(['websocket'])
-          .disableAutoConnect()
-          .build(),);
+      _socket = IO.io(
+        serverUrl,
+        IO.OptionBuilder()
+            .setTransports(['websocket'])
+            .disableAutoConnect()
+            .build(),
+      );
 
       _setupListeners();
       _socket!.connect();
@@ -109,7 +112,7 @@ class WebSocketService {
       try {
         final map = data as Map<String, dynamic>;
         final isFirstPlayer = map['color'] == 'black'; // P1 is black
-        
+
         final msg = WebSocketMessage(
           type: MessageType.matchFound,
           matchId: map['matchId'],
@@ -156,37 +159,37 @@ class WebSocketService {
       // Server: { matchId, message }
       final map = data as Map<String, dynamic>;
       final msg = WebSocketMessage(
-          type: MessageType.disconnect,
-          matchId: map['matchId'],
-          payload: const {},
-          timestamp: DateTime.now(),
+        type: MessageType.disconnect,
+        matchId: map['matchId'],
+        payload: const {},
+        timestamp: DateTime.now(),
       );
       _messageController.add(msg);
     });
-    
+
     // 游戏结束
     _socket!.on('game_over', (data) {
-       // Server: { matchId, winnerId, reason }
-       try {
-         final map = data as Map<String, dynamic>;
-         final msg = WebSocketMessage(
-            type: MessageType.gameOver,
-            matchId: map['matchId'],
-            payload: {
-              'winnerId': map['winnerId'],
-              'reason': map['reason'] ?? 'server_decision',
-            },
-            timestamp: DateTime.now(),
-         );
-         _messageController.add(msg);
-       } catch (e) {
-         print('Error parsing game_over: $e');
-       }
+      // Server: { matchId, winnerId, reason }
+      try {
+        final map = data as Map<String, dynamic>;
+        final msg = WebSocketMessage(
+          type: MessageType.gameOver,
+          matchId: map['matchId'],
+          payload: {
+            'winnerId': map['winnerId'],
+            'reason': map['reason'] ?? 'server_decision',
+          },
+          timestamp: DateTime.now(),
+        );
+        _messageController.add(msg);
+      } catch (e) {
+        print('Error parsing game_over: $e');
+      }
     });
-    
+
     // 心跳/系统消息
     _socket!.on('message', (data) {
-       print('System Message: $data');
+      print('System Message: $data');
     });
   }
 
@@ -228,7 +231,7 @@ class WebSocketService {
             }
           : null,
     };
-    
+
     _emit('submit_move', moveData);
   }
 

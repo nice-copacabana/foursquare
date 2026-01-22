@@ -18,19 +18,20 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // 初始化存储服务
   final storageService = StorageService();
   await storageService.initialize();
-  
+
   // 加载环境变量
-  await dotenv.load(fileName: kReleaseMode ? ".env.production" : ".env.development");
+  await dotenv.load(
+      fileName: kReleaseMode ? ".env.production" : ".env.development",);
 
   await ThemeManager().initialize();
   await AudioCoordinator().initialize();
   final settings = await storageService.loadSettings();
   PerformanceMonitor().setEnabled(settings.performanceMonitoringEnabled);
-  
+
   runApp(const FourSquareGameApp());
 }
 
@@ -69,7 +70,8 @@ class _FourSquareGameAppState extends State<FourSquareGameApp> {
 
   Future<void> _checkFirstLaunch() async {
     final prefs = await SharedPreferences.getInstance();
-    final isFirstLaunch = prefs.getBool(StorageConstants.keyFirstLaunch) ?? true;
+    final isFirstLaunch =
+        prefs.getBool(StorageConstants.keyFirstLaunch) ?? true;
     setState(() {
       _isFirstLaunch = isFirstLaunch;
     });

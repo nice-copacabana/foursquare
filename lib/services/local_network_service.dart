@@ -30,12 +30,11 @@ class LocalNetworkService {
   WebSocketChannel? _clientChannel;
   final List<Service> _foundServices = [];
 
-  // Streams
-  final _messageController = StreamController<WebSocketMessage>.broadcast();
-  Stream<WebSocketMessage> get messageStream => _messageController.stream;
-
-  final _servicesController = StreamController<List<Service>>.broadcast();
-  Stream<List<Service>> get foundServices => _servicesController.stream;
+  // State Streams
+  final _connectionStateController =
+      StreamController<LocalNetworkConnectionState>.broadcast();
+  Stream<LocalNetworkConnectionState> get connectionStateStream =>
+      _connectionStateController.stream;
 
   static const String _serviceType = '_foursquare._tcp';
   static const int _port = 4040;
@@ -44,6 +43,7 @@ class LocalNetworkService {
   Future<void> startHost({String roomName = 'Foursquare Room'}) async {
     if (_role != LocalNetworkRole.none) await stop();
     _role = LocalNetworkRole.host;
+    _updateConnectionState(LocalNetworkConnectionState.disconnected);
 
     try {
       // 1. Start WebSocket Server
@@ -56,21 +56,27 @@ class LocalNetworkService {
 
         logger.info('Client connected', 'LocalNetworkService');
         _connectedClient = WebSocketChannel(webSocket);
+        _updateConnectionState(LocalNetworkConnectionState.connected);
+
         _connectedClient!.stream.listen(
           (message) => _onMessageReceived(message),
           onDone: () {
             logger.info('Client disconnected', 'LocalNetworkService');
             _connectedClient = null;
+            _updateConnectionState(LocalNetworkConnectionState.disconnected);
           },
           onError: (error) {
             logger.error('WebSocket error', 'LocalNetworkService', error);
             _connectedClient = null;
+            _updateConnectionState(LocalNetworkConnectionState.disconnected);
           },
         );
       });
 
       _server = await shelf_io.serve(handler, InternetAddress.anyIPv4, _port);
-      logger.info('Server running on port $_server.port', 'LocalNetworkService');
+      logger.info(
+          'Server running on port $_server.port', 'LocalNetworkService',);
+      _updateConnectionState(LocalNetworkConnectionState.hosting);
 
       // 2. Register mDNS Service
       final ip = await NetworkInfo().getWifiIP();
@@ -83,7 +89,6 @@ class LocalNetworkService {
         ),
       );
       logger.info('mDNS Service registered: $roomName', 'LocalNetworkService');
-
     } catch (e) {
       logger.error('Failed to start host', 'LocalNetworkService', e);
       await stop();
@@ -94,9 +99,10 @@ class LocalNetworkService {
   /// Start Discovery (Client Mode)
   Future<void> startDiscovery() async {
     if (_role == LocalNetworkRole.host) return; // Host cannot discover
-    
+
     _foundServices.clear();
     _servicesController.add([]);
+    _updateConnectionState(LocalNetworkConnectionState.scanning);
 
     try {
       _discovery = await startDiscovery(_serviceType, autoResolve: true);
@@ -104,11 +110,13 @@ class LocalNetworkService {
         _foundServices.clear();
         _foundServices.addAll(_discovery!.services);
         _servicesController.add(List.from(_foundServices));
-        logger.info('Services updated: ${_foundServices.length}', 'LocalNetworkService');
+        logger.info('Services updated: ${_foundServices.length}',
+            'LocalNetworkService',);
       });
       logger.info('Discovery started', 'LocalNetworkService');
     } catch (e) {
       logger.error('Failed to start discovery', 'LocalNetworkService', e);
+      _updateConnectionState(LocalNetworkConnectionState.disconnected);
     }
   }
 
@@ -116,6 +124,7 @@ class LocalNetworkService {
   Future<void> connectToHost(Service service) async {
     if (_role == LocalNetworkRole.host) return;
     _role = LocalNetworkRole.client;
+    _updateConnectionState(LocalNetworkConnectionState.connecting);
 
     try {
       await stopDiscovery(); // Stop discovery after selecting
@@ -123,20 +132,16 @@ class LocalNetworkService {
       // Use IP from TXT record or resolving (NSD resolves it usually)
       String? ip;
       if (service.txt != null && service.txt!['ip'] != null) {
-         // Some implementations return Uint8List bytes, others String. 
-         // nsd usually handles attributes as Uint8List or String depending on format.
-         // Let's safe convert.
-         try {
-           ip = String.fromCharCodes(service.txt!['ip'] as List<int>);
-         } catch (_) {
-           ip = service.txt!['ip'].toString();
-         }
+        try {
+          ip = String.fromCharCodes(service.txt!['ip'] as List<int>);
+        } catch (_) {
+          ip = service.txt!['ip'].toString();
+        }
       } else {
-         // Fallback to host/address from service if available
-         ip = service.host; // This might be hostname
-         if (service.addresses.isNotEmpty) {
-           ip = service.addresses.first.address;
-         }
+        ip = service.host;
+        if (service.addresses.isNotEmpty) {
+          ip = service.addresses.first.address;
+        }
       }
 
       if (ip == null) {
@@ -147,6 +152,11 @@ class LocalNetworkService {
       logger.info('Connecting to $uri', 'LocalNetworkService');
 
       _clientChannel = WebSocketChannel.connect(Uri.parse(uri));
+
+      // Monitor connection via stream access? WebSocketChannel doesn't expose 'onConnected' easily.
+      // But we can assume connecting state until first message or stream done?
+      // Actually, waiting for the stream to be ready is implicit.
+
       _clientChannel!.stream.listen(
         (message) => _onMessageReceived(message),
         onDone: () {
@@ -158,9 +168,11 @@ class LocalNetworkService {
           _cleanupClient();
         },
       );
-      
-      // Wait for connection to be ready (WebSocketChannel lazy connects usually, so this is just setup)
-      
+
+      // In a real app we might want to send a handshake here.
+      logger.info('WebSocket connection initiated', 'LocalNetworkService');
+      _updateConnectionState(
+          LocalNetworkConnectionState.connected,); // Optimistic connected
     } catch (e) {
       logger.error('Failed to connect to host', 'LocalNetworkService', e);
       _cleanupClient();
@@ -170,19 +182,7 @@ class LocalNetworkService {
 
   void _onMessageReceived(dynamic data) {
     try {
-      // Assuming JSON string or similar is passed, handled by WebSocketMessage.fromJson
-      // But WebSocketMessage expects a Map or similar. We need serialization.
-      // For now, let's assume raw string and we parse it elsewhere?
-      // Or implementing Message parsing here. 
-      // The current WebSocketMessage model might be tailored for the other WebSocketService.
-      // Let's just log for now and maybe implement parsing later.
       // logger.info('Message received: $data', 'LocalNetworkService');
-      
-      // Temporary: Since we don't have a shared serializer yet, just forward raw
-      // Actually we should create a WebSocketMessage.fromRaw(data)
-      
-      // For simple forwarding:
-      // _messageController.add(WebSocketMessage(...)); 
     } catch (e) {
       print('Error parsing message: $e');
     }
@@ -203,11 +203,12 @@ class LocalNetworkService {
       } else {
         _cleanupClient();
         if (_discovery != null) {
-           await stopDiscovery(_discovery!);
-           _discovery = null;
+          await stopDiscovery(_discovery!);
+          _discovery = null;
         }
       }
       _role = LocalNetworkRole.none;
+      _updateConnectionState(LocalNetworkConnectionState.disconnected);
       logger.info('Local Network Service stopped', 'LocalNetworkService');
     } catch (e) {
       logger.error('Error stopping service', 'LocalNetworkService', e);
@@ -220,5 +221,18 @@ class LocalNetworkService {
     if (_role == LocalNetworkRole.client) {
       _role = LocalNetworkRole.none;
     }
+    _updateConnectionState(LocalNetworkConnectionState.disconnected);
   }
+
+  void _updateConnectionState(LocalNetworkConnectionState state) {
+    _connectionStateController.add(state);
+  }
+}
+
+enum LocalNetworkConnectionState {
+  disconnected,
+  scanning,
+  hosting,
+  connecting,
+  connected,
 }

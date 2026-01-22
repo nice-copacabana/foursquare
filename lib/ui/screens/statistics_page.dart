@@ -2,7 +2,7 @@
 // Task: 实现游戏统计页面，展示总体统计、难度战绩、游戏数据等信息
 
 /// Statistics Page - 游戏统计页面
-/// 
+///
 /// 职责：
 /// - 显示玩家游戏统计数据
 /// - 包含总局数、胜率、难度战绩等
@@ -228,7 +228,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
   Widget _buildWinRateCard() {
     final stats = _statistics!;
     final winRate = stats.winRate * 100;
-    
+
     return _StatCard(
       title: '胜率分析',
       icon: Icons.pie_chart,
@@ -318,7 +318,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
 
   Widget _buildGameDataCard() {
     final stats = _statistics!;
-    final avgMoves = stats.totalGames > 0 
+    final avgMoves = stats.totalGames > 0
         ? (stats.totalMoves / stats.totalGames).toStringAsFixed(1)
         : '0';
 
@@ -353,7 +353,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
   /// 构建胜率趋势图卡片
   Widget _buildWinRateTrendCard() {
     final stats = _statistics!;
-    
+
     // 转换每日胜率数据
     final winRateData = <DateTime, double>{};
     stats.dailyWinRate.forEach((dateStr, rate) {
@@ -378,7 +378,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
   /// 构建时间分布图卡片
   Widget _buildTimeDistributionCard() {
     final stats = _statistics!;
-    
+
     // 转换每小时游戏数据
     final timeDistribution = <int, int>{};
     stats.hourlyGames.forEach((hourStr, count) {

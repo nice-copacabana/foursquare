@@ -6,62 +6,63 @@ library;
 import 'package:flutter_tts/flutter_tts.dart';
 
 /// 语音合成服务
-/// 
+///
 /// 负责文字转语音功能，支持：
 /// - 语音播报
 /// - 音量/语速/音调控制
 /// - 队列管理
 /// - 多语言支持
-/// 
+///
 /// 注意：需要添加依赖 flutter_tts: ^3.8.0
 
 /// 语音合成状态
 enum VoiceSynthesisStatus {
   /// 未初始化
   notInitialized,
-  
+
   /// 就绪
   ready,
-  
+
   /// 播放中
   playing,
-  
+
   /// 暂停
   paused,
-  
+
   /// 错误
   error,
 }
 
 /// 语音合成服务
-/// 
+///
 /// 使用 flutter_tts 实现文字转语音功能
 class VoiceSynthesisService {
-  static final VoiceSynthesisService _instance = VoiceSynthesisService._internal();
+  static final VoiceSynthesisService _instance =
+      VoiceSynthesisService._internal();
   factory VoiceSynthesisService() => _instance;
   VoiceSynthesisService._internal();
 
   // 当前状态
   VoiceSynthesisStatus _status = VoiceSynthesisStatus.notInitialized;
-  
+
   // 当前语言
   String _language = 'zh-CN';
-  
+
   // 音频参数
-  double _volume = 1.0;   // 音量 0.0-1.0
-  double _pitch = 1.0;    // 音调 0.5-2.0
-  double _rate = 0.5;     // 语速 0.0-1.0
-  
+  double _volume = 1.0; // 音量 0.0-1.0
+  double _pitch = 1.0; // 音调 0.5-2.0
+  double _rate = 0.5; // 语速 0.0-1.0
+
   // 播报队列
   final List<String> _queue = [];
   bool _isProcessingQueue = false;
-  
+
   // 语音合成引擎
   final FlutterTts _tts = FlutterTts();
-  
+
   /// 获取当前状态
   VoiceSynthesisStatus get status => _status;
-  
+
   /// 是否正在播放
   bool get isPlaying => _status == VoiceSynthesisStatus.playing;
 
@@ -74,44 +75,44 @@ class VoiceSynthesisService {
     try {
       // 设置语言
       await _tts.setLanguage(_language);
-      
+
       // 设置音频参数
       await _tts.setVolume(_volume);
       await _tts.setPitch(_pitch);
       await _tts.setSpeechRate(_rate);
-      
+
       // 设置回调
       _tts.setStartHandler(() {
         _status = VoiceSynthesisStatus.playing;
         print('[VoiceSynthesisService] 开始播报');
       });
-      
+
       _tts.setCompletionHandler(() {
         _status = VoiceSynthesisStatus.ready;
         print('[VoiceSynthesisService] 播报完成');
         _processNextInQueue();
       });
-      
+
       _tts.setErrorHandler((msg) {
         _status = VoiceSynthesisStatus.error;
         print('[VoiceSynthesisService] 错误: $msg');
       });
-      
+
       _tts.setCancelHandler(() {
         _status = VoiceSynthesisStatus.ready;
         print('[VoiceSynthesisService] 取消播报');
       });
-      
+
       _tts.setPauseHandler(() {
         _status = VoiceSynthesisStatus.paused;
         print('[VoiceSynthesisService] 暂停播报');
       });
-      
+
       _tts.setContinueHandler(() {
         _status = VoiceSynthesisStatus.playing;
         print('[VoiceSynthesisService] 继续播报');
       });
-      
+
       print('[VoiceSynthesisService] 初始化成功');
       _status = VoiceSynthesisStatus.ready;
     } catch (e) {
@@ -121,7 +122,7 @@ class VoiceSynthesisService {
   }
 
   /// 播报文本
-  /// 
+  ///
   /// [text] 要播报的文本
   /// [volume] 音量 (0.0-1.0)
   /// [pitch] 音调 (0.5-2.0)
@@ -148,9 +149,10 @@ class VoiceSynthesisService {
 
       // 播报文本
       await _tts.speak(text);
-      
+
       print('[VoiceSynthesisService] 播报: $text');
-      print('[VoiceSynthesisService] 参数: volume=$_volume, pitch=$_pitch, rate=$_rate');
+      print(
+          '[VoiceSynthesisService] 参数: volume=$_volume, pitch=$_pitch, rate=$_rate',);
     } catch (e) {
       print('[VoiceSynthesisService] 播报失败: $e');
       _status = VoiceSynthesisStatus.error;
@@ -166,7 +168,7 @@ class VoiceSynthesisService {
     try {
       // 停止播报
       await _tts.stop();
-      
+
       _status = VoiceSynthesisStatus.ready;
       _queue.clear();
       _isProcessingQueue = false;
@@ -185,7 +187,7 @@ class VoiceSynthesisService {
     try {
       // 暂停播报
       await _tts.pause();
-      
+
       _status = VoiceSynthesisStatus.paused;
       print('[VoiceSynthesisService] 暂停播报');
     } catch (e) {
@@ -194,7 +196,7 @@ class VoiceSynthesisService {
   }
 
   /// 队列播报
-  /// 
+  ///
   /// 将多个文本加入队列，依次播报
   Future<void> speakQueue(List<String> texts) async {
     if (texts.isEmpty) {
@@ -202,7 +204,7 @@ class VoiceSynthesisService {
     }
 
     _queue.addAll(texts);
-    
+
     if (!_isProcessingQueue) {
       _processNextInQueue();
     }
@@ -227,10 +229,10 @@ class VoiceSynthesisService {
     }
 
     _language = language;
-    
+
     // 设置语言
     await _tts.setLanguage(language);
-    
+
     print('[VoiceSynthesisService] 切换语言: $language');
   }
 

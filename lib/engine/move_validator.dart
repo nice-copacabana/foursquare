@@ -6,7 +6,7 @@ import '../models/position.dart';
 import '../models/piece_type.dart';
 
 /// 移动验证器
-/// 
+///
 /// 负责验证移动是否合法，包括：
 /// - 棋子所有权验证
 /// - 目标位置验证
@@ -14,7 +14,7 @@ import '../models/piece_type.dart';
 /// - 边界验证
 class MoveValidator {
   /// 判断移动是否合法
-  /// 
+  ///
   /// 验证规则：
   /// 1. from位置必须有当前玩家的棋子
   /// 2. to位置必须为空
@@ -50,7 +50,7 @@ class MoveValidator {
   }
 
   /// 获取指定棋子的所有合法移动目标位置
-  /// 
+  ///
   /// 返回该棋子可以移动到的所有空位
   List<Position> getValidMoves(
     BoardState board,
@@ -71,13 +71,11 @@ class MoveValidator {
     final adjacentPositions = piece.getAdjacentPositions();
 
     // 过滤出空位
-    return adjacentPositions
-        .where((pos) => board.isEmpty(pos))
-        .toList();
+    return adjacentPositions.where((pos) => board.isEmpty(pos)).toList();
   }
 
   /// 判断两个位置是否四方向相邻
-  /// 
+  ///
   /// 四方向定义：上、下、左、右
   /// 曼哈顿距离为1
   bool isAdjacent(Position from, Position to) {
@@ -86,7 +84,7 @@ class MoveValidator {
   }
 
   /// 获取当前玩家所有可能的移动
-  /// 
+  ///
   /// 返回一个Map，key为棋子位置，value为该棋子可移动的目标位置列表
   Map<Position, List<Position>> getAllPossibleMoves(
     BoardState board,
@@ -109,7 +107,7 @@ class MoveValidator {
   }
 
   /// 检查玩家是否还有可移动的棋子
-  /// 
+  ///
   /// 如果没有任何合法移动，游戏可能结束
   bool hasValidMoves(BoardState board, PieceType player) {
     final pieces = board.getAllPieces(player);
@@ -117,7 +115,7 @@ class MoveValidator {
     for (final piece in pieces) {
       // 获取四方向相邻位置
       final adjacentPositions = piece.getAdjacentPositions();
-      
+
       // 检查是否有空位
       for (final pos in adjacentPositions) {
         if (board.isEmpty(pos)) {

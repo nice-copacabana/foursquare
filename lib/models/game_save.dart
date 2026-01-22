@@ -2,7 +2,7 @@
 // Task: 实现游戏保存数据模型，支持游戏状态的序列化和反序列化
 
 /// Game Save - 游戏存档模型
-/// 
+///
 /// 职责：
 /// - 保存完整的游戏状态
 /// - 支持JSON序列化/反序列化
@@ -216,7 +216,8 @@ class MoveData extends Equatable {
       to: PositionData.fromJson(Map<String, dynamic>.from(json['to'])),
       capturedPosition: json['capturedPosition'] != null
           ? PositionData.fromJson(
-              Map<String, dynamic>.from(json['capturedPosition']),)
+              Map<String, dynamic>.from(json['capturedPosition']),
+            )
           : null,
       capturedPiece: json['capturedPiece'] as String?,
     );

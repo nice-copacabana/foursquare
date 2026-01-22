@@ -19,14 +19,16 @@ import '../ai/ai_player.dart';
 import '../ai/minimax_ai.dart';
 import 'meditation_mode_event.dart';
 import 'meditation_mode_state.dart';
+
 /// 冥想模式BLoC
-/// 
+///
 /// 负责冥想模式的完整业务逻辑，包括：
 /// - 语音引导流程
 /// - 语音指令处理
 /// - 棋盘状态播报
 /// - AI对战逻辑
-class MeditationModeBloc extends Bloc<MeditationModeEvent, MeditationModeState> {
+class MeditationModeBloc
+    extends Bloc<MeditationModeEvent, MeditationModeState> {
   final GameEngine _gameEngine;
   final MoveValidator _moveValidator;
   final VoiceRecognitionService _voiceRecognition;
@@ -34,7 +36,7 @@ class MeditationModeBloc extends Bloc<MeditationModeEvent, MeditationModeState> 
 
   // 当前选中的棋子位置
   Position? _selectedPosition;
-  
+
   // 最后一次播报的内容（用于重复播报）
   String? _lastAnnouncement;
 
@@ -86,20 +88,24 @@ class MeditationModeBloc extends Bloc<MeditationModeEvent, MeditationModeState> 
 
 现在开始游戏，您执黑棋先行，请说出您的第一步。''';
 
-    emit(const VoiceGuiding(
-      guidanceText: guidanceText,
-      stepNumber: 1,
-    ),);
+    emit(
+      const VoiceGuiding(
+        guidanceText: guidanceText,
+        stepNumber: 1,
+      ),
+    );
 
     // 播报引导文本
     await _voiceSynthesis.speak(guidanceText);
 
     // 引导完成后进入等待输入状态
-    emit(WaitingVoiceInput(
-      currentPlayer: PieceType.black,
-      board: BoardState.initial(),
-      moveHistory: const [],
-    ),);
+    emit(
+      WaitingVoiceInput(
+        currentPlayer: PieceType.black,
+        board: BoardState.initial(),
+        moveHistory: const [],
+      ),
+    );
 
     // 开始监听语音输入
     _startListening();
@@ -113,35 +119,41 @@ class MeditationModeBloc extends Bloc<MeditationModeEvent, MeditationModeState> 
     if (state is! WaitingVoiceInput) return;
     final currentState = state as WaitingVoiceInput;
 
-    emit(ProcessingVoiceCommand(
-      recognizedText: event.recognizedText,
-      confidence: event.confidence,
-      board: currentState.board,
-      currentPlayer: currentState.currentPlayer,
-    ),);
+    emit(
+      ProcessingVoiceCommand(
+        recognizedText: event.recognizedText,
+        confidence: event.confidence,
+        board: currentState.board,
+        currentPlayer: currentState.currentPlayer,
+      ),
+    );
 
     // 解析语音命令
     final position = VoiceCommandParser.parse(event.recognizedText);
-    
+
     // 检查是否为查询指令
     final queryType = _parseQueryType(event.recognizedText);
-    
+
     if (queryType != null) {
       // 处理查询指令
-      add(VoiceCommandParsed(
-        isQuery: true,
-        queryType: queryType,
-      ),);
+      add(
+        VoiceCommandParsed(
+          isQuery: true,
+          queryType: queryType,
+        ),
+      );
     } else if (position != null) {
       // 处理落子指令
-      add(VoiceCommandParsed(
-        position: position,
-        isQuery: false,
-      ),);
+      add(
+        VoiceCommandParsed(
+          position: position,
+          isQuery: false,
+        ),
+      );
     } else {
       // 识别失败或无效指令
       await _announceError('没有理解您的指令，您可以说横几竖几，或者说我的棋子在哪');
-      
+
       // 返回等待输入状态
       emit(currentState);
       _startListening();
@@ -172,7 +184,7 @@ class MeditationModeBloc extends Bloc<MeditationModeEvent, MeditationModeState> 
     Emitter<MeditationModeState> emit,
   ) async {
     String announcement;
-    
+
     switch (queryType) {
       case 1: // 我的棋子在哪
         announcement = _buildMyPiecesAnnouncement(
@@ -206,13 +218,15 @@ class MeditationModeBloc extends Bloc<MeditationModeEvent, MeditationModeState> 
     await _voiceSynthesis.speak(announcement);
 
     // 播报完成后返回等待输入状态
-    emit(WaitingVoiceInput(
-      currentPlayer: currentState.currentPlayer,
-      board: currentState.board,
-      selectedPosition: _selectedPosition,
-      moveHistory: const [],
-    ),);
-    
+    emit(
+      WaitingVoiceInput(
+        currentPlayer: currentState.currentPlayer,
+        board: currentState.board,
+        selectedPosition: _selectedPosition,
+        moveHistory: const [],
+      ),
+    );
+
     _startListening();
   }
 
@@ -228,14 +242,16 @@ class MeditationModeBloc extends Bloc<MeditationModeEvent, MeditationModeState> 
     // 如果还没有选中棋子，尝试选中该位置的棋子
     if (_selectedPosition == null) {
       final piece = board.getPiece(position);
-      
+
       if (piece != currentPlayer) {
         await _announceError('这个位置没有您的棋子，请重新选择');
-        emit(WaitingVoiceInput(
-          currentPlayer: currentPlayer,
-          board: board,
-          moveHistory: const [],
-        ),);
+        emit(
+          WaitingVoiceInput(
+            currentPlayer: currentPlayer,
+            board: board,
+            moveHistory: const [],
+          ),
+        );
         _startListening();
         return;
       }
@@ -243,26 +259,30 @@ class MeditationModeBloc extends Bloc<MeditationModeEvent, MeditationModeState> 
       // 选中棋子
       _selectedPosition = position;
       final validMoves = _moveValidator.getValidMoves(board, position);
-      
+
       if (validMoves.isEmpty) {
         await _announceError('这个棋子没有可以移动的位置，请选择其他棋子');
         _selectedPosition = null;
-        emit(WaitingVoiceInput(
-          currentPlayer: currentPlayer,
-          board: board,
-          moveHistory: const [],
-        ),);
+        emit(
+          WaitingVoiceInput(
+            currentPlayer: currentPlayer,
+            board: board,
+            moveHistory: const [],
+          ),
+        );
         _startListening();
         return;
       }
 
       await _voiceSynthesis.speak('已选中${_positionToText(position)}的棋子，请说出目标位置');
-      emit(WaitingVoiceInput(
-        currentPlayer: currentPlayer,
-        board: board,
-        selectedPosition: position,
-        moveHistory: const [],
-      ),);
+      emit(
+        WaitingVoiceInput(
+          currentPlayer: currentPlayer,
+          board: board,
+          selectedPosition: position,
+          moveHistory: const [],
+        ),
+      );
       _startListening();
       return;
     }
@@ -274,27 +294,31 @@ class MeditationModeBloc extends Bloc<MeditationModeEvent, MeditationModeState> 
     // 验证移动是否合法
     if (!_moveValidator.isValidMove(board, from, to)) {
       await _announceError('该棋子不能移动到这个位置，请选择相邻的空位');
-      emit(WaitingVoiceInput(
-        currentPlayer: currentPlayer,
-        board: board,
-        selectedPosition: from,
-        moveHistory: const [],
-      ),);
+      emit(
+        WaitingVoiceInput(
+          currentPlayer: currentPlayer,
+          board: board,
+          selectedPosition: from,
+          moveHistory: const [],
+        ),
+      );
       _startListening();
       return;
     }
 
     // 执行移动
     final result = _gameEngine.executeMove(board, from, to);
-    
+
     if (!result.success) {
       await _announceError('移动失败，请重试');
       _selectedPosition = null;
-      emit(WaitingVoiceInput(
-        currentPlayer: currentPlayer,
-        board: board,
-        moveHistory: const [],
-      ),);
+      emit(
+        WaitingVoiceInput(
+          currentPlayer: currentPlayer,
+          board: board,
+          moveHistory: const [],
+        ),
+      );
       _startListening();
       return;
     }
@@ -312,14 +336,17 @@ class MeditationModeBloc extends Bloc<MeditationModeEvent, MeditationModeState> 
 
     // 检查游戏是否结束
     if (result.gameResult != null) {
-      emit(MeditationGameOver(
-        winner: result.gameResult!.winner,
-        reason: _getGameOverReason(result.gameResult!.status),
-        finalBoard: result.newBoard!,
-        moveHistory: const [],
-      ),);
-      
-      await _voiceSynthesis.speak(_buildGameOverAnnouncement(result.gameResult!));
+      emit(
+        MeditationGameOver(
+          winner: result.gameResult!.winner,
+          reason: _getGameOverReason(result.gameResult!.status),
+          finalBoard: result.newBoard!,
+          moveHistory: const [],
+        ),
+      );
+
+      await _voiceSynthesis
+          .speak(_buildGameOverAnnouncement(result.gameResult!));
       return;
     }
 
@@ -327,15 +354,17 @@ class MeditationModeBloc extends Bloc<MeditationModeEvent, MeditationModeState> 
     final newBoard = result.newBoard!;
     final nextPlayer = currentPlayer.getOpponent();
 
-    emit(MeditationPlaying(
-      board: newBoard,
-      moveHistory: const [],
-      currentPlayer: nextPlayer,
-      isAiOpponent: currentState is WaitingVoiceInput 
-          ? (currentState as WaitingVoiceInput).selectedPosition != null 
-          : true,
-      lastAnnouncement: announcement,
-    ),);
+    emit(
+      MeditationPlaying(
+        board: newBoard,
+        moveHistory: const [],
+        currentPlayer: nextPlayer,
+        isAiOpponent: currentState is WaitingVoiceInput
+            ? (currentState as WaitingVoiceInput).selectedPosition != null
+            : true,
+        lastAnnouncement: announcement,
+      ),
+    );
 
     // 如果是AI回合，触发AI思考
     final playingState = state as MeditationPlaying;
@@ -343,11 +372,13 @@ class MeditationModeBloc extends Bloc<MeditationModeEvent, MeditationModeState> 
       _triggerAiMove(playingState, emit);
     } else {
       // 继续等待玩家输入
-      emit(WaitingVoiceInput(
-        currentPlayer: nextPlayer,
-        board: newBoard,
-        moveHistory: const [],
-      ),);
+      emit(
+        WaitingVoiceInput(
+          currentPlayer: nextPlayer,
+          board: newBoard,
+          moveHistory: const [],
+        ),
+      );
       _startListening();
     }
   }
@@ -359,11 +390,13 @@ class MeditationModeBloc extends Bloc<MeditationModeEvent, MeditationModeState> 
   ) async {
     await _voiceSynthesis.speak('对手思考中');
 
-    emit(AiThinking(
-      board: playingState.board,
-      moveHistory: playingState.moveHistory,
-      aiDifficulty: playingState.aiDifficulty,
-    ),);
+    emit(
+      AiThinking(
+        board: playingState.board,
+        moveHistory: playingState.moveHistory,
+        aiDifficulty: playingState.aiDifficulty,
+      ),
+    );
 
     // AI计算最佳移动
     final aiDifficulty = _getAIDifficulty(playingState.aiDifficulty);
@@ -384,7 +417,7 @@ class MeditationModeBloc extends Bloc<MeditationModeEvent, MeditationModeState> 
   /// 解析查询类型
   int? _parseQueryType(String text) {
     final lowerText = text.toLowerCase();
-    
+
     if (lowerText.contains('我的棋子') || lowerText.contains('我在哪')) {
       return 1; // 我的棋子在哪
     } else if (lowerText.contains('对方棋子') || lowerText.contains('对手棋子')) {
@@ -396,10 +429,10 @@ class MeditationModeBloc extends Bloc<MeditationModeEvent, MeditationModeState> 
     } else if (lowerText.contains('重复') || lowerText.contains('再说')) {
       return 5; // 重复一遍
     }
-    
+
     return null;
   }
-  
+
   /// 将数字难度转换为AIDifficulty枚举
   AIDifficulty _getAIDifficulty(int difficulty) {
     switch (difficulty) {
@@ -439,24 +472,29 @@ class MeditationModeBloc extends Bloc<MeditationModeEvent, MeditationModeState> 
 
     // 检查游戏是否结束
     if (result.gameResult != null) {
-      emit(MeditationGameOver(
-        winner: result.gameResult!.winner,
-        reason: _getGameOverReason(result.gameResult!.status),
-        finalBoard: result.newBoard!,
-        moveHistory: thinkingState.moveHistory,
-      ),);
-      
-      await _voiceSynthesis.speak(_buildGameOverAnnouncement(result.gameResult!));
+      emit(
+        MeditationGameOver(
+          winner: result.gameResult!.winner,
+          reason: _getGameOverReason(result.gameResult!.status),
+          finalBoard: result.newBoard!,
+          moveHistory: thinkingState.moveHistory,
+        ),
+      );
+
+      await _voiceSynthesis
+          .speak(_buildGameOverAnnouncement(result.gameResult!));
       return;
     }
 
     // 继续等待玩家输入
-    emit(WaitingVoiceInput(
-      currentPlayer: PieceType.black,
-      board: result.newBoard!,
-      moveHistory: thinkingState.moveHistory,
-    ),);
-    
+    emit(
+      WaitingVoiceInput(
+        currentPlayer: PieceType.black,
+        board: result.newBoard!,
+        moveHistory: thinkingState.moveHistory,
+      ),
+    );
+
     _startListening();
   }
 
@@ -492,7 +530,7 @@ class MeditationModeBloc extends Bloc<MeditationModeEvent, MeditationModeState> 
     if (state is! WaitingVoiceInput && state is! MeditationPlaying) return;
 
     await _voiceRecognition.stopListening();
-    
+
     // 保存当前状态
     // 实现略
   }
@@ -512,7 +550,7 @@ class MeditationModeBloc extends Bloc<MeditationModeEvent, MeditationModeState> 
   ) async {
     await _voiceRecognition.stopListening();
     await _voiceSynthesis.stop();
-    
+
     emit(const MeditationInitial());
   }
 
@@ -529,14 +567,17 @@ class MeditationModeBloc extends Bloc<MeditationModeEvent, MeditationModeState> 
     _voiceRecognition.startListening(
       onResult: (result) {
         if (result.isFinal) {
-          add(VoiceInputReceived(
-            recognizedText: result.text,
-            confidence: result.confidence,
-          ),);
+          add(
+            VoiceInputReceived(
+              recognizedText: result.text,
+              confidence: result.confidence,
+            ),
+          );
         }
       },
       onError: (error) {
-        logger.error('[MeditationModeBloc] 语音识别错误', 'MeditationModeBloc', error);
+        logger.error(
+            '[MeditationModeBloc] 语音识别错误', 'MeditationModeBloc', error,);
       },
     );
   }
@@ -552,7 +593,7 @@ class MeditationModeBloc extends Bloc<MeditationModeEvent, MeditationModeState> 
     if (pieces.isEmpty) {
       return '您已经没有棋子了';
     }
-    
+
     final positions = pieces.map(_positionToText).join('、');
     return '您的棋子在：$positions';
   }
@@ -564,7 +605,7 @@ class MeditationModeBloc extends Bloc<MeditationModeEvent, MeditationModeState> 
     if (pieces.isEmpty) {
       return '对方已经没有棋子了';
     }
-    
+
     final positions = pieces.map(_positionToText).join('、');
     return '对方的棋子在：$positions';
   }
@@ -579,14 +620,15 @@ class MeditationModeBloc extends Bloc<MeditationModeEvent, MeditationModeState> 
   /// 构建可用移动播报
   String _buildAvailableMovesAnnouncement(BoardState board, PieceType player) {
     if (_selectedPosition != null) {
-      final validMoves = _moveValidator.getValidMoves(board, _selectedPosition!);
+      final validMoves =
+          _moveValidator.getValidMoves(board, _selectedPosition!);
       if (validMoves.isEmpty) {
         return '当前棋子没有可以移动的位置';
       }
       final positions = validMoves.map(_positionToText).join('、');
       return '${_positionToText(_selectedPosition!)}的棋子可以移动到：$positions';
     }
-    
+
     return '请先选择一个棋子';
   }
 

@@ -1,5 +1,5 @@
 /// Board Widget Test - 棋盘组件测试
-/// 
+///
 /// 测试范围：
 /// - 棋盘渲染
 /// - 用户交互
@@ -127,7 +127,7 @@ void main() {
     testWidgets('应该正确处理空棋盘', (WidgetTester tester) async {
       // 创建一个空棋盘
       var boardState = BoardState.initial();
-      
+
       // 移除所有棋子
       for (int y = 0; y < 4; y++) {
         for (int x = 0; x < 4; x++) {

@@ -124,7 +124,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
   Future<void> _completeOnboarding() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(StorageConstants.keyFirstLaunch, false);
-    
+
     if (mounted) {
       Navigator.of(context).pushReplacementNamed('/home');
     }
@@ -180,7 +180,8 @@ class _WelcomePage extends StatelessWidget {
             height: 200,
             decoration: BoxDecoration(
               color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(UIConstants.borderRadiusLarge),
+              borderRadius:
+                  BorderRadius.circular(UIConstants.borderRadiusLarge),
             ),
             child: const Center(
               child: GameIcon(
@@ -234,21 +235,22 @@ class _RulesBoardPage extends StatelessWidget {
                 ),
           ),
           const SizedBox(height: 32),
-          
+
           // 棋盘示意图
           Container(
             width: 240,
             height: 240,
             decoration: BoxDecoration(
               color: UIConstants.boardBackgroundColor,
-              borderRadius: BorderRadius.circular(UIConstants.borderRadiusLarge),
+              borderRadius:
+                  BorderRadius.circular(UIConstants.borderRadiusLarge),
               boxShadow: [UIConstants.boardShadow],
             ),
             child: CustomPaint(
               painter: _BoardDemoPainter(),
             ),
           ),
-          
+
           const SizedBox(height: 32),
           _InfoCard(
             customIcon: Container(
@@ -297,14 +299,15 @@ class _RulesMovementPage extends StatelessWidget {
                 ),
           ),
           const SizedBox(height: 32),
-          
+
           // 移动示意图
           Container(
             width: 200,
             height: 200,
             decoration: BoxDecoration(
               color: Colors.grey.shade100,
-              borderRadius: BorderRadius.circular(UIConstants.borderRadiusLarge),
+              borderRadius:
+                  BorderRadius.circular(UIConstants.borderRadiusLarge),
             ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -341,7 +344,7 @@ class _RulesMovementPage extends StatelessWidget {
               ],
             ),
           ),
-          
+
           const SizedBox(height: 32),
           const _InfoCard(
             icon: Icons.arrow_upward,
@@ -378,14 +381,15 @@ class _RulesCapturePage extends StatelessWidget {
                 ),
           ),
           const SizedBox(height: 32),
-          
+
           // 吃子示意图：己方2子 + 对方1子 = 3子连线
           Container(
             width: 240,
             height: 120,
             decoration: BoxDecoration(
               color: Colors.grey.shade100,
-              borderRadius: BorderRadius.circular(UIConstants.borderRadiusLarge),
+              borderRadius:
+                  BorderRadius.circular(UIConstants.borderRadiusLarge),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -398,7 +402,7 @@ class _RulesCapturePage extends StatelessWidget {
               ],
             ),
           ),
-          
+
           const SizedBox(height: 32),
           const _InfoCard(
             icon: Icons.filter_3,
@@ -450,7 +454,6 @@ class _FeaturesPage extends StatelessWidget {
                 ),
           ),
           const SizedBox(height: 32),
-          
           const _FeatureCard(
             icon: Icons.smart_toy,
             title: 'AI对战',
@@ -496,7 +499,8 @@ class _InfoCard extends StatelessWidget {
     this.customIcon,
     required this.title,
     required this.description,
-  }) : assert(icon != null || customIcon != null, 'Either icon or customIcon must be provided');
+  }) : assert(icon != null || customIcon != null,
+            'Either icon or customIcon must be provided',);
 
   @override
   Widget build(BuildContext context) {
@@ -515,7 +519,8 @@ class _InfoCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          customIcon ?? Icon(icon!, size: 32, color: Theme.of(context).primaryColor),
+          customIcon ??
+              Icon(icon!, size: 32, color: Theme.of(context).primaryColor),
           const SizedBox(width: 16),
           Expanded(
             child: Column(
@@ -574,7 +579,8 @@ class _FeatureCard extends StatelessWidget {
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: color,
-              borderRadius: BorderRadius.circular(UIConstants.borderRadiusSmall),
+              borderRadius:
+                  BorderRadius.circular(UIConstants.borderRadiusSmall),
             ),
             child: Icon(icon, size: 24, color: Colors.white),
           ),
@@ -628,7 +634,7 @@ class _BoardDemoPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final cellSize = size.width / 4;
-    
+
     // 绘制网格
     final gridPaint = Paint()
       ..color = UIConstants.boardGridColor

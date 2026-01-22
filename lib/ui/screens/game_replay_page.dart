@@ -1,5 +1,5 @@
 /// Game Replay Page - 游戏回放页面
-/// 
+///
 /// 显示游戏回放界面，包括：
 /// - 棋盘显示（只读）
 /// - 回放控制按钮
@@ -15,7 +15,7 @@ import '../widgets/themed_board_widget.dart';
 class GameReplayPage extends StatefulWidget {
   /// 移动历史
   final List<Move> moveHistory;
-  
+
   /// 游戏模式标题
   final String gameTitle;
 
@@ -69,7 +69,7 @@ class _GameReplayPageState extends State<GameReplayPage> {
         children: [
           // 步骤信息
           _buildStepInfo(),
-          
+
           // 棋盘显示
           Expanded(
             child: Center(
@@ -83,21 +83,21 @@ class _GameReplayPageState extends State<GameReplayPage> {
                     validMoves: const [],
                     lastMoveFrom: _replayState.currentMove?.from,
                     lastMoveTo: _replayState.currentMove?.to,
-                    capturedPiecePosition: _replayState.currentMove?.capturedPiece,
+                    capturedPiecePosition:
+                        _replayState.currentMove?.capturedPiece,
                     onPositionTapped: (_) {}, // 禁用交互
                   ),
                 ),
               ),
             ),
           ),
-          
+
           // 当前移动信息
-          if (_replayState.currentMove != null)
-            _buildCurrentMoveInfo(),
-          
+          if (_replayState.currentMove != null) _buildCurrentMoveInfo(),
+
           // 回放控制按钮
           _buildControls(),
-          
+
           // 移动历史列表
           _buildMoveHistory(),
         ],
@@ -117,8 +117,8 @@ class _GameReplayPageState extends State<GameReplayPage> {
           Text(
             _replayState.stepDescription,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
+                  fontWeight: FontWeight.bold,
+                ),
           ),
         ],
       ),
@@ -177,9 +177,10 @@ class _GameReplayPageState extends State<GameReplayPage> {
               value: (_replayState.currentStep + 1).toDouble(),
               min: 0,
               max: _replayState.totalSteps.toDouble(),
-              divisions: _replayState.totalSteps > 0 ? _replayState.totalSteps : 1,
-              label: _replayState.isAtStart 
-                  ? '初始' 
+              divisions:
+                  _replayState.totalSteps > 0 ? _replayState.totalSteps : 1,
+              label: _replayState.isAtStart
+                  ? '初始'
                   : '第 ${_replayState.currentStep + 1} 步',
               onChanged: (value) {
                 _updateState(_replayService.goToStep(value.toInt() - 1));
@@ -187,7 +188,7 @@ class _GameReplayPageState extends State<GameReplayPage> {
             ),
           ),
           const SizedBox(height: 8),
-          
+
           // 控制按钮
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -248,7 +249,7 @@ class _GameReplayPageState extends State<GameReplayPage> {
         itemBuilder: (context, index) {
           final move = widget.moveHistory[index];
           final isCurrentStep = index == _replayState.currentStep;
-          
+
           return Card(
             color: isCurrentStep
                 ? Theme.of(context).colorScheme.primaryContainer
@@ -266,9 +267,8 @@ class _GameReplayPageState extends State<GameReplayPage> {
                   fontWeight: isCurrentStep ? FontWeight.bold : null,
                 ),
               ),
-              trailing: move.hasCapture
-                  ? const Icon(Icons.close, size: 20)
-                  : null,
+              trailing:
+                  move.hasCapture ? const Icon(Icons.close, size: 20) : null,
               onTap: () {
                 _updateState(_replayService.goToStep(index));
               },

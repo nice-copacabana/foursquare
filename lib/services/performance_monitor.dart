@@ -58,10 +58,10 @@ class PerformanceMonitor {
 
       logger.info(
         'frames=${sample.length} avgBuild=${avgBuild.toStringAsFixed(2)}ms '
-        'avgRaster=${avgRaster.toStringAsFixed(2)}ms '
-        'maxBuild=${maxBuildMs.toStringAsFixed(2)}ms '
-        'maxRaster=${maxRasterMs.toStringAsFixed(2)}ms '
-        'jank=$jankCount',
+            'avgRaster=${avgRaster.toStringAsFixed(2)}ms '
+            'maxBuild=${maxBuildMs.toStringAsFixed(2)}ms '
+            'maxRaster=${maxRasterMs.toStringAsFixed(2)}ms '
+            'jank=$jankCount',
         'PerformanceMonitor',
       );
     }

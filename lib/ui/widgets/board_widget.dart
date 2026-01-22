@@ -9,7 +9,7 @@ import '../../constants/game_constants.dart';
 import 'board_painter.dart';
 
 /// 棋盘Widget
-/// 
+///
 /// 集成BoardPainter进行绘制，并处理用户点击交互
 class BoardWidget extends StatelessWidget {
   final BoardState boardState;
@@ -19,6 +19,7 @@ class BoardWidget extends StatelessWidget {
   final Position? lastMoveTo;
   final Function(Position) onPositionTapped;
   final double? size;
+
   /// 是否翻转棋盘视角（让白方在下方）
   final bool flipBoard;
 
@@ -62,7 +63,8 @@ class BoardWidget extends StatelessWidget {
     }
 
     return Center(
-      child: RepaintBoundary( // 添加 RepaintBoundary 优化渲染
+      child: RepaintBoundary(
+        // 添加 RepaintBoundary 优化渲染
         child: Container(
           width: boardSize,
           height: boardSize,
@@ -107,7 +109,10 @@ class BoardWidget extends StatelessWidget {
     final y = (localPos.dy / cellSize).floor();
 
     // 检查坐标是否在棋盘范围内
-    if (x >= 0 && x < GameConstants.boardSize && y >= 0 && y < GameConstants.boardSize) {
+    if (x >= 0 &&
+        x < GameConstants.boardSize &&
+        y >= 0 &&
+        y < GameConstants.boardSize) {
       final position = Position(x, y);
       onPositionTapped(position);
     }

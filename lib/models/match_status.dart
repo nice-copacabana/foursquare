@@ -5,13 +5,13 @@
 enum MatchStatus {
   /// 等待匹配
   waiting,
-  
+
   /// 游戏进行中
   playing,
-  
+
   /// 游戏结束
   finished,
-  
+
   /// 连接断开
   disconnected,
 }
@@ -21,7 +21,7 @@ extension MatchStatusExtension on MatchStatus {
   String toJson() {
     return toString().split('.').last;
   }
-  
+
   /// 从JSON字符串创建
   static MatchStatus fromJson(String json) {
     return MatchStatus.values.firstWhere(
@@ -29,7 +29,7 @@ extension MatchStatusExtension on MatchStatus {
       orElse: () => MatchStatus.waiting,
     );
   }
-  
+
   /// 获取显示名称
   String get displayName {
     switch (this) {
@@ -43,10 +43,11 @@ extension MatchStatusExtension on MatchStatus {
         return '已断开';
     }
   }
-  
+
   /// 是否可以进行游戏操作
   bool get canPlay => this == MatchStatus.playing;
-  
+
   /// 是否已结束
-  bool get isFinished => this == MatchStatus.finished || this == MatchStatus.disconnected;
+  bool get isFinished =>
+      this == MatchStatus.finished || this == MatchStatus.disconnected;
 }

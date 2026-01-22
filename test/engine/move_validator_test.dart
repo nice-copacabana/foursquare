@@ -161,9 +161,12 @@ void main() {
         );
 
         expect(moves.length, 1); // 只有下
-        expect(moves, containsAll([
-          const Position(0, 1),
-        ]),);
+        expect(
+          moves,
+          containsAll([
+            const Position(0, 1),
+          ]),
+        );
       });
 
       test('角落棋子应有1个可移动位置', () {
@@ -173,14 +176,17 @@ void main() {
         );
 
         expect(moves.length, 1); // 只有下
-        expect(moves, containsAll([
-          const Position(3, 1),
-        ]),);
+        expect(
+          moves,
+          containsAll([
+            const Position(3, 1),
+          ]),
+        );
       });
 
       test('中间棋子应有多个可移动位置', () {
-        final customBoard = board
-            .setPiece(const Position(2, 2), PieceType.black);
+        final customBoard =
+            board.setPiece(const Position(2, 2), PieceType.black);
 
         final moves = validator.getValidMoves(
           customBoard,
@@ -316,12 +322,15 @@ void main() {
         );
 
         expect(moves.length, 4); // 4个黑方棋子
-        expect(moves.keys, containsAll([
-          const Position(0, 0),
-          const Position(1, 0),
-          const Position(2, 0),
-          const Position(3, 0),
-        ]),);
+        expect(
+          moves.keys,
+          containsAll([
+            const Position(0, 0),
+            const Position(1, 0),
+            const Position(2, 0),
+            const Position(3, 0),
+          ]),
+        );
       });
 
       test('应返回白方所有可能移动', () {

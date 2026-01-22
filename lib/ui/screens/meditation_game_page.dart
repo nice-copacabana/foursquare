@@ -9,7 +9,7 @@ import '../../bloc/meditation_mode_event.dart';
 import '../../bloc/meditation_mode_state.dart';
 
 /// 冥想模式游戏页面
-/// 
+///
 /// 特点：
 /// - 极简黑屏界面
 /// - 仅显示必要的文字提示
@@ -253,7 +253,7 @@ class _MeditationGamePageState extends State<MeditationGamePage> {
   /// 游戏结束显示
   Widget _buildGameOverDisplay(MeditationGameOver state) {
     final isWin = state.winner == PieceType.black;
-    
+
     return Column(
       children: [
         _buildStatusIcon(
@@ -314,7 +314,7 @@ class _MeditationGamePageState extends State<MeditationGamePage> {
   /// 构建退出指示器
   Widget _buildExitIndicator() {
     final progress = _longPressSeconds / 3;
-    
+
     return Center(
       child: Column(
         children: [
@@ -377,7 +377,7 @@ class _MeditationGamePageState extends State<MeditationGamePage> {
       if (!_isLongPressing) return false;
 
       await Future.delayed(const Duration(seconds: 1));
-      
+
       if (!mounted || !_isLongPressing) return false;
 
       setState(() {

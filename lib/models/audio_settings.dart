@@ -4,30 +4,30 @@
 import 'package:equatable/equatable.dart';
 
 /// 音频设置
-/// 
+///
 /// 包含音效、音乐、语音的开关和音量配置
 class AudioSettings extends Equatable {
   /// 音效总开关
   final bool soundEnabled;
-  
+
   /// 音乐总开关
   final bool musicEnabled;
-  
+
   /// 语音总开关
   final bool voiceEnabled;
-  
+
   /// 音效音量 (0.0-1.0)
   final double soundVolume;
-  
+
   /// 音乐音量 (0.0-1.0)
   final double musicVolume;
-  
+
   /// 语音音量 (0.0-1.0)
   final double voiceVolume;
-  
+
   /// 语速 (0.0-1.0)
   final double voiceSpeechRate;
-  
+
   /// 音调 (0.5-2.0)
   final double voicePitch;
 

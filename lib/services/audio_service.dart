@@ -9,25 +9,25 @@ import '../services/logger_service.dart';
 enum SoundType {
   /// 选中棋子
   select,
-  
+
   /// 移动棋子
   move,
-  
+
   /// 吃子
   capture,
-  
+
   /// 胜利
   win,
-  
+
   /// 失败
   lose,
-  
+
   /// 按钮点击
   click,
 }
 
 /// 音频服务
-/// 
+///
 /// 负责游戏音效的播放和管理
 class AudioService {
   static final AudioService _instance = AudioService._internal();

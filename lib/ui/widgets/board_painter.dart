@@ -10,7 +10,7 @@ import '../../models/board_theme.dart';
 import '../../constants/ui_constants.dart';
 
 /// 棋盘绘制器
-/// 
+///
 /// 使用CustomPainter绘制：
 /// - 棋盘背景和网格线
 /// - 黑白棋子
@@ -155,7 +155,7 @@ class BoardPainter extends CustomPainter {
   void _drawGrid(Canvas canvas, Size size, double cellSize) {
     final gridColor = theme?.gridColor ?? UIConstants.boardGridColor;
     final lineWidth = theme?.gridLineWidth ?? UIConstants.gridLineWidth;
-    
+
     final paint = Paint()
       ..color = gridColor
       ..strokeWidth = lineWidth
@@ -183,7 +183,8 @@ class BoardPainter extends CustomPainter {
   }
 
   /// 绘制棋子
-  void _drawPiece(Canvas canvas, double cellSize, Position pos, PieceType piece) {
+  void _drawPiece(
+      Canvas canvas, double cellSize, Position pos, PieceType piece,) {
     final center = Offset(
       pos.x * cellSize + cellSize / 2,
       pos.y * cellSize + cellSize / 2,
@@ -194,7 +195,8 @@ class BoardPainter extends CustomPainter {
     if (style != PieceStyle.flat) {
       final shadowPaint = Paint()
         ..color = Colors.black.withValues(alpha: UIConstants.shadowOpacity)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, UIConstants.pieceShadowBlur);
+        ..maskFilter = const MaskFilter.blur(
+            BlurStyle.normal, UIConstants.pieceShadowBlur,);
 
       canvas.drawCircle(
         center + UIConstants.pieceShadowOffset,
@@ -211,8 +213,8 @@ class BoardPainter extends CustomPainter {
         piecePaint.color = baseColor;
         break;
       case PieceStyle.glowing:
-        final glowColor = (theme?.selectionColor ?? Colors.cyan)
-            .withValues(alpha: 0.35);
+        final glowColor =
+            (theme?.selectionColor ?? Colors.cyan).withValues(alpha: 0.35);
         final glowPaint = Paint()
           ..color = glowColor
           ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
@@ -225,12 +227,10 @@ class BoardPainter extends CustomPainter {
             : Colors.grey.shade200;
         break;
       case PieceStyle.classic:
-        final light = piece == PieceType.black
-            ? Colors.grey.shade700
-            : Colors.white;
-        final dark = piece == PieceType.black
-            ? Colors.black
-            : Colors.grey.shade300;
+        final light =
+            piece == PieceType.black ? Colors.grey.shade700 : Colors.white;
+        final dark =
+            piece == PieceType.black ? Colors.black : Colors.grey.shade300;
         piecePaint.shader = RadialGradient(
           center: const Alignment(-0.3, -0.3),
           radius: 0.9,
@@ -285,8 +285,10 @@ class BoardPainter extends CustomPainter {
 
     // 绘制光晕效果
     final glowPaint = Paint()
-      ..color = selectionColor.withValues(alpha: UIConstants.selectionGlowOpacity)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, UIConstants.selectionGlowBlur)
+      ..color =
+          selectionColor.withValues(alpha: UIConstants.selectionGlowOpacity)
+      ..maskFilter =
+          const MaskFilter.blur(BlurStyle.normal, UIConstants.selectionGlowBlur)
       ..style = PaintingStyle.fill;
 
     canvas.drawCircle(center, radius, glowPaint);
@@ -326,9 +328,11 @@ class BoardPainter extends CustomPainter {
   }
 
   /// 绘制最后移动标记
-  void _drawLastMove(Canvas canvas, double cellSize, Position from, Position to) {
+  void _drawLastMove(
+      Canvas canvas, double cellSize, Position from, Position to,) {
     final paint = Paint()
-      ..color = UIConstants.lastMoveColor.withValues(alpha: UIConstants.lastMoveBackgroundOpacity)
+      ..color = UIConstants.lastMoveColor
+          .withValues(alpha: UIConstants.lastMoveBackgroundOpacity)
       ..style = PaintingStyle.fill;
 
     // 标记起始位置
@@ -351,7 +355,8 @@ class BoardPainter extends CustomPainter {
 
     // 绘制箭头（缩短长度，避免遮挡棋子）
     final arrowPaint = Paint()
-      ..color = UIConstants.lastMoveColor.withValues(alpha: UIConstants.lastMoveArrowOpacity)
+      ..color = UIConstants.lastMoveColor
+          .withValues(alpha: UIConstants.lastMoveArrowOpacity)
       ..strokeWidth = UIConstants.lastMoveArrowWidth
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
@@ -370,7 +375,7 @@ class BoardPainter extends CustomPainter {
     final direction = toCenter - fromCenter;
     final distance = direction.distance;
     final normalizedDir = direction / distance;
-    
+
     // 缩短箭头，从起点留出40%，终点留出40%，确保不遮挡棋子
     final arrowStart = fromCenter + normalizedDir * (distance * 0.4);
     final arrowEnd = toCenter - normalizedDir * (distance * 0.4);
@@ -389,25 +394,25 @@ class BoardPainter extends CustomPainter {
     final path = Path();
     path.moveTo(to.dx, to.dy);
     path.lineTo(
-      to.dx - arrowSize * (to - from).distance / 50 * 
-          (to.dx - from.dx).sign * 0.5,
-      to.dy - arrowSize * (to - from).distance / 50 * 
-          (to.dy - from.dy).sign * 0.5,
+      to.dx -
+          arrowSize * (to - from).distance / 50 * (to.dx - from.dx).sign * 0.5,
+      to.dy -
+          arrowSize * (to - from).distance / 50 * (to.dy - from.dy).sign * 0.5,
     );
 
     // 简化箭头绘制
     final arrowPath = Path();
     arrowPath.moveTo(to.dx, to.dy);
-    
+
     // 左侧箭头线
     final leftAngle = angle + 2.5;
     arrowPath.lineTo(
       to.dx - arrowSize * math.cos(leftAngle),
       to.dy - arrowSize * math.sin(leftAngle),
     );
-    
+
     arrowPath.moveTo(to.dx, to.dy);
-    
+
     // 右侧箭头线
     final rightAngle = angle - 2.5;
     arrowPath.lineTo(
@@ -429,5 +434,4 @@ class BoardPainter extends CustomPainter {
         theme != oldDelegate.theme ||
         selectionPulse != oldDelegate.selectionPulse;
   }
-
 }

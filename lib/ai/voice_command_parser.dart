@@ -4,9 +4,9 @@
 import '../models/position.dart';
 
 /// 语音命令解析器
-/// 
+///
 /// 负责将语音识别结果解析为游戏指令（Position）
-/// 
+///
 /// 支持的格式：
 /// 1. 传统坐标: "横1竖2"、"横三竖四"
 /// 2. 国际式: "A1"、"B2"、"C3"
@@ -15,19 +15,28 @@ import '../models/position.dart';
 class VoiceCommandParser {
   // 中文数字映射
   static const Map<String, int> _chineseNumbers = {
-    '零': 0, '〇': 0,
-    '一': 1, '1': 1,
-    '二': 2, '2': 2,
-    '三': 3, '3': 3,
-    '四': 4, '4': 4,
+    '零': 0,
+    '〇': 0,
+    '一': 1,
+    '1': 1,
+    '二': 2,
+    '2': 2,
+    '三': 3,
+    '3': 3,
+    '四': 4,
+    '4': 4,
   };
 
   // 英文字母映射（A-D对应0-3）
   static const Map<String, int> _letterCoords = {
-    'A': 0, 'a': 0,
-    'B': 1, 'b': 1,
-    'C': 2, 'c': 2,
-    'D': 3, 'd': 3,
+    'A': 0,
+    'a': 0,
+    'B': 1,
+    'b': 1,
+    'C': 2,
+    'c': 2,
+    'D': 3,
+    'd': 3,
   };
 
   // 方向坐标映射
@@ -42,7 +51,7 @@ class VoiceCommandParser {
   };
 
   /// 解析语音指令为Position
-  /// 
+  ///
   /// 返回null表示解析失败
   static Position? parse(String command) {
     if (command.isEmpty) {
@@ -101,8 +110,10 @@ class VoiceCommandParser {
     for (final pattern in patterns) {
       final match = pattern.firstMatch(command);
       if (match != null) {
-        final x = _chineseNumbers[match.group(1)] ?? int.tryParse(match.group(1)!);
-        final y = _chineseNumbers[match.group(2)] ?? int.tryParse(match.group(2)!);
+        final x =
+            _chineseNumbers[match.group(1)] ?? int.tryParse(match.group(1)!);
+        final y =
+            _chineseNumbers[match.group(2)] ?? int.tryParse(match.group(2)!);
 
         if (x != null && y != null && _isValidCoord(x) && _isValidCoord(y)) {
           return Position(x, y);
@@ -121,7 +132,7 @@ class VoiceCommandParser {
     if (match != null) {
       final x = _letterCoords[match.group(1)];
       final y = int.tryParse(match.group(2)!) != null
-          ? int.parse(match.group(2)!) - 1  // 用户输入1-4，转为0-3
+          ? int.parse(match.group(2)!) - 1 // 用户输入1-4，转为0-3
           : null;
 
       if (x != null && y != null && _isValidCoord(x) && _isValidCoord(y)) {
@@ -157,7 +168,7 @@ class VoiceCommandParser {
   }
 
   /// 模糊匹配
-  /// 
+  ///
   /// 当精确解析失败时，返回可能的候选位置列表
   static List<Position> fuzzyMatch(String command) {
     final candidates = <Position>[];
@@ -192,12 +203,10 @@ class VoiceCommandParser {
     final y = position.y;
 
     // 转换为中文数字
-    final xChinese = _chineseNumbers.entries
-        .firstWhere((e) => e.value == x)
-        .key;
-    final yChinese = _chineseNumbers.entries
-        .firstWhere((e) => e.value == y)
-        .key;
+    final xChinese =
+        _chineseNumbers.entries.firstWhere((e) => e.value == x).key;
+    final yChinese =
+        _chineseNumbers.entries.firstWhere((e) => e.value == y).key;
 
     return '横$xChinese竖$yChinese';
   }

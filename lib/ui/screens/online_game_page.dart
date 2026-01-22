@@ -10,13 +10,13 @@ import '../../models/piece_type.dart';
 import '../../models/position.dart';
 
 /// 在线对战游戏页面
-/// 
+///
 /// 功能：
 /// - 显示在线对战棋盘
 /// - 显示对手信息和连接状态
 /// - 处理在线移动逻辑
 /// - 显示游戏结果
-/// 
+///
 /// 注意：这是基础框架版本，实际棋盘组件需要复用现有的ThemedBoardWidget
 class OnlineGamePage extends StatelessWidget {
   final String playerId;
@@ -79,9 +79,9 @@ class OnlineGamePage extends StatelessWidget {
       children: [
         // 对手信息栏
         _buildOpponentInfo(context, state),
-        
+
         const Divider(height: 1),
-        
+
         // 棋盘区域 - 集成真实的ThemedBoardWidget组件
         Expanded(
           child: Center(
@@ -90,7 +90,7 @@ class OnlineGamePage extends StatelessWidget {
                 final size = constraints.maxWidth < constraints.maxHeight
                     ? constraints.maxWidth * 0.9
                     : constraints.maxHeight * 0.9;
-                
+
                 return Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -102,13 +102,13 @@ class OnlineGamePage extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
-                          color: state.isLocalPlayerTurn 
-                              ? Colors.blue 
+                          color: state.isLocalPlayerTurn
+                              ? Colors.blue
                               : Colors.grey,
                         ),
                       ),
                     ),
-                    
+
                     // 棋盘组件
                     SizedBox(
                       width: size,
@@ -121,10 +121,11 @@ class OnlineGamePage extends StatelessWidget {
                         lastMoveTo: state.lastMove?.to,
                         capturedPiecePosition: state.lastMove?.capturedPiece,
                         flipBoard: state.localPlayerColor == PieceType.white,
-                        onPositionTapped: (position) => _handlePositionTapped(context, state, position),
+                        onPositionTapped: (position) =>
+                            _handlePositionTapped(context, state, position),
                       ),
                     ),
-                    
+
                     // 对局信息
                     Padding(
                       padding: const EdgeInsets.only(top: 16),
@@ -142,9 +143,9 @@ class OnlineGamePage extends StatelessWidget {
             ),
           ),
         ),
-        
+
         const Divider(height: 1),
-        
+
         // 本地玩家信息栏
         _buildLocalPlayerInfo(context, state),
       ],
@@ -184,13 +185,15 @@ class OnlineGamePage extends StatelessWidget {
           ),
         ),
         const Divider(height: 1),
-        _buildLocalPlayerInfoFromMatch(context, state.match, state.localPlayerId),
+        _buildLocalPlayerInfoFromMatch(
+            context, state.match, state.localPlayerId,),
       ],
     );
   }
 
   /// 构建断线视图
-  Widget _buildDisconnectedView(BuildContext context, OpponentDisconnected state) {
+  Widget _buildDisconnectedView(
+      BuildContext context, OpponentDisconnected state,) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -233,17 +236,18 @@ class OnlineGamePage extends StatelessWidget {
   Widget _buildOpponentInfo(BuildContext context, dynamic state) {
     String opponentId = '';
     PieceType opponentColor = PieceType.white;
-    
+
     if (state is OnlinePlaying) {
       opponentId = state.opponentId;
-      opponentColor = state.localPlayerColor == PieceType.black 
-          ? PieceType.white 
+      opponentColor = state.localPlayerColor == PieceType.black
+          ? PieceType.white
           : PieceType.black;
     } else if (state is WaitingOpponent) {
       opponentId = state.match.getOpponentId(state.localPlayerId) ?? '';
-      opponentColor = state.match.getPlayerColor(state.localPlayerId) == PieceType.black
-          ? PieceType.white
-          : PieceType.black;
+      opponentColor =
+          state.match.getPlayerColor(state.localPlayerId) == PieceType.black
+              ? PieceType.white
+              : PieceType.black;
     }
 
     return Container(
@@ -255,7 +259,9 @@ class OnlineGamePage extends StatelessWidget {
             width: 50,
             height: 50,
             decoration: BoxDecoration(
-              color: opponentColor == PieceType.black ? Colors.black : Colors.white,
+              color: opponentColor == PieceType.black
+                  ? Colors.black
+                  : Colors.white,
               shape: BoxShape.circle,
               border: Border.all(color: Colors.grey[300]!, width: 2),
             ),
@@ -303,12 +309,13 @@ class OnlineGamePage extends StatelessWidget {
             width: 50,
             height: 50,
             decoration: BoxDecoration(
-              color: state.localPlayerColor == PieceType.black 
-                  ? Colors.black 
+              color: state.localPlayerColor == PieceType.black
+                  ? Colors.black
                   : Colors.white,
               shape: BoxShape.circle,
               border: Border.all(
-                color: state.isLocalPlayerTurn ? Colors.blue : Colors.grey[300]!,
+                color:
+                    state.isLocalPlayerTurn ? Colors.blue : Colors.grey[300]!,
                 width: state.isLocalPlayerTurn ? 3 : 2,
               ),
             ),
@@ -329,8 +336,12 @@ class OnlineGamePage extends StatelessWidget {
                   state.isLocalPlayerTurn ? '你的回合' : '等待中',
                   style: TextStyle(
                     fontSize: 12,
-                    color: state.isLocalPlayerTurn ? Colors.blue : Colors.grey[600],
-                    fontWeight: state.isLocalPlayerTurn ? FontWeight.w500 : FontWeight.normal,
+                    color: state.isLocalPlayerTurn
+                        ? Colors.blue
+                        : Colors.grey[600],
+                    fontWeight: state.isLocalPlayerTurn
+                        ? FontWeight.w500
+                        : FontWeight.normal,
                   ),
                 ),
               ],
@@ -357,7 +368,8 @@ class OnlineGamePage extends StatelessWidget {
             width: 50,
             height: 50,
             decoration: BoxDecoration(
-              color: localColor == PieceType.black ? Colors.black : Colors.white,
+              color:
+                  localColor == PieceType.black ? Colors.black : Colors.white,
               shape: BoxShape.circle,
               border: Border.all(color: Colors.grey[300]!, width: 2),
             ),
@@ -397,7 +409,9 @@ class OnlineGamePage extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
-              state.isLocalPlayerWin ? Icons.emoji_events : Icons.sentiment_dissatisfied,
+              state.isLocalPlayerWin
+                  ? Icons.emoji_events
+                  : Icons.sentiment_dissatisfied,
               size: 80,
               color: state.isLocalPlayerWin ? Colors.amber : Colors.grey,
             ),
@@ -451,7 +465,8 @@ class OnlineGamePage extends StatelessWidget {
   }
 
   /// 处理棋盘点击事件
-  void _handlePositionTapped(BuildContext context, OnlinePlaying state, Position position) {
+  void _handlePositionTapped(
+      BuildContext context, OnlinePlaying state, Position position,) {
     // 如果不是本地玩家回合，忽略点击
     if (!state.isLocalPlayerTurn) {
       return;
@@ -459,7 +474,7 @@ class OnlineGamePage extends StatelessWidget {
 
     // TODO: 实现完整的棋子选中和移动逻辑
     // 这里仅作示例，实际需要根据业务逻辑完善
-    
+
     // 临时方案：显示提示
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(

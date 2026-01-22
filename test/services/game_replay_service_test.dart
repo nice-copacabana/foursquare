@@ -1,5 +1,5 @@
 /// Game Replay Service Test - 游戏回放服务测试
-/// 
+///
 /// 测试范围：
 /// - 回放初始化
 /// - 前进/后退导航
@@ -21,7 +21,7 @@ void main() {
 
     setUp(() {
       service = GameReplayService();
-      
+
       // 创建示例移动历史
       sampleMoves = [
         Move.now(
@@ -81,7 +81,7 @@ void main() {
       service.startReplay(sampleMoves);
       service.goForward();
       service.goForward();
-      
+
       final state = service.goBackward();
 
       expect(state.currentStep, 0);
@@ -100,7 +100,7 @@ void main() {
     test('goToStart应该跳转到初始状态', () {
       service.startReplay(sampleMoves);
       service.goToEnd();
-      
+
       final state = service.goToStart();
 
       expect(state.currentStep, -1);
@@ -110,7 +110,7 @@ void main() {
 
     test('goToEnd应该跳转到最后一步', () {
       service.startReplay(sampleMoves);
-      
+
       final state = service.goToEnd();
 
       expect(state.currentStep, 2);
@@ -120,7 +120,7 @@ void main() {
 
     test('goToStep应该跳转到指定步骤', () {
       service.startReplay(sampleMoves);
-      
+
       final state = service.goToStep(1);
 
       expect(state.currentStep, 1);
@@ -130,7 +130,7 @@ void main() {
     test('goToStep超出范围时不应该改变状态', () {
       service.startReplay(sampleMoves);
       final beforeState = service.state;
-      
+
       final state = service.goToStep(10);
 
       expect(state.currentStep, beforeState.currentStep);
@@ -194,7 +194,7 @@ void main() {
 
       service.goForward();
       final afterForwardState = service.state;
-      
+
       service.goForward();
       service.goBackward();
       final afterBackwardState = service.state;

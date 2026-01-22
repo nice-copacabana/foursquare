@@ -11,7 +11,7 @@ class ErrorHandler {
   /// 显示错误提示Toast
   static void showErrorToast(BuildContext context, dynamic error) {
     final message = _getErrorMessage(error);
-    
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
@@ -173,39 +173,39 @@ class ErrorHandler {
     if (error is InvalidMoveException) {
       return _getInvalidMoveMessage(error.reason);
     }
-    
+
     if (error is GameOverException) {
       return '游戏已结束，无法继续操作';
     }
-    
+
     if (error is ConnectionFailedException) {
       return '无法连接到服务器，请检查网络连接';
     }
-    
+
     if (error is TimeoutException) {
       return '连接超时，请稍后重试';
     }
-    
+
     if (error is SaveFailedException) {
       return '保存失败，请重试';
     }
-    
+
     if (error is LoadFailedException) {
       return '加载失败，数据可能已损坏';
     }
-    
+
     if (error is NoAvailableMoveException) {
       return 'AI无可用移动，游戏结束';
     }
-    
+
     if (error is AudioFileNotFoundException) {
       return '音频文件缺失: ${(error).fileName}';
     }
-    
+
     if (error is AppException) {
       return error.message;
     }
-    
+
     // 默认错误消息
     return '操作失败: ${error.toString()}';
   }
@@ -214,27 +214,27 @@ class ErrorHandler {
   static String _getInvalidMoveMessage(String reason) {
     // 根据reason返回更友好的提示
     final reasonLower = reason.toLowerCase();
-    
+
     if (reasonLower.contains('adjacent') || reasonLower.contains('相邻')) {
       return '只能移动到相邻的空位';
     }
-    
+
     if (reasonLower.contains('occupied') || reasonLower.contains('已占')) {
       return '目标位置已有棋子';
     }
-    
+
     if (reasonLower.contains('diagonal') || reasonLower.contains('斜')) {
       return '不能斜向移动';
     }
-    
+
     if (reasonLower.contains('empty') || reasonLower.contains('空')) {
       return '请选择己方棋子';
     }
-    
+
     if (reasonLower.contains('wrong player') || reasonLower.contains('不是你的')) {
       return '请选择己方棋子';
     }
-    
+
     return reason;
   }
 

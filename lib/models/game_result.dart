@@ -8,19 +8,19 @@ import 'piece_type.dart';
 enum GameStatus {
   /// 游戏进行中
   ongoing,
-  
+
   /// 黑方胜利
   blackWin,
-  
+
   /// 白方胜利
   whiteWin,
-  
+
   /// 平局
   draw,
-  
+
   /// 超时
   timeout,
-  
+
   /// 弃局
   abandoned,
 }
@@ -51,7 +51,7 @@ extension GameStatusExtension on GameStatus {
 }
 
 /// 游戏结果
-/// 
+///
 /// 记录游戏结束时的完整信息，包括：
 /// - 游戏状态
 /// - 胜者
@@ -61,16 +61,16 @@ extension GameStatusExtension on GameStatus {
 class GameResult extends Equatable {
   /// 游戏状态
   final GameStatus status;
-  
+
   /// 胜者（可能为null，如弃局）
   final PieceType? winner;
-  
+
   /// 胜负原因
   final String reason;
-  
+
   /// 总步数
   final int moveCount;
-  
+
   /// 对局时长
   final Duration duration;
 

@@ -198,8 +198,7 @@ class OnlineGameOver extends OnlineGameState {
       ];
 
   @override
-  String toString() =>
-      'OnlineGameOver(winnerId: $winnerId, reason: $reason)';
+  String toString() => 'OnlineGameOver(winnerId: $winnerId, reason: $reason)';
 }
 
 /// 连接错误状态

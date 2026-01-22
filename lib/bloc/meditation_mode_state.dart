@@ -25,7 +25,7 @@ class MeditationInitial extends MeditationModeState {
 class VoiceGuiding extends MeditationModeState {
   /// 引导文本
   final String guidanceText;
-  
+
   /// 步骤编号
   final int stepNumber;
 
@@ -42,13 +42,13 @@ class VoiceGuiding extends MeditationModeState {
 class WaitingVoiceInput extends MeditationModeState {
   /// 当前玩家
   final PieceType currentPlayer;
-  
+
   /// 当前棋盘
   final BoardState board;
-  
+
   /// 已选中的棋子位置（如果有）
   final dynamic selectedPosition;
-  
+
   /// 移动历史
   final List<Move> moveHistory;
 
@@ -60,20 +60,21 @@ class WaitingVoiceInput extends MeditationModeState {
   });
 
   @override
-  List<Object?> get props => [currentPlayer, board, selectedPosition, moveHistory];
+  List<Object?> get props =>
+      [currentPlayer, board, selectedPosition, moveHistory];
 }
 
 /// 处理语音命令中
 class ProcessingVoiceCommand extends MeditationModeState {
   /// 识别的文本
   final String recognizedText;
-  
+
   /// 置信度
   final double confidence;
-  
+
   /// 当前棋盘
   final BoardState board;
-  
+
   /// 当前玩家
   final PieceType currentPlayer;
 
@@ -92,10 +93,10 @@ class ProcessingVoiceCommand extends MeditationModeState {
 class AnnouncingBoardState extends MeditationModeState {
   /// 当前棋盘
   final BoardState board;
-  
+
   /// 播报队列
   final List<String> announcementQueue;
-  
+
   /// 当前播报索引
   final int currentAnnouncementIndex;
 
@@ -106,26 +107,27 @@ class AnnouncingBoardState extends MeditationModeState {
   });
 
   @override
-  List<Object?> get props => [board, announcementQueue, currentAnnouncementIndex];
+  List<Object?> get props =>
+      [board, announcementQueue, currentAnnouncementIndex];
 }
 
 /// 冥想对弈中
 class MeditationPlaying extends MeditationModeState {
   /// 当前棋盘
   final BoardState board;
-  
+
   /// 移动历史
   final List<Move> moveHistory;
-  
+
   /// 当前玩家
   final PieceType currentPlayer;
-  
+
   /// 是否AI对手
   final bool isAiOpponent;
-  
+
   /// AI难度
   final int aiDifficulty;
-  
+
   /// 最后播报的文本
   final String? lastAnnouncement;
 
@@ -172,10 +174,10 @@ class MeditationPlaying extends MeditationModeState {
 class AiThinking extends MeditationModeState {
   /// 当前棋盘
   final BoardState board;
-  
+
   /// 移动历史
   final List<Move> moveHistory;
-  
+
   /// AI难度
   final int aiDifficulty;
 
@@ -193,13 +195,13 @@ class AiThinking extends MeditationModeState {
 class MeditationPaused extends MeditationModeState {
   /// 暂停原因
   final String reason;
-  
+
   /// 暂停前的棋盘
   final BoardState board;
-  
+
   /// 暂停前的移动历史
   final List<Move> moveHistory;
-  
+
   /// 暂停前的当前玩家
   final PieceType currentPlayer;
 
@@ -218,13 +220,13 @@ class MeditationPaused extends MeditationModeState {
 class MeditationGameOver extends MeditationModeState {
   /// 胜者
   final PieceType? winner;
-  
+
   /// 结束原因
   final String reason;
-  
+
   /// 最终棋盘
   final BoardState finalBoard;
-  
+
   /// 移动历史
   final List<Move> moveHistory;
 
@@ -243,10 +245,10 @@ class MeditationGameOver extends MeditationModeState {
 class MeditationError extends MeditationModeState {
   /// 错误消息
   final String errorMessage;
-  
+
   /// 错误类型
   final String errorType;
-  
+
   /// 是否可恢复
   final bool recoverable;
 

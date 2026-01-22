@@ -11,7 +11,7 @@ import '../../engine/move_validator.dart';
 import '../widgets/themed_board_widget.dart';
 
 /// 游戏测试页面
-/// 
+///
 /// 功能：
 /// - 显示可交互的棋盘
 /// - 支持点击选择和移动棋子
@@ -28,11 +28,11 @@ class _GameTestPageState extends State<GameTestPage> {
   late GameEngine _engine;
   late MoveValidator _validator;
   late BoardState _board;
-  
+
   Position? _selectedPiece;
   List<Position> _validMoves = [];
   Move? _lastMove;
-  
+
   final List<String> _logs = [];
 
   @override
@@ -49,7 +49,7 @@ class _GameTestPageState extends State<GameTestPage> {
     _validMoves = [];
     _lastMove = null;
     _logs.clear();
-    
+
     _engine.startNewGame();
     _addLog('游戏开始！黑方先手');
   }
@@ -66,13 +66,13 @@ class _GameTestPageState extends State<GameTestPage> {
   String _formatTime() {
     final now = DateTime.now();
     return '${now.hour.toString().padLeft(2, '0')}:'
-           '${now.minute.toString().padLeft(2, '0')}:'
-           '${now.second.toString().padLeft(2, '0')}';
+        '${now.minute.toString().padLeft(2, '0')}:'
+        '${now.second.toString().padLeft(2, '0')}';
   }
 
   void _handlePositionTapped(Position pos) {
     final piece = _board.getPiece(pos);
-    
+
     // 如果点击的是当前玩家的棋子，选中它
     if (piece == _board.currentPlayer) {
       setState(() {
@@ -99,7 +99,7 @@ class _GameTestPageState extends State<GameTestPage> {
 
   void _executeMove(Position from, Position to) {
     final result = _engine.executeMove(_board, from, to);
-    
+
     if (result.success && result.newBoard != null) {
       setState(() {
         _board = result.newBoard!;
@@ -107,13 +107,13 @@ class _GameTestPageState extends State<GameTestPage> {
         _selectedPiece = null;
         _validMoves = [];
       });
-      
+
       _addLog('✓ ${result.move!.player.getDisplayName()} 移动: $from → $to');
-      
+
       if (result.captured != null) {
         _addLog('  ⭐ 吃子! 移除 ${result.captured}');
       }
-      
+
       if (result.gameOver && result.gameResult != null) {
         _showGameOverDialog(result.gameResult!);
       }
@@ -125,7 +125,7 @@ class _GameTestPageState extends State<GameTestPage> {
   void _showGameOverDialog(dynamic gameResult) {
     _addLog('━━━ 游戏结束 ━━━');
     _addLog(gameResult.status.getDisplayText());
-    
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -210,9 +210,9 @@ class _GameTestPageState extends State<GameTestPage> {
       children: [
         // 顶部玩家信息
         _buildPlayerInfo(isTop: true),
-        
+
         const SizedBox(height: 20),
-        
+
         // 棋盘
         Expanded(
           child: Center(
@@ -227,12 +227,12 @@ class _GameTestPageState extends State<GameTestPage> {
             ),
           ),
         ),
-        
+
         const SizedBox(height: 20),
-        
+
         // 底部玩家信息
         _buildPlayerInfo(isTop: false),
-        
+
         // 操作日志
         _buildLogPanel(),
       ],
@@ -265,7 +265,7 @@ class _GameTestPageState extends State<GameTestPage> {
             ],
           ),
         ),
-        
+
         // 右侧：日志
         Expanded(
           flex: 1,
@@ -280,10 +280,11 @@ class _GameTestPageState extends State<GameTestPage> {
     final player = isTop ? PieceType.black : PieceType.white;
     final isCurrent = _board.currentPlayer == player;
     final pieceCount = _board.getPieceCount(player);
-    
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-      color: isCurrent ? Colors.amber.withValues(alpha: 0.3) : Colors.transparent,
+      color:
+          isCurrent ? Colors.amber.withValues(alpha: 0.3) : Colors.transparent,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -293,7 +294,8 @@ class _GameTestPageState extends State<GameTestPage> {
                 width: 30,
                 height: 30,
                 decoration: BoxDecoration(
-                  color: player == PieceType.black ? Colors.black : Colors.white,
+                  color:
+                      player == PieceType.black ? Colors.black : Colors.white,
                   shape: BoxShape.circle,
                   border: Border.all(color: Colors.grey, width: 2),
                 ),

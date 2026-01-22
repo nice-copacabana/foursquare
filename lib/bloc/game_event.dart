@@ -1,9 +1,9 @@
 /// Game Events - 游戏事件定义
-/// 
+///
 /// 职责：
 /// - 定义所有可能的游戏事件
 /// - 为BLoC提供类型安全的事件接口
-/// 
+///
 /// 事件类型：
 /// - SelectPiece: 选中棋子
 /// - MovePiece: 移动棋子
@@ -25,7 +25,7 @@ abstract class GameEvent extends Equatable {
 }
 
 /// 选中棋子事件
-/// 
+///
 /// 当用户点击己方棋子时触发
 class SelectPieceEvent extends GameEvent {
   final Position position;
@@ -40,7 +40,7 @@ class SelectPieceEvent extends GameEvent {
 }
 
 /// 移动棋子事件
-/// 
+///
 /// 当用户选中棋子后点击合法位置时触发
 class MovePieceEvent extends GameEvent {
   final Position from;
@@ -59,7 +59,7 @@ class MovePieceEvent extends GameEvent {
 }
 
 /// 取消选中事件
-/// 
+///
 /// 当用户点击空白处或已选中的棋子时触发
 class DeselectPieceEvent extends GameEvent {
   const DeselectPieceEvent();
@@ -69,7 +69,7 @@ class DeselectPieceEvent extends GameEvent {
 }
 
 /// 重新开始游戏事件
-/// 
+///
 /// 重置当前游戏到初始状态，保留游戏模式
 class RestartGameEvent extends GameEvent {
   const RestartGameEvent();
@@ -79,7 +79,7 @@ class RestartGameEvent extends GameEvent {
 }
 
 /// 开始新游戏事件
-/// 
+///
 /// 可以选择不同的游戏模式
 class NewGameEvent extends GameEvent {
   final GameMode mode;
@@ -98,7 +98,7 @@ class NewGameEvent extends GameEvent {
 }
 
 /// 撤销移动事件
-/// 
+///
 /// 撤销上一步移动（双人模式可能需要撤销2步，AI模式撤销1步）
 class UndoMoveEvent extends GameEvent {
   final int steps; // 撤销步数，默认1步
@@ -113,7 +113,7 @@ class UndoMoveEvent extends GameEvent {
 }
 
 /// 重做移动事件
-/// 
+///
 /// 重做之前撤销的移动
 class RedoMoveEvent extends GameEvent {
   final int steps; // 重做步数，默认1步
@@ -128,7 +128,7 @@ class RedoMoveEvent extends GameEvent {
 }
 
 /// 确认移动事件
-/// 
+///
 /// 当启用移动确认机制时，用户需要确认移动
 class ConfirmMoveEvent extends GameEvent {
   const ConfirmMoveEvent();
@@ -138,7 +138,7 @@ class ConfirmMoveEvent extends GameEvent {
 }
 
 /// 取消移动事件
-/// 
+///
 /// 取消当前待确认的移动
 class CancelMoveEvent extends GameEvent {
   const CancelMoveEvent();
@@ -156,7 +156,7 @@ class SwitchPlayerEvent extends GameEvent {
 }
 
 /// AI移动事件
-/// 
+///
 /// 触发AI计算并执行移动
 class AIPlayEvent extends GameEvent {
   const AIPlayEvent();
@@ -182,7 +182,7 @@ class LoadGameEvent extends GameEvent {
 }
 
 /// 设置更新事件
-/// 
+///
 /// 当游戏设置改变时触发
 class SettingsChangedEvent extends GameEvent {
   final bool? soundEnabled;
@@ -215,7 +215,7 @@ class SettingsChangedEvent extends GameEvent {
 // Task: 添加语音控制相关事件
 
 /// 切换语音控制事件
-/// 
+///
 /// 开启或关闭语音控制功能
 class VoiceControlToggledEvent extends GameEvent {
   final bool enabled;
@@ -230,7 +230,7 @@ class VoiceControlToggledEvent extends GameEvent {
 }
 
 /// 接收到语音指令事件
-/// 
+///
 /// 当语音识别到用户指令时触发
 class VoiceCommandReceivedEvent extends GameEvent {
   final String command;
@@ -245,11 +245,12 @@ class VoiceCommandReceivedEvent extends GameEvent {
   List<Object?> get props => [command, confidence];
 
   @override
-  String toString() => 'VoiceCommandReceivedEvent(command: $command, confidence: $confidence)';
+  String toString() =>
+      'VoiceCommandReceivedEvent(command: $command, confidence: $confidence)';
 }
 
 /// 语音播报请求事件
-/// 
+///
 /// 请求对某个移动进行语音播报
 class VoiceAnnouncementRequestedEvent extends GameEvent {
   final Position from;
@@ -266,7 +267,8 @@ class VoiceAnnouncementRequestedEvent extends GameEvent {
   List<Object?> get props => [from, to, isCaptureMove];
 
   @override
-  String toString() => 'VoiceAnnouncementRequestedEvent(from: $from, to: $to, capture: $isCaptureMove)';
+  String toString() =>
+      'VoiceAnnouncementRequestedEvent(from: $from, to: $to, capture: $isCaptureMove)';
 }
 
 /// 游戏模式枚举
