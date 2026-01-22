@@ -22,54 +22,51 @@ import 'package:foursquare/models/board_state.dart';
 import 'package:foursquare/models/move.dart';
 import 'package:foursquare/engine/game_engine.dart';
 import 'package:foursquare/engine/move_validator.dart';
-import 'package:foursquare/services/audio_service.dart';
-import 'package:foursquare/services/music_service.dart';
+import 'package:foursquare/services/audio_coordinator.dart' as audio;
 import 'package:foursquare/services/storage_service.dart';
+import 'package:foursquare/models/audio_settings.dart';
 
 // Mock classes
 class MockGameEngine extends Mock implements GameEngine {}
 class MockMoveValidator extends Mock implements MoveValidator {}
-class MockAudioService extends Mock implements AudioService {}
-class MockMusicService extends Mock implements MusicService {}
+class MockAudioCoordinator extends Mock implements audio.AudioCoordinator {}
 class MockStorageService extends Mock implements StorageService {}
 
 void main() {
   // 注册fallback值以支持mocktail的any()匹配器
   setUpAll(() {
-    registerFallbackValue(SoundType.move);
-    registerFallbackValue(MusicTheme.main);
+    registerFallbackValue(audio.GameEvent.pieceMoved);
+    registerFallbackValue(audio.GameScene.gameplay);
     registerFallbackValue(BoardState.initial());
     registerFallbackValue(const Position(0, 0));
+    registerFallbackValue(AudioSettings.defaultSettings);
   });
 
   group('GameBloc', () {
     late GameEngine gameEngine;
     late MoveValidator moveValidator;
-    late AudioService audioService;
-    late MusicService musicService;
+    late audio.AudioCoordinator audioCoordinator;
     late StorageService storageService;
 
     setUp(() {
       gameEngine = MockGameEngine();
       moveValidator = MockMoveValidator();
-      audioService = MockAudioService();
-      musicService = MockMusicService();
+      audioCoordinator = MockAudioCoordinator();
       storageService = MockStorageService();
 
       // 设置默认的mock行为
-      when(() => audioService.playSound(any())).thenReturn(null);
-      when(() => audioService.setEnabled(any())).thenReturn(null);
-      when(() => musicService.playMusic(any())).thenAnswer((_) async {});
-      when(() => musicService.switchTheme(any())).thenAnswer((_) async {});
-      when(() => musicService.setVolume(any())).thenAnswer((_) async {});
+      when(() => audioCoordinator.initialize()).thenAnswer((_) async {});
+      when(() => audioCoordinator.onGameEvent(any(), data: any(named: 'data'))).thenReturn(null);
+      when(() => audioCoordinator.onSceneChange(any())).thenAnswer((_) async {});
+      when(() => audioCoordinator.updateSettings(any())).thenAnswer((_) async {});
+      when(() => audioCoordinator.settings).thenReturn(AudioSettings.defaultSettings);
     });
 
     test('初始状态应该是 GameInitial', () {
       final bloc = GameBloc(
         gameEngine: gameEngine,
         moveValidator: moveValidator,
-        audioService: audioService,
-        musicService: musicService,
+        audioCoordinator: audioCoordinator,
         storageService: storageService,
       );
 
@@ -83,8 +80,7 @@ void main() {
       build: () => GameBloc(
         gameEngine: gameEngine,
         moveValidator: moveValidator,
-        audioService: audioService,
-        musicService: musicService,
+        audioCoordinator: audioCoordinator,
         storageService: storageService,
       ),
       act: (bloc) => bloc.add(const NewGameEvent(mode: GameMode.pvp)),
@@ -95,7 +91,8 @@ void main() {
             .having((s) => s.moveHistory.length, 'moveHistory', 0),
       ],
       verify: (_) {
-        verify(() => audioService.playSound(SoundType.click)).called(1);
+        verify(() => audioCoordinator.onGameEvent(audio.GameEvent.buttonClicked)).called(1);
+        verify(() => audioCoordinator.onSceneChange(audio.GameScene.gameplay)).called(1);
       },
     );
 
@@ -104,8 +101,7 @@ void main() {
       build: () => GameBloc(
         gameEngine: gameEngine,
         moveValidator: moveValidator,
-        audioService: audioService,
-        musicService: musicService,
+        audioCoordinator: audioCoordinator,
         storageService: storageService,
       ),
       seed: () => GamePlaying(
@@ -130,7 +126,8 @@ void main() {
             .having((s) => s.moveHistory.length, 'moveHistory', 0),
       ],
       verify: (_) {
-        verify(() => audioService.playSound(SoundType.click)).called(1);
+        verify(() => audioCoordinator.onGameEvent(audio.GameEvent.buttonClicked)).called(1);
+        verify(() => audioCoordinator.onSceneChange(audio.GameScene.gameplay)).called(1);
       },
     );
 
@@ -146,8 +143,7 @@ void main() {
         return GameBloc(
           gameEngine: gameEngine,
           moveValidator: moveValidator,
-          audioService: audioService,
-          musicService: musicService,
+          audioCoordinator: audioCoordinator,
           storageService: storageService,
         );
       },
@@ -163,7 +159,7 @@ void main() {
             .having((s) => s.validMoves.length, 'validMoves', 2),
       ],
       verify: (_) {
-        verify(() => audioService.playSound(SoundType.select)).called(1);
+        verify(() => audioCoordinator.onGameEvent(audio.GameEvent.pieceSelected)).called(1);
         verify(() => moveValidator.getValidMoves(any(), const Position(0, 0))).called(1);
       },
     );
@@ -173,8 +169,7 @@ void main() {
       build: () => GameBloc(
         gameEngine: gameEngine,
         moveValidator: moveValidator,
-        audioService: audioService,
-        musicService: musicService,
+        audioCoordinator: audioCoordinator,
         storageService: storageService,
       ),
       seed: () => GamePlaying(
@@ -191,8 +186,7 @@ void main() {
       build: () => GameBloc(
         gameEngine: gameEngine,
         moveValidator: moveValidator,
-        audioService: audioService,
-        musicService: musicService,
+        audioCoordinator: audioCoordinator,
         storageService: storageService,
       ),
       seed: () => GamePlaying(
@@ -235,8 +229,7 @@ void main() {
         return GameBloc(
           gameEngine: gameEngine,
           moveValidator: moveValidator,
-          audioService: audioService,
-          musicService: musicService,
+          audioCoordinator: audioCoordinator,
           storageService: storageService,
         );
       },
@@ -263,7 +256,7 @@ void main() {
       verify: (_) {
         verify(() => moveValidator.isValidMove(any(), const Position(0, 0), const Position(0, 1))).called(1);
         verify(() => gameEngine.executeMove(any(), const Position(0, 0), const Position(0, 1))).called(1);
-        verify(() => audioService.playSound(SoundType.move)).called(1);
+        verify(() => audioCoordinator.onGameEvent(audio.GameEvent.pieceMoved)).called(1);
       },
     );
 
@@ -276,8 +269,7 @@ void main() {
         return GameBloc(
           gameEngine: gameEngine,
           moveValidator: moveValidator,
-          audioService: audioService,
-          musicService: musicService,
+          audioCoordinator: audioCoordinator,
           storageService: storageService,
         );
       },
@@ -323,8 +315,7 @@ void main() {
         return GameBloc(
           gameEngine: gameEngine,
           moveValidator: moveValidator,
-          audioService: audioService,
-          musicService: musicService,
+          audioCoordinator: audioCoordinator,
           storageService: storageService,
         );
       },
@@ -343,7 +334,10 @@ void main() {
       ),
       skip: 0,
       verify: (_) {
-        verify(() => audioService.playSound(SoundType.capture)).called(1);
+        verify(() => audioCoordinator.onGameEvent(
+          audio.GameEvent.pieceCaptured, 
+          data: any(named: 'data'),
+        )).called(1);
       },
     );
 
@@ -371,8 +365,7 @@ void main() {
         return GameBloc(
           gameEngine: gameEngine,
           moveValidator: moveValidator,
-          audioService: audioService,
-          musicService: musicService,
+          audioCoordinator: audioCoordinator,
           storageService: storageService,
         );
       },
@@ -401,7 +394,7 @@ void main() {
             .having((s) => s.moveHistory.length, 'moveHistory', 0),
       ],
       verify: (_) {
-        verify(() => audioService.playSound(SoundType.click)).called(1);
+        verify(() => audioCoordinator.onGameEvent(audio.GameEvent.buttonClicked)).called(1);
       },
     );
 
@@ -410,15 +403,14 @@ void main() {
       build: () => GameBloc(
         gameEngine: gameEngine,
         moveValidator: moveValidator,
-        audioService: audioService,
-        musicService: musicService,
+        audioCoordinator: audioCoordinator,
         storageService: storageService,
       ),
       act: (bloc) => bloc.add(
         const SettingsChangedEvent(soundEnabled: false),
       ),
       verify: (_) {
-        verify(() => audioService.setEnabled(false)).called(1);
+        verify(() => audioCoordinator.updateSettings(any())).called(1);
       },
     );
   });

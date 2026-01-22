@@ -53,7 +53,7 @@ void main() {
 
   group('音乐主题类型', () {
     test('MusicTheme枚举应包含所有主题', () {
-      final allThemes = MusicTheme.values;
+      const allThemes = MusicTheme.values;
       
       expect(allThemes.contains(MusicTheme.main), true);
       expect(allThemes.contains(MusicTheme.gameplay), true);
@@ -248,7 +248,7 @@ void main() {
         service.switchTheme(MusicTheme.main);
         service.switchTheme(MusicTheme.gameplay);
         service.switchTheme(MusicTheme.victory);
-      }, returnsNormally);
+      }, returnsNormally,);
     });
   });
 }

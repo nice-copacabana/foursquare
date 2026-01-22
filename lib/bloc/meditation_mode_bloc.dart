@@ -4,6 +4,7 @@
 library;
 
 import 'dart:async';
+import '../services/logger_service.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../models/board_state.dart';
 import '../models/piece_type.dart';
@@ -88,7 +89,7 @@ class MeditationModeBloc extends Bloc<MeditationModeEvent, MeditationModeState> 
     emit(const VoiceGuiding(
       guidanceText: guidanceText,
       stepNumber: 1,
-    ));
+    ),);
 
     // 播报引导文本
     await _voiceSynthesis.speak(guidanceText);
@@ -98,7 +99,7 @@ class MeditationModeBloc extends Bloc<MeditationModeEvent, MeditationModeState> 
       currentPlayer: PieceType.black,
       board: BoardState.initial(),
       moveHistory: const [],
-    ));
+    ),);
 
     // 开始监听语音输入
     _startListening();
@@ -117,7 +118,7 @@ class MeditationModeBloc extends Bloc<MeditationModeEvent, MeditationModeState> 
       confidence: event.confidence,
       board: currentState.board,
       currentPlayer: currentState.currentPlayer,
-    ));
+    ),);
 
     // 解析语音命令
     final position = VoiceCommandParser.parse(event.recognizedText);
@@ -130,13 +131,13 @@ class MeditationModeBloc extends Bloc<MeditationModeEvent, MeditationModeState> 
       add(VoiceCommandParsed(
         isQuery: true,
         queryType: queryType,
-      ));
+      ),);
     } else if (position != null) {
       // 处理落子指令
       add(VoiceCommandParsed(
         position: position,
         isQuery: false,
-      ));
+      ),);
     } else {
       // 识别失败或无效指令
       await _announceError('没有理解您的指令，您可以说横几竖几，或者说我的棋子在哪');
@@ -210,7 +211,7 @@ class MeditationModeBloc extends Bloc<MeditationModeEvent, MeditationModeState> 
       board: currentState.board,
       selectedPosition: _selectedPosition,
       moveHistory: const [],
-    ));
+    ),);
     
     _startListening();
   }
@@ -234,7 +235,7 @@ class MeditationModeBloc extends Bloc<MeditationModeEvent, MeditationModeState> 
           currentPlayer: currentPlayer,
           board: board,
           moveHistory: const [],
-        ));
+        ),);
         _startListening();
         return;
       }
@@ -250,7 +251,7 @@ class MeditationModeBloc extends Bloc<MeditationModeEvent, MeditationModeState> 
           currentPlayer: currentPlayer,
           board: board,
           moveHistory: const [],
-        ));
+        ),);
         _startListening();
         return;
       }
@@ -261,7 +262,7 @@ class MeditationModeBloc extends Bloc<MeditationModeEvent, MeditationModeState> 
         board: board,
         selectedPosition: position,
         moveHistory: const [],
-      ));
+      ),);
       _startListening();
       return;
     }
@@ -278,7 +279,7 @@ class MeditationModeBloc extends Bloc<MeditationModeEvent, MeditationModeState> 
         board: board,
         selectedPosition: from,
         moveHistory: const [],
-      ));
+      ),);
       _startListening();
       return;
     }
@@ -293,7 +294,7 @@ class MeditationModeBloc extends Bloc<MeditationModeEvent, MeditationModeState> 
         currentPlayer: currentPlayer,
         board: board,
         moveHistory: const [],
-      ));
+      ),);
       _startListening();
       return;
     }
@@ -316,7 +317,7 @@ class MeditationModeBloc extends Bloc<MeditationModeEvent, MeditationModeState> 
         reason: _getGameOverReason(result.gameResult!.status),
         finalBoard: result.newBoard!,
         moveHistory: const [],
-      ));
+      ),);
       
       await _voiceSynthesis.speak(_buildGameOverAnnouncement(result.gameResult!));
       return;
@@ -334,7 +335,7 @@ class MeditationModeBloc extends Bloc<MeditationModeEvent, MeditationModeState> 
           ? (currentState as WaitingVoiceInput).selectedPosition != null 
           : true,
       lastAnnouncement: announcement,
-    ));
+    ),);
 
     // 如果是AI回合，触发AI思考
     final playingState = state as MeditationPlaying;
@@ -346,7 +347,7 @@ class MeditationModeBloc extends Bloc<MeditationModeEvent, MeditationModeState> 
         currentPlayer: nextPlayer,
         board: newBoard,
         moveHistory: const [],
-      ));
+      ),);
       _startListening();
     }
   }
@@ -362,7 +363,7 @@ class MeditationModeBloc extends Bloc<MeditationModeEvent, MeditationModeState> 
       board: playingState.board,
       moveHistory: playingState.moveHistory,
       aiDifficulty: playingState.aiDifficulty,
-    ));
+    ),);
 
     // AI计算最佳移动
     final aiDifficulty = _getAIDifficulty(playingState.aiDifficulty);
@@ -443,7 +444,7 @@ class MeditationModeBloc extends Bloc<MeditationModeEvent, MeditationModeState> 
         reason: _getGameOverReason(result.gameResult!.status),
         finalBoard: result.newBoard!,
         moveHistory: thinkingState.moveHistory,
-      ));
+      ),);
       
       await _voiceSynthesis.speak(_buildGameOverAnnouncement(result.gameResult!));
       return;
@@ -454,7 +455,7 @@ class MeditationModeBloc extends Bloc<MeditationModeEvent, MeditationModeState> 
       currentPlayer: PieceType.black,
       board: result.newBoard!,
       moveHistory: thinkingState.moveHistory,
-    ));
+    ),);
     
     _startListening();
   }
@@ -531,11 +532,11 @@ class MeditationModeBloc extends Bloc<MeditationModeEvent, MeditationModeState> 
           add(VoiceInputReceived(
             recognizedText: result.text,
             confidence: result.confidence,
-          ));
+          ),);
         }
       },
       onError: (error) {
-        print('[MeditationModeBloc] 语音识别错误: $error');
+        logger.error('[MeditationModeBloc] 语音识别错误', 'MeditationModeBloc', error);
       },
     );
   }

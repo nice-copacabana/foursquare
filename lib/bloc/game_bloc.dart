@@ -16,7 +16,6 @@ library;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../models/board_state.dart';
 import '../models/piece_type.dart';
-import '../models/position.dart';
 import '../models/game_result.dart';
 import '../models/game_save.dart';
 import '../engine/game_engine.dart';
@@ -28,7 +27,6 @@ import '../services/logger_service.dart';
 // import '../services/voice_synthesis_service.dart'; // 暂时禁用
 import '../ai/ai_player.dart';
 import '../ai/minimax_ai.dart';
-import '../ai/voice_command_parser.dart';
 import 'game_event.dart';
 import 'game_state.dart';
 import 'dart:math' as math;
@@ -216,7 +214,7 @@ class GameBloc extends Bloc<GameEvent, GameState> {
       } else if (winner != null) {
         _audioCoordinator.onGameEvent(
           audio.GameEvent.gameWon,
-          data: {'player': winner!.getDisplayName()},
+          data: {'player': winner.getDisplayName()},
         );
       }
 
@@ -264,7 +262,7 @@ class GameBloc extends Bloc<GameEvent, GameState> {
         from: event.from,
         to: event.to,
         isCaptureMove: result.captured != null,
-      ));
+      ),);
     }
   }
 

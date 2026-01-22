@@ -162,7 +162,7 @@ class OnlineGameBloc extends Bloc<OnlineGameEvent, OnlineGameState> {
       emit(OnlineGameError(
         message: '无法连接到服务器',
         timestamp: DateTime.now(),
-      ));
+      ),);
       return;
     }
 

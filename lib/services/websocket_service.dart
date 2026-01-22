@@ -6,7 +6,6 @@ import 'package:socket_io_client/socket_io_client.dart' as IO;
 import '../models/websocket_message.dart';
 import '../models/message_type.dart';
 import '../models/move.dart';
-import '../constants/network_constants.dart';
 
 /// WebSocket连接状态
 enum ConnectionState {
@@ -69,7 +68,7 @@ class WebSocketService {
       _socket = IO.io(serverUrl, IO.OptionBuilder()
           .setTransports(['websocket'])
           .disableAutoConnect()
-          .build());
+          .build(),);
 
       _setupListeners();
       _socket!.connect();
@@ -136,7 +135,7 @@ class WebSocketService {
           type: MessageType.move,
           matchId: map['matchId'],
           payload: {
-            'move': map
+            'move': map,
           },
           timestamp: DateTime.now(),
         );
@@ -159,8 +158,8 @@ class WebSocketService {
       final msg = WebSocketMessage(
           type: MessageType.disconnect,
           matchId: map['matchId'],
-          payload: {},
-          timestamp: DateTime.now()
+          payload: const {},
+          timestamp: DateTime.now(),
       );
       _messageController.add(msg);
     });
@@ -177,7 +176,7 @@ class WebSocketService {
               'winnerId': map['winnerId'],
               'reason': map['reason'] ?? 'server_decision',
             },
-            timestamp: DateTime.now()
+            timestamp: DateTime.now(),
          );
          _messageController.add(msg);
        } catch (e) {

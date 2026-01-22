@@ -15,7 +15,6 @@ import '../models/board_state.dart';
 import '../models/piece_type.dart';
 import '../models/position.dart';
 import '../engine/game_engine.dart';
-import '../constants/game_constants.dart';
 import 'ai_player.dart';
 import 'evaluation.dart';
 

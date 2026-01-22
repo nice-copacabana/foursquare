@@ -199,7 +199,7 @@ class ErrorHandler {
     }
     
     if (error is AudioFileNotFoundException) {
-      return '音频文件缺失: ${(error as AudioFileNotFoundException).fileName}';
+      return '音频文件缺失: ${(error).fileName}';
     }
     
     if (error is AppException) {

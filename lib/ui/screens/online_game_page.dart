@@ -8,7 +8,6 @@ import '../../bloc/online_game_event.dart';
 import '../../bloc/online_game_state.dart';
 import '../../models/piece_type.dart';
 import '../../models/position.dart';
-import '../widgets/themed_board_widget.dart';
 
 /// 在线对战游戏页面
 /// 

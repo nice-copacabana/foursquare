@@ -106,7 +106,7 @@ class GameEngine {
     BoardState board,
     Position from,
     Position to,
-    {Position? capturedPieceOverride}
+    {Position? capturedPieceOverride,}
   ) {
     // 1. 验证移动合法性
     if (!_validator.isValidMove(board, from, to)) {

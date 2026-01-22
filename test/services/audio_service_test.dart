@@ -176,7 +176,7 @@ void main() {
 
   group('音效类型', () {
     test('SoundType枚举应包含所有音效类型', () {
-      final allTypes = SoundType.values;
+      const allTypes = SoundType.values;
       
       expect(allTypes.contains(SoundType.select), true);
       expect(allTypes.contains(SoundType.move), true);
@@ -225,7 +225,7 @@ void main() {
         service.playSound(SoundType.click);
         service.playSound(SoundType.click);
         service.playSound(SoundType.click);
-      }, returnsNormally);
+      }, returnsNormally,);
     });
 
     test('连续播放不同音效', () {
@@ -235,7 +235,7 @@ void main() {
         service.playSound(SoundType.move);
         service.playSound(SoundType.capture);
         service.playSound(SoundType.win);
-      }, returnsNormally);
+      }, returnsNormally,);
     });
 
     test('调整音量后所有音效应使用新音量', () {

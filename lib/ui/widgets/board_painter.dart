@@ -194,7 +194,7 @@ class BoardPainter extends CustomPainter {
     if (style != PieceStyle.flat) {
       final shadowPaint = Paint()
         ..color = Colors.black.withValues(alpha: UIConstants.shadowOpacity)
-        ..maskFilter = MaskFilter.blur(BlurStyle.normal, UIConstants.pieceShadowBlur);
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, UIConstants.pieceShadowBlur);
 
       canvas.drawCircle(
         center + UIConstants.pieceShadowOffset,
@@ -286,7 +286,7 @@ class BoardPainter extends CustomPainter {
     // 绘制光晕效果
     final glowPaint = Paint()
       ..color = selectionColor.withValues(alpha: UIConstants.selectionGlowOpacity)
-      ..maskFilter = MaskFilter.blur(BlurStyle.normal, UIConstants.selectionGlowBlur)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, UIConstants.selectionGlowBlur)
       ..style = PaintingStyle.fill;
 
     canvas.drawCircle(center, radius, glowPaint);
@@ -383,7 +383,7 @@ class BoardPainter extends CustomPainter {
 
   /// 绘制箭头头部
   void _drawArrowHead(Canvas canvas, Offset from, Offset to, Paint paint) {
-    final arrowSize = UIConstants.arrowHeadSize;
+    const arrowSize = UIConstants.arrowHeadSize;
     final angle = (to - from).direction;
 
     final path = Path();

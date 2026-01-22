@@ -133,7 +133,7 @@ void main() {
       expect(restored.totalMoves, original.totalMoves);
       expect(restored.totalCaptures, original.totalCaptures);
       expect(restored.lastPlayedAt?.toIso8601String(), 
-             original.lastPlayedAt?.toIso8601String());
+             original.lastPlayedAt?.toIso8601String(),);
       expect(restored.difficultyWins, original.difficultyWins);
     });
 

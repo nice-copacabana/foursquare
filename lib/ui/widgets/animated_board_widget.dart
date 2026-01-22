@@ -137,7 +137,7 @@ class _AnimatedBoardWidgetState extends State<AnimatedBoardWidget>
     ).animate(CurvedAnimation(
       parent: _selectionAnimationController!,
       curve: Curves.easeInOut,
-    ));
+    ),);
   }
 
   @override

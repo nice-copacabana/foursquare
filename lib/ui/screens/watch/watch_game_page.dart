@@ -23,7 +23,7 @@ enum _WearShape { round, square }
 typedef _WatchShapeBuilder = Widget Function(BuildContext, _WearShape, Widget?);
 class _WatchShape extends StatelessWidget {
   final _WatchShapeBuilder builder;
-  const _WatchShape({super.key, required this.builder});
+  const _WatchShape({required this.builder});
   @override
   Widget build(BuildContext context) {
     return builder(context, _WearShape.square, null);
@@ -163,7 +163,7 @@ class WatchGamePage extends StatelessWidget {
       height: boardSize,
       // 圆形屏幕需要特殊裁剪
       decoration: isRound
-          ? BoxDecoration(
+          ? const BoxDecoration(
               shape: BoxShape.circle,
               color: Colors.transparent,
             )

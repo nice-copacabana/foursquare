@@ -13,8 +13,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../services/storage_service.dart';
-import '../../services/audio_service.dart';
-import '../../services/music_service.dart';
 import '../../services/audio_coordinator.dart';
 import '../../services/performance_monitor.dart';
 import '../../services/resource_warmup_service.dart';
@@ -218,7 +216,7 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Widget _buildThemeGroup() {
-    final allThemes = ThemePresets.all;
+    const allThemes = ThemePresets.all;
     return _SettingsGroup(
       title: '棋盘主题',
       children: [
@@ -529,7 +527,6 @@ class _SettingsSlider extends StatelessWidget {
     required this.label,
     required this.value,
     required this.onChanged,
-    this.onChangeEnd,
   });
 
   @override

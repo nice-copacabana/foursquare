@@ -268,7 +268,7 @@ class _RulesBoardPage extends StatelessWidget {
             description: '游戏在一个4×4的棋盘上进行',
           ),
           const SizedBox(height: 16),
-          _InfoCard(
+          const _InfoCard(
             icon: Icons.circle,
             title: '黑白各4子',
             description: '黑方和白方各有4枚棋子',
@@ -309,7 +309,7 @@ class _RulesMovementPage extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Row(
+                const Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     _DirectionArrow(Icons.arrow_upward),
@@ -318,7 +318,7 @@ class _RulesMovementPage extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    _DirectionArrow(Icons.arrow_back),
+                    const _DirectionArrow(Icons.arrow_back),
                     const SizedBox(width: 16),
                     Container(
                       width: 40,
@@ -329,10 +329,10 @@ class _RulesMovementPage extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 16),
-                    _DirectionArrow(Icons.arrow_forward),
+                    const _DirectionArrow(Icons.arrow_forward),
                   ],
                 ),
-                Row(
+                const Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     _DirectionArrow(Icons.arrow_downward),
@@ -343,13 +343,13 @@ class _RulesMovementPage extends StatelessWidget {
           ),
           
           const SizedBox(height: 32),
-          _InfoCard(
+          const _InfoCard(
             icon: Icons.arrow_upward,
             title: '上下左右移动',
             description: '棋子只能移动到相邻的空位',
           ),
           const SizedBox(height: 16),
-          _InfoCard(
+          const _InfoCard(
             icon: Icons.block,
             title: '不能斜向移动',
             description: '斜向移动是不允许的',
@@ -406,7 +406,7 @@ class _RulesCapturePage extends StatelessWidget {
             description: '当己方2子与对方1子连成一线时',
           ),
           const SizedBox(height: 16),
-          _InfoCard(
+          const _InfoCard(
             icon: Icons.close,
             title: '吃掉最远端敌子',
             description: '可以吃掉对方距离最远的一个棋子',
@@ -451,28 +451,28 @@ class _FeaturesPage extends StatelessWidget {
           ),
           const SizedBox(height: 32),
           
-          _FeatureCard(
+          const _FeatureCard(
             icon: Icons.smart_toy,
             title: 'AI对战',
             description: '3种难度的AI陪你练习',
             color: Colors.blue,
           ),
           const SizedBox(height: 16),
-          _FeatureCard(
+          const _FeatureCard(
             icon: Icons.replay,
             title: '游戏回放',
             description: '回顾每一步精彩对局',
             color: Colors.green,
           ),
           const SizedBox(height: 16),
-          _FeatureCard(
+          const _FeatureCard(
             icon: Icons.palette,
             title: '多种主题',
             description: '个性化你的游戏界面',
             color: Colors.purple,
           ),
           const SizedBox(height: 16),
-          _FeatureCard(
+          const _FeatureCard(
             icon: Icons.bar_chart,
             title: '战绩统计',
             description: '查看你的游戏数据',
