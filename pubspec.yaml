@@ -41,6 +41,12 @@ dependencies:
   # 环境配置
   flutter_dotenv: ^5.1.0  # 环境变量管理
 
+  # 局域网对战
+  nsd: ^2.0.0  # mDNS服务发现
+  shelf: ^1.4.1  # 轻量级Web服务器
+  shelf_web_socket: ^1.0.4  # WebSocket支持
+  network_info_plus: ^5.0.0  # 获取网络信息
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
