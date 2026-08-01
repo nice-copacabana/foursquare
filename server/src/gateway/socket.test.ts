@@ -1,0 +1,580 @@
+import assert from 'node:assert/strict';
+import { EventEmitter } from 'node:events';
+import test from 'node:test';
+
+import { createSocketGateway } from './socket';
+import type { MatchmakingResult } from '../game/room_manager';
+import type { GameState, Player, Room } from '../types/game';
+import type {
+    AuthoritativeSnapshot,
+    MoveDecision,
+    MoveIntent,
+} from '../types/protocol';
+import { PROTOCOL_VERSION } from '../types/protocol';
+
+type EmittedEvent = {
+    event: string;
+    payload: unknown;
+};
+
+class FakeSocket {
+    public readonly emitted: EmittedEvent[] = [];
+    public readonly joinedRooms: string[] = [];
+    private readonly listeners = new Map<string, (payload?: unknown) => void>();
+
+    public constructor(public readonly id: string) {}
+
+    public emit(event: string, payload: unknown): void {
+        this.emitted.push({ event, payload });
+    }
+
+    public on(event: string, listener: (payload?: unknown) => void): void {
+        this.listeners.set(event, listener);
+    }
+
+    public join(roomId: string): void {
+        this.joinedRooms.push(roomId);
+    }
+
+    public trigger(event: string, payload?: unknown): void {
+        this.listeners.get(event)?.(payload);
+    }
+}
+
+class FakeIo {
+    public readonly roomEvents: Array<EmittedEvent & { target: string }> = [];
+    public readonly sockets = {
+        sockets: new Map<string, FakeSocket>(),
+    };
+    private connectionListener?: (socket: FakeSocket) => void;
+
+    public on(event: string, listener: (socket: FakeSocket) => void): void {
+        assert.equal(event, 'connection');
+        this.connectionListener = listener;
+    }
+
+    public to(target: string): { emit: (event: string, payload: unknown) => void } {
+        return {
+            emit: (event, payload) => {
+                this.roomEvents.push({ target, event, payload });
+            },
+        };
+    }
+
+    public connect(socket: FakeSocket): void {
+        this.sockets.sockets.set(socket.id, socket);
+        this.connectionListener?.(socket);
+    }
+}
+
+class FakeRoomManager extends EventEmitter {
+    public readonly calls: string[] = [];
+    public reconnectResult?: AuthoritativeSnapshot;
+    public queuedRoom: Room | null = null;
+    public roomBySocket?: Room;
+    public moveDecision: MoveDecision = {
+        type: 'rejected',
+        protocolVersion: PROTOCOL_VERSION,
+        commandId: 'command-1',
+        reason: 'room_not_found',
+        currentRevision: 0,
+    };
+    public handledIntent?: MoveIntent;
+    public handleMoveCalls = 0;
+    public disconnectDeadlineEpochMs = 30_000;
+    public removeFromQueueResult = true;
+
+    public reconnectPlayer(
+        playerId: string,
+        socketId: string,
+    ): AuthoritativeSnapshot | undefined {
+        this.calls.push(`reconnect:${playerId}:${socketId}`);
+        return this.reconnectResult;
+    }
+
+    public queuePlayer(player: Player): MatchmakingResult {
+        this.calls.push(`queue:${player.id}:${player.socketId}`);
+        return this.queuedRoom == null
+            ? { status: 'queued' }
+            : { status: 'matched', room: this.queuedRoom };
+    }
+
+    public removePlayerFromQueue(playerId: string, socketId: string): boolean {
+        this.calls.push(`cancel:${playerId}:${socketId}`);
+        return this.removeFromQueueResult;
+    }
+
+    public handleMove(socketId: string, intent: MoveIntent): MoveDecision {
+        this.calls.push(`move:${socketId}`);
+        this.handleMoveCalls += 1;
+        this.handledIntent = intent;
+        return this.moveDecision;
+    }
+
+    public getRoomBySocketId(): Room | undefined {
+        return this.roomBySocket;
+    }
+
+    public removePlayer(socketId: string): Room | undefined {
+        this.calls.push(`disconnect:${socketId}`);
+        return this.roomBySocket;
+    }
+
+    public getDisconnectDeadline(socketId: string): number | undefined {
+        this.calls.push(`disconnect-deadline:${socketId}`);
+        return this.disconnectDeadlineEpochMs;
+    }
+}
+
+const createState = (status: GameState['status'] = 'playing'): GameState => ({
+    board: Array.from({ length: 4 }, () => Array(4).fill(null)),
+    currentTurn: 'black',
+    status,
+    moveHistory: [],
+    noCapturePly: 0,
+    revision: status === 'playing' ? 0 : 1,
+    ...(status === 'finished'
+        ? { winner: 'black' as const, endReason: 'disconnect' as const }
+        : {}),
+});
+
+const createRoom = (firstSocketId = 'socket-a'): Room => ({
+    id: 'match-1',
+    players: [
+        { id: 'player-aaaa', socketId: firstSocketId, name: 'A' },
+        { id: 'player-bbbb', socketId: 'socket-b', name: 'B' },
+    ],
+    spectators: [],
+    gameState: createState(),
+    colorBySocketId: {
+        [firstSocketId]: 'black',
+        'socket-b': 'white',
+    },
+    startingPlayer: 'black',
+    turnDeadlineEpochMs: 60_000,
+    createdAt: 0,
+});
+
+const setup = () => {
+    const io = new FakeIo();
+    const manager = new FakeRoomManager();
+    const persisted: Room[] = [];
+    createSocketGateway(
+        io,
+        manager,
+        async (room) => {
+            persisted.push(room);
+        },
+    );
+    return { io, manager, persisted };
+};
+
+test('request_match reconnects before queueing and restores the room snapshot', () => {
+    const { io, manager } = setup();
+    const socket = new FakeSocket('socket-new');
+    const room = createRoom('socket-new');
+    manager.roomBySocket = room;
+    manager.reconnectResult = {
+        protocolVersion: PROTOCOL_VERSION,
+        matchId: room.id,
+        color: 'black',
+        state: room.gameState,
+        turnDeadlineEpochMs: room.turnDeadlineEpochMs,
+        opponentConnected: true,
+    };
+
+    io.connect(socket);
+    socket.trigger('request_match', {
+        protocolVersion: PROTOCOL_VERSION,
+        playerId: 'player-aaaa',
+    });
+
+    assert.deepEqual(manager.calls, [
+        'reconnect:player-aaaa:socket-new',
+    ]);
+    assert.deepEqual(socket.joinedRooms, ['match-1']);
+    assert.equal(
+        socket.emitted.some((event) => event.event === 'authoritative_snapshot'),
+        true,
+    );
+    assert.equal(
+        io.roomEvents.some(
+            (event) => event.target === 'socket-b'
+                && event.event === 'opponent_reconnected',
+        ),
+        true,
+    );
+});
+
+test('match lifecycle responses always carry the protocol version', () => {
+    const { io } = setup();
+    const socket = new FakeSocket('socket-a');
+    io.connect(socket);
+
+    socket.trigger('request_match', {
+        protocolVersion: PROTOCOL_VERSION,
+        playerId: 'short',
+    });
+    socket.trigger('request_match', {
+        protocolVersion: PROTOCOL_VERSION,
+        playerId: 'player-aaaa',
+    });
+    socket.trigger('cancel_match', {
+        protocolVersion: PROTOCOL_VERSION,
+        playerId: 'player-aaaa',
+    });
+
+    for (const eventName of [
+        'match_rejected',
+        'match_queued',
+        'match_cancelled',
+    ]) {
+        const event = socket.emitted.find(
+            (candidate) => candidate.event === eventName,
+        );
+        assert.equal(
+            (event?.payload as { protocolVersion?: number }).protocolVersion,
+            PROTOCOL_VERSION,
+            `${eventName} must carry protocolVersion`,
+        );
+    }
+});
+
+test('match requests reject an unsupported protocol version', () => {
+    const { io } = setup();
+    const socket = new FakeSocket('socket-a');
+    io.connect(socket);
+
+    socket.trigger('request_match', {
+        protocolVersion: 999,
+        playerId: 'player-aaaa',
+    });
+
+    const rejection = socket.emitted.find(
+        (event) => event.event === 'match_rejected',
+    );
+    assert.equal(
+        (rejection?.payload as { reason?: string }).reason,
+        'invalid_protocol',
+    );
+});
+
+test('cancel_match rejects when that identity is not queued on the socket', () => {
+    const { io, manager } = setup();
+    const socket = new FakeSocket('socket-a');
+    manager.removeFromQueueResult = false;
+    io.connect(socket);
+
+    socket.trigger('cancel_match', {
+        protocolVersion: PROTOCOL_VERSION,
+        playerId: 'player-bbbb',
+    });
+
+    assert.equal(
+        socket.emitted.some((event) => event.event === 'match_cancelled'),
+        false,
+    );
+    assert.deepEqual(
+        socket.emitted.find(
+            (event) => event.event === 'match_rejected',
+        )?.payload,
+        {
+            protocolVersion: PROTOCOL_VERSION,
+            reason: 'not_queued',
+        },
+    );
+});
+
+test('hostile match payload getters cannot escape socket handlers', () => {
+    const { io } = setup();
+    const socket = new FakeSocket('socket-a');
+    io.connect(socket);
+    const hostilePayload = new Proxy({}, {
+        get: () => {
+            throw new Error('hostile getter');
+        },
+    });
+
+    assert.doesNotThrow(() => socket.trigger('request_match', hostilePayload));
+    assert.doesNotThrow(() => socket.trigger('cancel_match', hostilePayload));
+    assert.deepEqual(
+        socket.emitted
+            .filter((event) => event.event === 'match_rejected')
+            .map((event) => (event.payload as { reason: string }).reason),
+        ['invalid_payload', 'invalid_payload'],
+    );
+});
+
+test('match_found never exposes either anonymous reconnect identity', () => {
+    const { io, manager } = setup();
+    const firstSocket = new FakeSocket('socket-a');
+    const secondSocket = new FakeSocket('socket-b');
+    const room = createRoom();
+    manager.queuedRoom = room;
+    io.sockets.sockets.set(secondSocket.id, secondSocket);
+    io.connect(firstSocket);
+
+    firstSocket.trigger('request_match', {
+        protocolVersion: PROTOCOL_VERSION,
+        playerId: 'player-aaaa',
+    });
+
+    for (const playerSocket of [firstSocket, secondSocket]) {
+        const found = playerSocket.emitted.find(
+            (event) => event.event === 'match_found',
+        );
+        const serialized = JSON.stringify(found?.payload);
+        assert.equal(serialized.includes('player-aaaa'), false);
+        assert.equal(serialized.includes('player-bbbb'), false);
+        assert.equal(serialized.includes('opponentId'), false);
+        assert.equal(serialized.includes('ownId'), false);
+    }
+});
+
+test('submit_move rejects invalid payloads and forwards only trusted fields', () => {
+    const { io, manager } = setup();
+    const socket = new FakeSocket('socket-a');
+    io.connect(socket);
+
+    socket.trigger('submit_move', {
+        matchId: 'match-1',
+        commandId: 'command-1',
+        expectedRevision: 0,
+        from: { x: 0, y: 0 },
+        to: { x: 0, y: 1 },
+    });
+    socket.trigger('submit_move', {
+        protocolVersion: 999,
+        matchId: 'match-1',
+        commandId: 'command-1',
+        expectedRevision: 0,
+        from: { x: 0, y: 0 },
+        to: { x: 0, y: 1 },
+    });
+    socket.trigger('submit_move', {
+        protocolVersion: PROTOCOL_VERSION,
+        matchId: 'match-1',
+        commandId: 'command-1',
+        expectedRevision: 'zero',
+        from: null,
+        to: { x: 0, y: 1 },
+    });
+    socket.trigger('submit_move', {
+        protocolVersion: PROTOCOL_VERSION,
+        matchId: 'm'.repeat(129),
+        commandId: 'command-1',
+        expectedRevision: 0,
+        from: { x: 0, y: 0 },
+        to: { x: 0, y: 1 },
+    });
+    socket.trigger('submit_move', {
+        protocolVersion: PROTOCOL_VERSION,
+        matchId: 'match-1',
+        commandId: 'contains spaces',
+        expectedRevision: 0,
+        from: { x: 0, y: 0 },
+        to: { x: 0, y: 1 },
+    });
+
+    assert.equal(manager.handleMoveCalls, 0);
+    assert.deepEqual(
+        socket.emitted
+            .filter((event) => event.event === 'move_rejected')
+            .map((event) => (event.payload as { reason: string }).reason),
+        [
+            'invalid_protocol',
+            'invalid_protocol',
+            'invalid_payload',
+            'invalid_payload',
+            'invalid_payload',
+        ],
+    );
+
+    socket.trigger('submit_move', {
+        protocolVersion: PROTOCOL_VERSION,
+        matchId: 'match-1',
+        commandId: 'command-1',
+        expectedRevision: 0,
+        from: { x: 0, y: 0 },
+        to: { x: 0, y: 1 },
+        color: 'white',
+        capturedPieces: [{ x: 1, y: 1 }],
+        winner: 'white',
+    });
+
+    assert.equal(manager.handleMoveCalls, 1);
+    assert.deepEqual(manager.handledIntent, {
+        protocolVersion: PROTOCOL_VERSION,
+        matchId: 'match-1',
+        commandId: 'command-1',
+        expectedRevision: 0,
+        from: { x: 0, y: 0 },
+        to: { x: 0, y: 1 },
+    });
+
+    const hostilePayload = new Proxy({}, {
+        get: () => {
+            throw new Error('hostile getter');
+        },
+    });
+    assert.doesNotThrow(() => socket.trigger('submit_move', hostilePayload));
+
+    manager.handleMove = () => {
+        throw new Error('unexpected manager failure');
+    };
+    assert.doesNotThrow(() => socket.trigger('submit_move', {
+        protocolVersion: PROTOCOL_VERSION,
+        matchId: 'match-1',
+        commandId: 'command-2',
+        expectedRevision: 0,
+        from: { x: 0, y: 0 },
+        to: { x: 0, y: 1 },
+    }));
+});
+
+test('timeout or disconnect completion broadcasts and persists exactly once', () => {
+    const { io, manager, persisted } = setup();
+    const socket = new FakeSocket('socket-a');
+    const room = createRoom();
+    manager.queuedRoom = room;
+    manager.roomBySocket = room;
+    io.sockets.sockets.set('socket-b', new FakeSocket('socket-b'));
+    io.connect(socket);
+    socket.trigger('request_match', {
+        protocolVersion: PROTOCOL_VERSION,
+        playerId: 'player-aaaa',
+    });
+    socket.trigger('disconnect');
+
+    assert.deepEqual(
+        io.roomEvents.find(
+            (event) => event.event === 'opponent_disconnected',
+        )?.payload,
+        {
+            protocolVersion: PROTOCOL_VERSION,
+            matchId: room.id,
+            reconnectDeadlineEpochMs: 30_000,
+        },
+    );
+
+    room.gameState = createState('finished');
+    const finished = { roomId: room.id, state: room.gameState };
+    manager.emit('game_finished', finished);
+    manager.emit('game_finished', finished);
+
+    assert.equal(
+        io.roomEvents.filter((event) => event.event === 'game_over').length,
+        1,
+    );
+    assert.deepEqual(persisted, [room]);
+});
+
+test('persistence keeps retrying without rebroadcasting game over', async () => {
+    const io = new FakeIo();
+    const manager = new FakeRoomManager();
+    const retries: Array<{ callback: () => void; delayMs: number }> = [];
+    let attempts = 0;
+    createSocketGateway(
+        io,
+        manager,
+        async () => {
+            attempts += 1;
+            if (attempts < 4) throw new Error('database unavailable');
+        },
+        (callback, delayMs) => {
+            retries.push({ callback, delayMs });
+        },
+    );
+    const socket = new FakeSocket('socket-a');
+    const room = createRoom();
+    manager.queuedRoom = room;
+    manager.roomBySocket = room;
+    io.sockets.sockets.set('socket-b', new FakeSocket('socket-b'));
+    io.connect(socket);
+    socket.trigger('request_match', {
+        protocolVersion: PROTOCOL_VERSION,
+        playerId: 'player-aaaa',
+    });
+    room.gameState = createState('finished');
+
+    manager.emit('game_finished', { roomId: room.id, state: room.gameState });
+    manager.emit('game_finished', { roomId: room.id, state: room.gameState });
+    await Promise.resolve();
+    assert.equal(attempts, 1);
+    assert.equal(retries[0].delayMs, 1_000);
+
+    retries.shift()!.callback();
+    await Promise.resolve();
+    assert.equal(attempts, 2);
+    assert.equal(retries[0].delayMs, 2_000);
+
+    retries.shift()!.callback();
+    await Promise.resolve();
+    assert.equal(attempts, 3);
+    assert.equal(retries[0].delayMs, 3_000);
+
+    retries.shift()!.callback();
+    await Promise.resolve();
+    assert.equal(attempts, 4);
+    assert.equal(
+        io.roomEvents.filter((event) => event.event === 'game_over').length,
+        1,
+    );
+});
+
+test('completion de-duplication covers every retained finished room', () => {
+    const io = new FakeIo();
+    const manager = new FakeRoomManager();
+    createSocketGateway(io, manager, () => undefined);
+    const state = createState('finished');
+
+    for (let index = 0; index < 1_025; index += 1) {
+        manager.emit('game_finished', { roomId: `match-${index}`, state });
+    }
+    manager.emit('game_finished', { roomId: 'match-0', state });
+
+    assert.equal(
+        io.roomEvents.filter((event) => event.event === 'game_over').length,
+        1_025,
+    );
+});
+
+test('a terminal committed move uses the same de-duplicated completion path', () => {
+    const { io, manager, persisted } = setup();
+    const socket = new FakeSocket('socket-a');
+    const room = createRoom();
+    room.gameState = createState('finished');
+    manager.roomBySocket = room;
+    manager.moveDecision = {
+        type: 'committed',
+        protocolVersion: PROTOCOL_VERSION,
+        commandId: 'command-1',
+        state: room.gameState,
+        capturedPieces: [],
+        turnDeadlineEpochMs: room.turnDeadlineEpochMs,
+    };
+    manager.queuedRoom = room;
+    io.sockets.sockets.set('socket-b', new FakeSocket('socket-b'));
+    io.connect(socket);
+    socket.trigger('request_match', {
+        protocolVersion: PROTOCOL_VERSION,
+        playerId: 'player-aaaa',
+    });
+
+    const intent = {
+        protocolVersion: PROTOCOL_VERSION,
+        matchId: room.id,
+        commandId: 'command-1',
+        expectedRevision: 0,
+        from: { x: 0, y: 0 },
+        to: { x: 0, y: 1 },
+    };
+    socket.trigger('submit_move', intent);
+    manager.emit('game_finished', { roomId: room.id, state: room.gameState });
+
+    assert.equal(
+        io.roomEvents.filter((event) => event.event === 'game_over').length,
+        1,
+    );
+    assert.deepEqual(persisted, [room]);
+});

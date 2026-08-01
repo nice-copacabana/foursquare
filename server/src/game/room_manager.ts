@@ -1,162 +1,502 @@
-import { Player, Room } from '../types/game';
-import { v4 as uuidv4 } from 'uuid';
-import { GameRules } from './rules';
-import { MoveData } from '../types/move';
-import { EventEmitter } from 'events';
+import { randomUUID } from 'node:crypto';
+import { EventEmitter } from 'node:events';
 
-const TURN_TIMEOUT = 30000; // 30 seconds
+import { GameRules } from './rules';
+import type { PieceColor, Player, Room } from '../types/game';
+import {
+    AuthoritativeSnapshot,
+    MoveDecision,
+    MoveIntent,
+    MoveRejectionReason,
+    PROTOCOL_VERSION,
+} from '../types/protocol';
+
+const TURN_DURATION_MS = 60_000;
+const RECONNECT_GRACE_MS = 30_000;
+const ROOM_RETENTION_MS = 5 * 60_000;
+const MAX_REJECTED_COMMANDS_PER_ROOM = 256;
+
+export type MatchmakingRejectionReason =
+    | 'identity_in_use'
+    | 'socket_in_use';
+
+export type MatchmakingResult =
+    | { status: 'queued' }
+    | { status: 'matched'; room: Room }
+    | { status: 'rejected'; reason: MatchmakingRejectionReason };
+
+type RoomManagerOptions = {
+    now: () => number;
+    random: () => number;
+    id: () => string;
+    schedule: (callback: () => void, delayMs: number) => unknown;
+    cancelSchedule: (handle: unknown) => void;
+};
+
+type ProcessedCommand = {
+    fingerprint: string;
+    decision: MoveDecision;
+};
+
+type DisconnectedPlayer = {
+    roomId: string;
+    color: PieceColor;
+    previousSocketId: string;
+    deadlineEpochMs: number;
+    timer?: unknown;
+};
+
+const defaultOptions: RoomManagerOptions = {
+    now: Date.now,
+    random: Math.random,
+    id: randomUUID,
+    schedule: (callback, delayMs) => setTimeout(callback, delayMs),
+    cancelSchedule: (handle) => clearTimeout(handle as NodeJS.Timeout),
+};
 
 export class RoomManager extends EventEmitter {
-    private rooms: Map<string, Room> = new Map();
-    private playerRoomMap: Map<string, string> = new Map(); // socketId -> roomId
-    private matchmakingQueue: Player[] = [];
+    private readonly rooms = new Map<string, Room>();
+    private readonly playerRoomMap = new Map<string, string>();
+    private readonly matchmakingQueue: Player[] = [];
+    private readonly processedCommands = new Map<
+        string,
+        Map<string, ProcessedCommand>
+    >();
+    private readonly disconnectedPlayers = new Map<string, DisconnectedPlayer>();
+    private readonly cleanupScheduledRooms = new Set<string>();
+    private readonly options: RoomManagerOptions;
 
-    constructor() {
+    public constructor(options: Partial<RoomManagerOptions> = {}) {
         super();
+        this.options = { ...defaultOptions, ...options };
     }
 
-    // Add player to matchmaking queue
-    public queuePlayer(player: Player): Room | null {
-        // Check if player is already in queue
-        if (this.matchmakingQueue.find(p => p.id === player.id)) {
-            return null;
+    public queuePlayer(player: Player): MatchmakingResult {
+        const mappedRoomId = this.playerRoomMap.get(player.socketId);
+        const mappedRoom = mappedRoomId
+            ? this.rooms.get(mappedRoomId)
+            : undefined;
+        if (mappedRoom && mappedRoom.gameState.status !== 'playing') {
+            this.playerRoomMap.delete(player.socketId);
         }
-
+        if (
+            (mappedRoom?.gameState.status === 'playing')
+            || this.matchmakingQueue.some(
+                (queued) => queued.socketId === player.socketId,
+            )
+        ) {
+            return { status: 'rejected', reason: 'socket_in_use' };
+        }
+        if (
+            this.matchmakingQueue.some((queued) => queued.id === player.id)
+            || [...this.rooms.values()].some(
+                (room) => room.gameState.status === 'playing'
+                    && room.players.some(
+                        (roomPlayer) => roomPlayer.id === player.id,
+                    ),
+            )
+        ) {
+            return { status: 'rejected', reason: 'identity_in_use' };
+        }
         this.matchmakingQueue.push(player);
+        if (this.matchmakingQueue.length < 2) return { status: 'queued' };
+        return {
+            status: 'matched',
+            room: this.createRoom(
+                this.matchmakingQueue.shift()!,
+                this.matchmakingQueue.shift()!,
+            ),
+        };
+    }
 
-        // Try to match
-        if (this.matchmakingQueue.length >= 2) {
-            const p1 = this.matchmakingQueue.shift()!;
-            const p2 = this.matchmakingQueue.shift()!;
-            return this.createRoom(p1, p2);
+    public removePlayerFromQueue(playerId: string, socketId: string): boolean {
+        const index = this.matchmakingQueue.findIndex(
+            (player) => player.id === playerId && player.socketId === socketId,
+        );
+        if (index < 0) return false;
+        this.matchmakingQueue.splice(index, 1);
+        return true;
+    }
+
+    public createRoom(first: Player, second: Player): Room {
+        if (first.id === second.id || first.socketId === second.socketId) {
+            throw new Error('room_players_must_be_distinct');
         }
-
-        return null;
-    }
-
-    public removePlayerFromQueue(playerId: string) {
-        this.matchmakingQueue = this.matchmakingQueue.filter(p => p.id !== playerId);
-    }
-
-    public createRoom(p1: Player, p2: Player): Room {
-        const roomId = uuidv4();
+        const id = this.options.id();
+        const currentTurn: PieceColor = this.options.random() < 0.5
+            ? 'black'
+            : 'white';
         const room: Room = {
-            id: roomId,
-            players: [p1, p2],
+            id,
+            players: [first, second],
             spectators: [],
             gameState: {
-                board: GameRules.getInitialBoard(), // Initialize board
-                currentTurn: 'black', // P1 starts (Black)
+                board: GameRules.getInitialBoard(),
+                currentTurn,
                 status: 'playing',
-                moveHistory: []
+                moveHistory: [],
+                noCapturePly: 0,
+                revision: 0,
             },
-            createdAt: Date.now()
+            colorBySocketId: {
+                [first.socketId]: 'black',
+                [second.socketId]: 'white',
+            },
+            startingPlayer: currentTurn,
+            turnDeadlineEpochMs: this.options.now() + TURN_DURATION_MS,
+            createdAt: this.options.now(),
         };
-
-        this.rooms.set(roomId, room);
-        this.playerRoomMap.set(p1.socketId, roomId);
-        this.playerRoomMap.set(p2.socketId, roomId);
-
-        this.resetTurnTimer(roomId);
-
+        this.rooms.set(id, room);
+        this.playerRoomMap.set(first.socketId, id);
+        this.playerRoomMap.set(second.socketId, id);
+        this.processedCommands.set(id, new Map());
+        this.scheduleTurnTimeout(room);
         return room;
     }
 
     public getRoomBySocketId(socketId: string): Room | undefined {
         const roomId = this.playerRoomMap.get(socketId);
-        if (!roomId) return undefined;
-        return this.rooms.get(roomId);
+        return roomId ? this.rooms.get(roomId) : undefined;
     }
 
-    public handleMove(socketId: string, moveData: MoveData): { success: boolean; room?: Room; error?: string; captured?: any[]; gameEnded?: boolean; winner?: string } {
+    public handleMove(socketId: string, intent: MoveIntent): MoveDecision {
         const room = this.getRoomBySocketId(socketId);
-        if (!room) return { success: false, error: 'Room not found' };
+        if (!room || room.id !== intent.matchId) {
+            return this.reject(intent, 'room_not_found', room?.gameState.revision ?? 0);
+        }
+        const player = room.colorBySocketId[socketId];
+        if (!player) {
+            return this.reject(intent, 'not_room_player', room.gameState.revision);
+        }
 
-        // Validate
-        const validation = new GameRules().validateMove(room.gameState, moveData);
+        const fingerprint = JSON.stringify([
+            intent.protocolVersion,
+            intent.matchId,
+            intent.expectedRevision,
+            intent.from.x,
+            intent.from.y,
+            intent.to.x,
+            intent.to.y,
+        ]);
+        const commandCache = this.processedCommands.get(room.id)!;
+        const processed = commandCache.get(intent.commandId);
+        if (processed) {
+            return processed.fingerprint === fingerprint
+                ? processed.decision
+                : this.reject(intent, 'command_conflict', room.gameState.revision);
+        }
+        const rejectedCommandCount = [...commandCache.values()].filter(
+            (command) => command.decision.type === 'rejected',
+        ).length;
+        if (rejectedCommandCount >= MAX_REJECTED_COMMANDS_PER_ROOM) {
+            return this.reject(
+                intent,
+                'rate_limited',
+                room.gameState.revision,
+            );
+        }
+        const rejectAndRemember = (
+            reason: MoveRejectionReason,
+        ): MoveDecision => {
+            const decision = this.reject(
+                intent,
+                reason,
+                room.gameState.revision,
+            );
+            commandCache.set(intent.commandId, { fingerprint, decision });
+            return decision;
+        };
+
+        if (room.gameState.status !== 'playing') {
+            return rejectAndRemember('game_finished');
+        }
+        if (this.options.now() >= room.turnDeadlineEpochMs) {
+            this.finalizeTimeout(room);
+            return rejectAndRemember('game_finished');
+        }
+        if (intent.expectedRevision !== room.gameState.revision) {
+            return rejectAndRemember('stale_revision');
+        }
+        if (room.gameState.currentTurn !== player) {
+            return rejectAndRemember('wrong_turn');
+        }
+
+        const validation = GameRules.validateMove(room.gameState, {
+            matchId: room.id,
+            from: intent.from,
+            to: intent.to,
+            player,
+        });
         if (!validation.valid) {
-            return { success: false, error: validation.message };
+            return rejectAndRemember(
+                validation.message as MoveRejectionReason,
+            );
         }
 
-        // Apply
-        const { newState, captured } = new GameRules().applyMove(room.gameState, moveData);
-        room.gameState = newState;
+        const applied = GameRules.applyMove(room.gameState, {
+            matchId: room.id,
+            from: intent.from,
+            to: intent.to,
+            player,
+        });
+        room.gameState = applied.state;
+        if (room.gameState.status === 'playing') {
+            room.turnDeadlineEpochMs = this.options.now() + TURN_DURATION_MS;
+            this.scheduleTurnTimeout(room);
+        } else {
+            this.cancelTurnTimer(room);
+            this.clearDisconnectedPlayers(room.id);
+        }
 
-        // Check Game Over
+        const decision: MoveDecision = {
+            type: 'committed',
+            protocolVersion: PROTOCOL_VERSION,
+            commandId: intent.commandId,
+            state: room.gameState,
+            capturedPieces: applied.capturedPieces,
+            turnDeadlineEpochMs: room.turnDeadlineEpochMs,
+        };
+        commandCache.set(intent.commandId, { fingerprint, decision });
         if (room.gameState.status === 'finished') {
-            if (room.turnTimer) clearTimeout(room.turnTimer);
-            return {
-                success: true,
-                room,
-                captured,
-                gameEnded: true,
-                winner: room.gameState.winner
-            };
+            this.scheduleRoomCleanup(room);
         }
-
-        this.resetTurnTimer(room.id);
-
-        return { success: true, room, captured };
+        return decision;
     }
-
-    private resetTurnTimer(roomId: string) {
-        const room = this.rooms.get(roomId);
-        if (!room || room.gameState.status !== 'playing') return;
-
-        if (room.turnTimer) {
-            clearTimeout(room.turnTimer);
-        }
-
-        room.turnTimer = setTimeout(() => {
-            this.handleTimeout(roomId);
-        }, TURN_TIMEOUT);
-    }
-
-    private handleTimeout(roomId: string) {
-        const room = this.rooms.get(roomId);
-        if (!room) return;
-
-        // Force switch turn
-        const p1 = room.players[0];
-        const p2 = room.players[1];
-        // Toggle turn
-        room.gameState.currentTurn = room.gameState.currentTurn === p1.id ? p2.id : p1.id;
-
-        // Emit event so socket can notify
-        this.emit('turn_timeout', { roomId, currentTurn: room.gameState.currentTurn });
-
-        // Restart timer for next player
-        this.resetTurnTimer(roomId);
-    }
-
 
     public removePlayer(socketId: string): Room | undefined {
         const roomId = this.playerRoomMap.get(socketId);
-        if (roomId) {
-            const room = this.rooms.get(roomId);
-            this.playerRoomMap.delete(socketId);
+        if (!roomId) {
+            const queueIndex = this.matchmakingQueue.findIndex(
+                (player) => player.socketId === socketId,
+            );
+            if (queueIndex >= 0) this.matchmakingQueue.splice(queueIndex, 1);
+            return undefined;
+        }
+        const room = this.rooms.get(roomId);
+        if (!room) return undefined;
+        const player = room.players.find(
+            (candidate) => candidate.socketId === socketId,
+        );
+        const color = room.colorBySocketId[socketId];
+        if (!player || !color) return undefined;
+        this.playerRoomMap.delete(socketId);
+        const disconnected: DisconnectedPlayer = {
+            roomId,
+            color,
+            previousSocketId: socketId,
+            deadlineEpochMs: this.options.now() + RECONNECT_GRACE_MS,
+        };
+        this.disconnectedPlayers.set(player.id, disconnected);
+        this.scheduleDisconnectTimeout(player.id, disconnected);
+        return room;
+    }
 
-            // If room exists, handle player leaving (end game?)
-            // For now, if a player leaves, destroy room?
-            // Or just return room so socket handler can notify opponent
-            if (room) {
-                // Remove room if empty or simplify logic for now
-                this.rooms.delete(roomId);
-                // Also remove opponent mapping
-                const opponent = room.players.find(p => p.socketId !== socketId);
-                if (opponent) {
-                    this.playerRoomMap.delete(opponent.socketId);
-                }
-                return room;
+    public getDisconnectDeadline(socketId: string): number | undefined {
+        for (const disconnected of this.disconnectedPlayers.values()) {
+            if (disconnected.previousSocketId === socketId) {
+                return disconnected.deadlineEpochMs;
             }
         }
+        return undefined;
+    }
 
-        // Also remove from queue if present
-        const queueIndex = this.matchmakingQueue.findIndex(p => p.socketId === socketId);
-        if (queueIndex !== -1) {
-            this.matchmakingQueue.splice(queueIndex, 1);
+    public reconnectPlayer(
+        playerId: string,
+        socketId: string,
+    ): AuthoritativeSnapshot | undefined {
+        const disconnected = this.disconnectedPlayers.get(playerId);
+        if (!disconnected) return undefined;
+        const room = this.rooms.get(disconnected.roomId);
+        if (!room || room.gameState.status !== 'playing') {
+            this.cancelDisconnectTimer(disconnected);
+            this.disconnectedPlayers.delete(playerId);
+            return undefined;
+        }
+        if (this.options.now() >= room.turnDeadlineEpochMs) {
+            this.finalizeTimeout(room);
+            return undefined;
+        }
+        if (this.options.now() >= disconnected.deadlineEpochMs) {
+            this.finalizeDisconnect(playerId, disconnected);
+            return undefined;
         }
 
-        return undefined;
+        const playerIndex = room.players.findIndex(
+            (player) => player.id === playerId,
+        );
+        if (playerIndex < 0) return undefined;
+        room.players[playerIndex] = {
+            ...room.players[playerIndex],
+            socketId,
+        };
+        delete room.colorBySocketId[disconnected.previousSocketId];
+        room.colorBySocketId[socketId] = disconnected.color;
+        this.playerRoomMap.set(socketId, room.id);
+        this.cancelDisconnectTimer(disconnected);
+        this.disconnectedPlayers.delete(playerId);
+
+        const opponent = room.players.find(
+            (candidate) => candidate.id !== playerId,
+        );
+        const opponentDisconnect = opponent
+            ? this.disconnectedPlayers.get(opponent.id)
+            : undefined;
+
+        return {
+            protocolVersion: PROTOCOL_VERSION,
+            matchId: room.id,
+            color: disconnected.color,
+            state: {
+                ...room.gameState,
+                board: room.gameState.board.map((row) => [...row]),
+                moveHistory: room.gameState.moveHistory.map((move) => ({
+                    ...move,
+                    from: { ...move.from },
+                    to: { ...move.to },
+                    capturedPieces: move.capturedPieces.map((position) => ({
+                        ...position,
+                    })),
+                })),
+            },
+            turnDeadlineEpochMs: room.turnDeadlineEpochMs,
+            opponentConnected: opponentDisconnect === undefined,
+            ...(opponentDisconnect
+                ? {
+                    opponentReconnectDeadlineEpochMs:
+                        opponentDisconnect.deadlineEpochMs,
+                }
+                : {}),
+        };
+    }
+
+    private scheduleTurnTimeout(room: Room): void {
+        this.cancelTurnTimer(room);
+        const delay = Math.max(0, room.turnDeadlineEpochMs - this.options.now());
+        room.turnTimer = this.options.schedule(() => {
+            if (room.gameState.status !== 'playing') return;
+            if (this.options.now() < room.turnDeadlineEpochMs) {
+                this.scheduleTurnTimeout(room);
+                return;
+            }
+            this.finalizeTimeout(room);
+        }, delay);
+    }
+
+    private finalizeTimeout(room: Room): void {
+        if (room.gameState.status !== 'playing') return;
+        const timedOut = room.gameState.currentTurn;
+        room.gameState = {
+            ...room.gameState,
+            status: 'finished',
+            winner: timedOut === 'black' ? 'white' : 'black',
+            endReason: 'timeout',
+            revision: room.gameState.revision + 1,
+        };
+        this.cancelTurnTimer(room);
+        this.clearDisconnectedPlayers(room.id);
+        this.emit('game_finished', {
+            roomId: room.id,
+            state: room.gameState,
+        });
+        this.scheduleRoomCleanup(room);
+    }
+
+    private cancelTurnTimer(room: Room): void {
+        if (room.turnTimer !== undefined) {
+            this.options.cancelSchedule(room.turnTimer);
+            room.turnTimer = undefined;
+        }
+    }
+
+    private scheduleDisconnectTimeout(
+        playerId: string,
+        disconnected: DisconnectedPlayer,
+    ): void {
+        const delay = Math.max(
+            0,
+            disconnected.deadlineEpochMs - this.options.now(),
+        );
+        disconnected.timer = this.options.schedule(() => {
+            disconnected.timer = undefined;
+            if (this.options.now() < disconnected.deadlineEpochMs) {
+                this.scheduleDisconnectTimeout(playerId, disconnected);
+                return;
+            }
+            this.finalizeDisconnect(playerId, disconnected);
+        }, delay);
+    }
+
+    private finalizeDisconnect(
+        playerId: string,
+        disconnected: DisconnectedPlayer,
+    ): void {
+        const room = this.rooms.get(disconnected.roomId);
+        if (!room || room.gameState.status !== 'playing') {
+            this.cancelDisconnectTimer(disconnected);
+            this.disconnectedPlayers.delete(playerId);
+            return;
+        }
+        if (this.options.now() >= room.turnDeadlineEpochMs) {
+            this.finalizeTimeout(room);
+            return;
+        }
+        room.gameState = {
+            ...room.gameState,
+            status: 'finished',
+            winner: disconnected.color === 'black' ? 'white' : 'black',
+            endReason: 'disconnect',
+            revision: room.gameState.revision + 1,
+        };
+        this.cancelTurnTimer(room);
+        this.clearDisconnectedPlayers(room.id);
+        this.emit('game_finished', {
+            roomId: room.id,
+            state: room.gameState,
+        });
+        this.scheduleRoomCleanup(room);
+    }
+
+    private cancelDisconnectTimer(disconnected: DisconnectedPlayer): void {
+        if (disconnected.timer !== undefined) {
+            this.options.cancelSchedule(disconnected.timer);
+            disconnected.timer = undefined;
+        }
+    }
+
+    private clearDisconnectedPlayers(roomId: string): void {
+        for (const [playerId, disconnected] of this.disconnectedPlayers) {
+            if (disconnected.roomId !== roomId) continue;
+            this.cancelDisconnectTimer(disconnected);
+            this.disconnectedPlayers.delete(playerId);
+        }
+    }
+
+    private scheduleRoomCleanup(room: Room): void {
+        if (this.cleanupScheduledRooms.has(room.id)) return;
+        this.cleanupScheduledRooms.add(room.id);
+        room.cleanupTimer = this.options.schedule(() => {
+            room.cleanupTimer = undefined;
+            this.cleanupScheduledRooms.delete(room.id);
+            this.rooms.delete(room.id);
+            this.processedCommands.delete(room.id);
+            this.clearDisconnectedPlayers(room.id);
+            for (const [socketId, roomId] of this.playerRoomMap) {
+                if (roomId === room.id) this.playerRoomMap.delete(socketId);
+            }
+        }, ROOM_RETENTION_MS);
+    }
+
+    private reject(
+        intent: MoveIntent,
+        reason: MoveRejectionReason,
+        currentRevision: number,
+    ): MoveDecision {
+        return {
+            type: 'rejected',
+            protocolVersion: PROTOCOL_VERSION,
+            commandId: intent.commandId,
+            reason,
+            currentRevision,
+        };
     }
 }

@@ -117,7 +117,7 @@ Phase 1 至 Phase 4 均不接入广告和应用内购买。国内 Android 应用
 
 ### 5.1 环境边界
 
-Phase 3 开始时才引入完整 staging，并与 production 隔离：
+完整 staging 是 Phase 3 进入真实集成与发布门禁的前置条件；在项目方集中补齐域名、区域、平台和责任边界后建立，并与 production 隔离：
 
 - 独立的 staging 应用配置。
 - 独立的 staging 服务器和数据库。
@@ -171,6 +171,7 @@ Phase 3 开始时才引入完整 staging，并与 production 隔离：
 - Phase 1：最终应用名称、永久 Android applicationId、隐私政策 URL、支持邮箱、Sentry DSN、Google Play 开发者账户状态、正式签名保管方案和商店素材。
 - Phase 2：对应 iOS Bundle ID、Apple Developer Team、App Store Connect 信息和签名权限。
 - Phase 3：staging/production 域名、服务器区域、部署平台、数据库和备份责任、数据保留期限、服务端 Sentry DSN。
+- Phase 4：最终语音识别与播报引擎、联网/离线边界、第三方处理区域、数据保留条款及所需外部账号。
 - 国内商店：在 Google Play 版本稳定后，再确认目标商店、商店合规要求、签名复用和分发计划。
 
 任何阶段只有在发布门禁全部通过后才能称为“完成”或“可发布”。

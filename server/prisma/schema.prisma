@@ -8,22 +8,27 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(uuid())
-  username  String   @unique
-  createdAt DateTime @default(now())
-  matchesAsPlayer1 Match[] @relation("Player1")
-  matchesAsPlayer2 Match[] @relation("Player2")
+  id               String   @id @default(uuid())
+  username         String   @unique
+  createdAt        DateTime @default(now())
+  matchesAsPlayer1 Match[]  @relation("Player1")
+  matchesAsPlayer2 Match[]  @relation("Player2")
 }
 
 model Match {
-  id            String   @id @default(uuid())
-  player1Id     String
-  player2Id     String
-  player1       User     @relation("Player1", fields: [player1Id], references: [id])
-  player2       User     @relation("Player2", fields: [player2Id], references: [id])
-  winnerId      String?
-  status        String   @default("finished") // playing, finished
-  movesJson     String   @default("[]") // Store moves as JSON string for now
-  createdAt     DateTime @default(now())
-  finishedAt    DateTime?
+  id              String    @id @default(uuid())
+  externalId      String    @unique
+  protocolVersion Int       @default(1)
+  player1Id       String
+  player2Id       String
+  player1         User      @relation("Player1", fields: [player1Id], references: [id])
+  player2         User      @relation("Player2", fields: [player2Id], references: [id])
+  winnerId        String?
+  startingPlayer  String
+  endReason       String
+  revision        Int
+  status          String    @default("finished") // playing, finished
+  movesJson       String    @default("[]") // Store moves as JSON string for now
+  createdAt       DateTime  @default(now())
+  finishedAt      DateTime?
 }

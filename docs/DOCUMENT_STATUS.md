@@ -23,10 +23,11 @@ README 是项目入口和摘要。README 与上述权威文档冲突时，应修
 | 文档 | 权威范围 | 不负责的内容 |
 |---|---|---|
 | [PRODUCT_ROADMAP.md](PRODUCT_ROADMAP.md) | 四阶段顺序、各阶段范围、平台与环境边界、用户后补门禁 | 当前代码完成度 |
-| [GAME_RULES.md](GAME_RULES.md) | 移动、吃子、计时、终局顺序、先手、撤销、存档和 LAN 协议不变量 | 发布渠道政策 |
-| [TEST_STRATEGY.md](TEST_STRATEGY.md) | 测试分层、规则场景、TDD 切片、LAN 故障矩阵和验收证据 | 产品范围变更 |
+| [GAME_RULES.md](GAME_RULES.md) | 移动、吃子、计时、终局顺序、先手、撤销、存档和 LAN/在线协议不变量 | 发布渠道政策 |
+| [TEST_STRATEGY.md](TEST_STRATEGY.md) | 测试分层、规则场景、TDD 切片、LAN/在线故障矩阵和验收证据 | 产品范围变更 |
 | [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md) | Android、iOS、在线和语音阶段的正式发布门禁 | 代替实际执行测试 |
 | [PRIVACY_DATA_MAP.md](PRIVACY_DATA_MAP.md) | 本地、LAN、Sentry、在线和语音数据流及隐私变更控制 | 法律意见 |
+| [PENDING_CONFIRMATIONS.md](PENDING_CONFIRMATIONS.md) | 项目方已确认、暂缓或需在发布前集中补齐的外部输入 | 产品规则或代码完成度 |
 | [VISUAL_DESIGN_SYSTEM.md](VISUAL_DESIGN_SYSTEM.md) | 现代东方棋艺、响应式布局、无障碍和主题包架构 | 具体页面已经实现的声明 |
 | [DOCUMENT_STATUS.md](DOCUMENT_STATUS.md) | 文档分类、冲突处理和维护规则 | 游戏或产品规则本身 |
 | [../README.md](../README.md) | 项目入口、当前阶段摘要、开发命令和权威文档导航 | 独立权威来源 |

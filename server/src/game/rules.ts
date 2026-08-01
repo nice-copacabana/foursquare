@@ -1,188 +1,223 @@
-import { GameState, BoardState } from '../types/game';
+import {
+    BoardState,
+    GameEndReason,
+    GameState,
+    GameWinner,
+    PieceColor,
+    RecordedMove,
+} from '../types/game';
 import { MoveData, Position } from '../types/move';
 
 const BOARD_SIZE = 4;
+const NO_CAPTURE_DRAW_PLY = 50;
+
+export type MoveValidation =
+    | { valid: true }
+    | { valid: false; message: string };
+
+export type AppliedMove = {
+    state: GameState;
+    capturedPieces: Position[];
+};
 
 export class GameRules {
-    constructor() { }
-
     public static getInitialBoard(): BoardState {
-        // 4x4 Grid
-        // Row 0: Black
-        // Row 3: White
-        const board: BoardState = Array(BOARD_SIZE).fill(null).map(() => Array(BOARD_SIZE).fill(null));
-
-        // Initialize Black pieces (Top)
-        for (let x = 0; x < BOARD_SIZE; x++) {
+        const board: BoardState = Array.from(
+            { length: BOARD_SIZE },
+            () => Array<PieceColor | null>(BOARD_SIZE).fill(null),
+        );
+        for (let x = 0; x < BOARD_SIZE; x += 1) {
             board[0][x] = 'black';
-        }
-
-        // Initialize White pieces (Bottom)
-        for (let x = 0; x < BOARD_SIZE; x++) {
             board[BOARD_SIZE - 1][x] = 'white';
         }
-
         return board;
     }
 
-    public validateMove(gameState: GameState, move: MoveData): { valid: boolean; message?: string } {
-        // 1. Check if game is playing
+    public static validateMove(
+        gameState: GameState,
+        move: MoveData,
+    ): MoveValidation {
         if (gameState.status !== 'playing') {
-            return { valid: false, message: 'Game is not active' };
+            return { valid: false, message: 'game_finished' };
         }
-
-        // 2. Check turn order
+        if (
+            gameState.noCapturePly >= NO_CAPTURE_DRAW_PLY
+            || this.countPieces(gameState.board, 'black') <= 1
+            || this.countPieces(gameState.board, 'white') <= 1
+            || !this.hasLegalMoves(gameState.board, gameState.currentTurn)
+        ) {
+            return { valid: false, message: 'invalid_state' };
+        }
         if (gameState.currentTurn !== move.player) {
-            return { valid: false, message: 'Not your turn' };
+            return { valid: false, message: 'wrong_turn' };
         }
-
-        // 3. Check Bounds
         if (!this.isWithinBounds(move.from) || !this.isWithinBounds(move.to)) {
-            return { valid: false, message: 'Move out of bounds' };
+            return { valid: false, message: 'out_of_bounds' };
         }
-
-        // 4. Check Ownership
-        const pieceAtFrom = gameState.board[move.from.y][move.from.x];
-        if (pieceAtFrom !== move.player) {
-            return { valid: false, message: 'Not your piece' };
+        if (gameState.board[move.from.y][move.from.x] !== move.player) {
+            return { valid: false, message: 'not_your_piece' };
         }
-
-        // 5. Check Target Empty
-        const pieceAtTo = gameState.board[move.to.y][move.to.x];
-        if (pieceAtTo !== null) {
-            return { valid: false, message: 'Target position is not empty' };
+        if (gameState.board[move.to.y][move.to.x] !== null) {
+            return { valid: false, message: 'target_occupied' };
         }
-
-        // 6. Check Adjacency (Up/Down/Left/Right) - No diagonals
-        const dx = Math.abs(move.from.x - move.to.x);
-        const dy = Math.abs(move.from.y - move.to.y);
-        if (dx + dy !== 1) {
-            return { valid: false, message: 'Invalid move: Must be adjacent' };
+        const distance = Math.abs(move.from.x - move.to.x)
+            + Math.abs(move.from.y - move.to.y);
+        if (distance !== 1) {
+            return { valid: false, message: 'not_adjacent' };
         }
-
         return { valid: true };
     }
 
-    public applyMove(gameState: GameState, move: MoveData): { newState: GameState; captured: Position[] } {
-        // 1. Move the piece
-        const currentPlayer = move.player; // 'black' or 'white'
-        gameState.board[move.from.y][move.from.x] = null;
-        gameState.board[move.to.y][move.to.x] = currentPlayer;
-
-        // 2. Check for Captures (Self-Self-Enemy)
-        const captured = this.checkCaptures(gameState.board, move.to, currentPlayer);
-
-        // Remove captured pieces
-        captured.forEach(pos => {
-            gameState.board[pos.y][pos.x] = null;
-        });
-
-        // 3. Record move in history (with capture info)
-        const recordedMove = { ...move, capturedPiece: captured.length > 0 ? captured[0] : undefined };
-        gameState.moveHistory.push(recordedMove);
-
-        // 4. Update Turn
-        const nextPlayer = currentPlayer === 'black' ? 'white' : 'black';
-        gameState.currentTurn = nextPlayer;
-
-        // 5. Check Win Condition
-        const winner = this.checkWinner(gameState.board, nextPlayer); // Check if nextPlayer is dead
-        if (winner) {
-            gameState.status = 'finished';
-            gameState.winner = winner;
-        } else if (this.checkDraw(gameState)) {
-            gameState.status = 'finished';
-            gameState.winner = 'draw';
+    public static applyMove(gameState: GameState, move: MoveData): AppliedMove {
+        const validation = this.validateMove(gameState, move);
+        if (!validation.valid) {
+            throw new Error(validation.message);
         }
 
-        return { newState: gameState, captured };
+        const board = gameState.board.map((row) => [...row]);
+        board[move.from.y][move.from.x] = null;
+        board[move.to.y][move.to.x] = move.player;
+
+        const capturedPieces = this.detectCaptures(board, move.to, move.player);
+        for (const captured of capturedPieces) {
+            board[captured.y][captured.x] = null;
+        }
+
+        const recordedMove: RecordedMove = {
+            matchId: move.matchId,
+            from: { ...move.from },
+            to: { ...move.to },
+            player: move.player,
+            capturedPieces: capturedPieces.map((position) => ({ ...position })),
+        };
+        const noCapturePly = capturedPieces.length > 0
+            ? 0
+            : gameState.noCapturePly + 1;
+        const nextPlayer = this.opponent(move.player);
+
+        let status: GameState['status'] = 'playing';
+        let winner: GameWinner | undefined;
+        let endReason: GameEndReason | undefined;
+        let currentTurn = move.player;
+
+        if (this.countPieces(board, nextPlayer) <= 1) {
+            status = 'finished';
+            winner = move.player;
+            endReason = 'piece_count';
+        } else if (noCapturePly >= NO_CAPTURE_DRAW_PLY) {
+            status = 'finished';
+            winner = 'draw';
+            endReason = 'no_capture_limit';
+        } else {
+            currentTurn = nextPlayer;
+            if (!this.hasLegalMoves(board, nextPlayer)) {
+                status = 'finished';
+                winner = move.player;
+                endReason = 'no_legal_moves';
+            }
+        }
+
+        return {
+            state: {
+                board,
+                currentTurn,
+                status,
+                winner,
+                endReason,
+                moveHistory: [...gameState.moveHistory, recordedMove],
+                noCapturePly,
+                revision: gameState.revision + 1,
+            },
+            capturedPieces,
+        };
     }
 
-    private checkCaptures(board: BoardState, pos: Position, player: string): Position[] {
-        const captured: Position[] = [];
-        const opponent = player === 'black' ? 'white' : 'black';
-        const directions = [
-            { x: 1, y: 0 },  // Right
-            { x: -1, y: 0 }, // Left
-            { x: 0, y: 1 },  // Down
-            { x: 0, y: -1 }  // Up
+    public static detectCaptures(
+        board: BoardState,
+        movedPiece: Position,
+        player: PieceColor,
+    ): Position[] {
+        if (!this.isWithinBounds(movedPiece)) return [];
+        const row = Array.from(
+            { length: BOARD_SIZE },
+            (_, x) => ({ x, y: movedPiece.y }),
+        );
+        const column = Array.from(
+            { length: BOARD_SIZE },
+            (_, y) => ({ x: movedPiece.x, y }),
+        );
+        const captures: Position[] = [];
+        const rowCapture = this.detectLineCapture(board, row, movedPiece, player);
+        if (rowCapture) captures.push(rowCapture);
+        const columnCapture = this.detectLineCapture(
+            board,
+            column,
+            movedPiece,
+            player,
+        );
+        if (columnCapture) captures.push(columnCapture);
+        return captures;
+    }
+
+    public validateMove(gameState: GameState, move: MoveData): MoveValidation {
+        return GameRules.validateMove(gameState, move);
+    }
+
+    public applyMove(
+        gameState: GameState,
+        move: MoveData,
+    ): { newState: GameState; captured: Position[] } {
+        const result = GameRules.applyMove(gameState, move);
+        return { newState: result.state, captured: result.capturedPieces };
+    }
+
+    private static detectLineCapture(
+        board: BoardState,
+        line: Position[],
+        movedPiece: Position,
+        player: PieceColor,
+    ): Position | undefined {
+        const enemy = this.opponent(player);
+        const pieces = line.map((position) => board[position.y][position.x]);
+        const patterns: Array<{
+            pieces: Array<PieceColor | null>;
+            capturedIndex: number;
+        }> = [
+            { pieces: [player, player, enemy, null], capturedIndex: 2 },
+            { pieces: [null, player, player, enemy], capturedIndex: 3 },
+            { pieces: [null, enemy, player, player], capturedIndex: 1 },
+            { pieces: [enemy, player, player, null], capturedIndex: 0 },
         ];
 
-        // The rule: "Self-Self-Enemy". Length = 3.
-        // The newly moved piece is at 'pos'. It could be the first or second 'Self'.
-        // Case A: [pos] [Self] [Enemy]
-        // Case B: [Self] [pos] [Enemy]
-
-        for (const dir of directions) {
-            // Check Case A: pos -> Self -> Enemy
-            const p1 = { x: pos.x + dir.x, y: pos.y + dir.y };
-            const p2 = { x: pos.x + dir.x * 2, y: pos.y + dir.y * 2 };
-
-            if (this.isWithinBounds(p1) && this.isWithinBounds(p2)) {
-                if (board[p1.y][p1.x] === player && board[p2.y][p2.x] === opponent) {
-                    captured.push(p2);
-                    continue; // Check next direction
-                }
-            }
-
-            // Check Case B: Self -> pos -> Enemy
-            // Opponent is at pos + dir. Self is at pos - dir.
-            const pEnemy = { x: pos.x + dir.x, y: pos.y + dir.y };
-            const pSelf = { x: pos.x - dir.x, y: pos.y - dir.y };
-
-            if (this.isWithinBounds(pEnemy) && this.isWithinBounds(pSelf)) {
-                if (board[pSelf.y][pSelf.x] === player && board[pEnemy.y][pEnemy.x] === opponent) {
-                    captured.push(pEnemy);
+        for (const pattern of patterns) {
+            if (pieces.every((piece, index) => piece === pattern.pieces[index])) {
+                const movedIndex = line.findIndex(
+                    (position) => this.samePosition(position, movedPiece),
+                );
+                if (movedIndex >= 0 && pattern.pieces[movedIndex] === player) {
+                    return { ...line[pattern.capturedIndex] };
                 }
             }
         }
-
-        return captured;
+        return undefined;
     }
 
-    private checkWinner(board: BoardState, nextPlayer: string): string | null {
-        // 1. Check piece count
-        let blackCount = 0;
-        let whiteCount = 0;
-        for (let y = 0; y < BOARD_SIZE; y++) {
-            for (let x = 0; x < BOARD_SIZE; x++) {
-                if (board[y][x] === 'black') blackCount++;
-                if (board[y][x] === 'white') whiteCount++;
-            }
-        }
-
-        if (blackCount === 0) return 'white';
-        if (whiteCount === 0) return 'black';
-
-        // 2. Check if nextPlayer has any legal moves
-        if (!this.hasLegalMoves(board, nextPlayer)) {
-            // Next player cannot move, so the previous player wins
-            return nextPlayer === 'black' ? 'white' : 'black';
-        }
-
-        return null;
+    private static countPieces(board: BoardState, player: PieceColor): number {
+        return board.reduce(
+            (total, row) => total + row.filter((piece) => piece === player).length,
+            0,
+        );
     }
 
-    private checkDraw(gameState: GameState): boolean {
-        // 50-move rule (if stored in history)
-        // Simplified: just check history length for now if we don't have no-capture counters
-        if (gameState.moveHistory.length > 100) return true; // Safety cap
-        return false;
-    }
-
-    private hasLegalMoves(board: BoardState, player: string): boolean {
-        const directions = [{ x: 1, y: 0 }, { x: -1, y: 0 }, { x: 0, y: 1 }, { x: 0, y: -1 }];
-
-        for (let y = 0; y < BOARD_SIZE; y++) {
-            for (let x = 0; x < BOARD_SIZE; x++) {
-                if (board[y][x] === player) {
-                    // Check if this piece can move anywhere
-                    for (const dir of directions) {
-                        const nx = x + dir.x;
-                        const ny = y + dir.y;
-                        if (this.isWithinBounds({ x: nx, y: ny }) && board[ny][nx] === null) {
-                            return true;
-                        }
+    private static hasLegalMoves(board: BoardState, player: PieceColor): boolean {
+        for (let y = 0; y < BOARD_SIZE; y += 1) {
+            for (let x = 0; x < BOARD_SIZE; x += 1) {
+                if (board[y][x] !== player) continue;
+                for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+                    const target = { x: x + dx, y: y + dy };
+                    if (this.isWithinBounds(target)
+                        && board[target.y][target.x] === null) {
+                        return true;
                     }
                 }
             }
@@ -190,7 +225,18 @@ export class GameRules {
         return false;
     }
 
-    private isWithinBounds(pos: Position): boolean {
-        return pos.x >= 0 && pos.x < BOARD_SIZE && pos.y >= 0 && pos.y < BOARD_SIZE;
+    private static opponent(player: PieceColor): PieceColor {
+        return player === 'black' ? 'white' : 'black';
+    }
+
+    private static samePosition(left: Position, right: Position): boolean {
+        return left.x === right.x && left.y === right.y;
+    }
+
+    private static isWithinBounds(position: Position): boolean {
+        return position.x >= 0
+            && position.x < BOARD_SIZE
+            && position.y >= 0
+            && position.y < BOARD_SIZE;
     }
 }

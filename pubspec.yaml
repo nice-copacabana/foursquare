@@ -21,6 +21,7 @@ dependencies:
   hive: ^2.2.3
   hive_flutter: ^1.1.0
   shared_preferences: ^2.2.2
+  uuid: ^4.5.3  # 匿名在线身份与幂等指令 ID
   
   # 音频
   audioplayers: ^5.2.1

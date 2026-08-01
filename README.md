@@ -2,7 +2,7 @@
 
 一个基于 Flutter 的 4×4 移动吃子策略游戏。
 
-> 当前状态：Phase 1 功能底座已完成，Phase 2 的 iOS 工程与中英日界面正在开发；Android/iOS 均尚未达到正式发布门禁。仓库中的历史完成报告和旧版本号不代表当前可发布状态。
+> 当前状态：Phase 1 功能底座已完成；Phase 2 的 iOS 工程与中英日界面工程切片已完成 Windows 代码、契约及 Android 回归验证，仍待 macOS/Xcode、真机和商店门禁。Phase 3 正在开发可靠在线基础；Android/iOS 均尚未达到正式发布门禁。仓库中的历史完成报告和旧版本号不代表当前可发布状态。
 > 当前范围与顺序以[产品路线图](docs/PRODUCT_ROADMAP.md)为准，规则以[四方棋规则与对局协议](docs/GAME_RULES.md)为准，文档有效性见[文档状态索引](docs/DOCUMENT_STATUS.md)。
 
 ## 项目概述
@@ -84,7 +84,7 @@ Phase 1 功能底座已经进入当前代码，但正式身份、签名、商店
    flutter run --dart-define=ENV=development
    ```
 
-   Phase 1/2 只定义 development 和 production。staging 在 Phase 3 在线能力开始时才建立，并与 production 的应用、服务器、数据库和诊断环境隔离。
+   Phase 1/2 只定义 development 和 production。完整 staging 属于 Phase 3 集成与发布门禁，待外部基础设施信息集中补齐后建立，并与 production 的应用、服务器、数据库和诊断环境隔离。
 
 ### 构建发布版本
 
@@ -166,7 +166,7 @@ foursquare/
 
 ### 当前代码状态
 
-仓库已经完成 Phase 1 的本地双人、AI、LAN、存储、统计、回放、规则、教程、现代东方主题和基础无障碍实现，并正在 Phase 2 接入 iOS 13 与中英日界面。仓库也保留在线、语音和冥想原型代码，但这些入口仍受阶段边界约束；“存在代码”不等于“达到正式发布质量”。
+仓库已经完成 Phase 1 的本地双人、AI、LAN、存储、统计、回放、规则、教程、现代东方主题和基础无障碍实现。Phase 2 的 iOS 13 工程与中英日界面已完成 Windows 可执行的代码、契约和 Android 回归验证，仍待 macOS/Xcode、真机和商店外部门禁。Phase 3 正在开发匿名身份、版本化协议、服务端权威规则、指令幂等、60 秒超时和断线重连等可靠在线基础；在线入口继续隐藏，尚不能视为可用或可发布功能。语音和冥想代码仍属于后续阶段原型；“存在代码”不等于“达到正式发布质量”。
 
 当前不能作出的发布承诺包括：
 
@@ -200,11 +200,12 @@ Model层 (Models)
 
 - [文档状态索引](docs/DOCUMENT_STATUS.md)：区分当前权威文档、历史快照和未来方案。
 - [产品路线图](docs/PRODUCT_ROADMAP.md)：四阶段范围、平台和环境边界。
-- [四方棋规则与对局协议](docs/GAME_RULES.md)：规则、模式差异、终局顺序和 LAN 不变量。
+- [四方棋规则与对局协议](docs/GAME_RULES.md)：规则、模式差异、终局顺序以及 LAN/在线权威协议不变量。
 - [测试策略与验收矩阵](docs/TEST_STRATEGY.md)：测试分层、TDD 切片和发布证据。
 - [发布门禁清单](docs/RELEASE_CHECKLIST.md)：Android、iOS、在线和语音阶段的发布条件。
 - [隐私数据地图](docs/PRIVACY_DATA_MAP.md)：本地、LAN、诊断、在线和语音数据边界。
 - [视觉设计系统](docs/VISUAL_DESIGN_SYSTEM.md)：现代东方棋艺与主题包架构。
+- [待确认事项](docs/PENDING_CONFIRMATIONS.md)：集中记录正式发布前由项目方后补的外部输入与暂缓事项。
 
 #### 历史与参考材料
 
@@ -238,7 +239,7 @@ Model层 (Models)
 
 - 遵循 Dart/Flutter 代码规范和仓库 `analysis_options.yaml`。
 - UI、BLoC、规则引擎、模型和服务按职责分层。
-- 规则只允许存在一个可执行真源；AI、回放和网络层不得复制规则实现。
+- Dart 客户端规则只允许存在一个可执行真源；AI、回放和客户端网络层不得复制规则实现。在线服务端保留独立权威实现，并通过跨语言契约场景保证一致。
 - 功能完成必须同时提供与风险相匹配的测试证据。
 
 ## 测试
