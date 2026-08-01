@@ -274,6 +274,10 @@ export class RoomManager extends EventEmitter {
         }
         const room = this.rooms.get(roomId);
         if (!room) return undefined;
+        if (this.isFinished(room)) {
+            this.playerRoomMap.delete(socketId);
+            return undefined;
+        }
         const player = room.players.find(
             (candidate) => candidate.socketId === socketId,
         );
@@ -300,31 +304,49 @@ export class RoomManager extends EventEmitter {
         return undefined;
     }
 
-    public reconnectPlayer(
+    public resumePlayer(
         playerId: string,
         socketId: string,
+        matchId: string,
     ): AuthoritativeSnapshot | undefined {
-        const disconnected = this.disconnectedPlayers.get(playerId);
-        if (!disconnected) return undefined;
-        const room = this.rooms.get(disconnected.roomId);
-        if (!room || room.gameState.status !== 'playing') {
-            this.cancelDisconnectTimer(disconnected);
-            this.disconnectedPlayers.delete(playerId);
+        if (
+            this.playerRoomMap.has(socketId)
+            || this.matchmakingQueue.some(
+                (player) => player.socketId === socketId,
+            )
+        ) {
             return undefined;
         }
+        const room = this.rooms.get(matchId);
+        const playerIndex = room?.players.findIndex(
+            (player) => player.id === playerId,
+        ) ?? -1;
+        if (!room || playerIndex < 0) return undefined;
+
+        const disconnected = this.disconnectedPlayers.get(playerId);
+        if (this.isFinished(room)) {
+            const color = room.colorBySocketId[
+                room.players[playerIndex].socketId
+            ];
+            return color
+                ? this.createSnapshot(room, playerId, color)
+                : undefined;
+        }
+        if (!disconnected || disconnected.roomId !== matchId) return undefined;
+
         if (this.options.now() >= room.turnDeadlineEpochMs) {
             this.finalizeTimeout(room);
-            return undefined;
-        }
-        if (this.options.now() >= disconnected.deadlineEpochMs) {
+        } else if (this.options.now() >= disconnected.deadlineEpochMs) {
             this.finalizeDisconnect(playerId, disconnected);
-            return undefined;
+        }
+        if (this.isFinished(room)) {
+            return this.createSnapshot(
+                room,
+                playerId,
+                disconnected.color,
+            );
         }
 
-        const playerIndex = room.players.findIndex(
-            (player) => player.id === playerId,
-        );
-        if (playerIndex < 0) return undefined;
         room.players[playerIndex] = {
             ...room.players[playerIndex],
             socketId,
@@ -335,6 +357,29 @@ export class RoomManager extends EventEmitter {
         this.cancelDisconnectTimer(disconnected);
         this.disconnectedPlayers.delete(playerId);
 
+        return this.createSnapshot(room, playerId, disconnected.color);
+    }
+
+    public createSnapshotForSocket(
+        socketId: string,
+        matchId: string,
+    ): AuthoritativeSnapshot | undefined {
+        if (this.playerRoomMap.get(socketId) !== matchId) return undefined;
+        const room = this.rooms.get(matchId);
+        if (!room) return undefined;
+        const player = room.players.find(
+            (candidate) => candidate.socketId === socketId,
+        );
+        const color = room.colorBySocketId[socketId];
+        if (!player || !color) return undefined;
+        return this.createSnapshot(room, player.id, color);
+    }
+
+    private createSnapshot(
+        room: Room,
+        playerId: string,
+        color: PieceColor,
+    ): AuthoritativeSnapshot {
         const opponent = room.players.find(
             (candidate) => candidate.id !== playerId,
         );
@@ -345,7 +390,7 @@ export class RoomManager extends EventEmitter {
         return {
             protocolVersion: PROTOCOL_VERSION,
             matchId: room.id,
-            color: disconnected.color,
+            color,
             state: {
                 ...room.gameState,
                 board: room.gameState.board.map((row) => [...row]),
@@ -367,6 +412,10 @@ export class RoomManager extends EventEmitter {
                 }
                 : {}),
         };
+    }
+
+    private isFinished(room: Room): boolean {
+        return room.gameState.status === 'finished';
     }
 
     private scheduleTurnTimeout(room: Room): void {
@@ -430,6 +479,10 @@ export class RoomManager extends EventEmitter {
         playerId: string,
         disconnected: DisconnectedPlayer,
     ): void {
+        if (this.disconnectedPlayers.get(playerId) !== disconnected) {
+            this.cancelDisconnectTimer(disconnected);
+            return;
+        }
         const room = this.rooms.get(disconnected.roomId);
         if (!room || room.gameState.status !== 'playing') {
             this.cancelDisconnectTimer(disconnected);

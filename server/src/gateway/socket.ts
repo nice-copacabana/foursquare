@@ -40,9 +40,14 @@ type RoomManagerLike = {
         event: 'game_finished',
         listener: (event: GameFinishedEvent) => void,
     ) => unknown;
-    reconnectPlayer: (
+    resumePlayer: (
         playerId: string,
         socketId: string,
+        matchId: string,
+    ) => AuthoritativeSnapshot | undefined;
+    createSnapshotForSocket: (
+        socketId: string,
+        matchId: string,
     ) => AuthoritativeSnapshot | undefined;
     queuePlayer: (player: Player) => MatchmakingResult;
     removePlayerFromQueue: (playerId: string, socketId: string) => boolean;
@@ -71,6 +76,22 @@ type MatchRequestParseResult =
     | {
         valid: false;
         reason: 'invalid_protocol' | 'invalid_payload' | 'invalid_identity';
+    };
+
+type ResumeRequestParseResult =
+    | { valid: true; playerId: string; matchId: string }
+    | {
+        valid: false;
+        matchId: string;
+        reason: 'invalid_protocol' | 'invalid_payload' | 'invalid_identity';
+    };
+
+type SnapshotRequestParseResult =
+    | { valid: true; matchId: string }
+    | {
+        valid: false;
+        matchId: string;
+        reason: 'invalid_protocol' | 'invalid_payload';
     };
 
 const roomManager = new RoomManager();
@@ -196,6 +217,61 @@ const handleSocketConnection = (
 ): void => {
     socket.emit('message', { type: 'system', content: 'connected' });
 
+    socket.on('resume_match', (payload) => {
+        const parsed = parseResumeRequest(payload);
+        if (!parsed.valid) {
+            socket.emit('match_rejected', {
+                protocolVersion: PROTOCOL_VERSION,
+                reason: parsed.reason,
+            });
+            return;
+        }
+        const snapshot = manager.resumePlayer(
+            parsed.playerId,
+            socket.id,
+            parsed.matchId,
+        );
+        if (!snapshot) {
+            socket.emit('match_rejected', {
+                protocolVersion: PROTOCOL_VERSION,
+                reason: 'resume_not_found',
+            });
+            return;
+        }
+        socket.join(snapshot.matchId);
+        socket.emit('authoritative_snapshot', snapshot);
+        if (snapshot.state.status === 'playing') {
+            const room = manager.getRoomBySocketId(socket.id);
+            registerRoom(room);
+            notifyOpponent(io, room, socket.id, 'opponent_reconnected');
+        }
+    });
+
+    socket.on('request_snapshot', (payload) => {
+        const parsed = parseSnapshotRequest(payload);
+        if (!parsed.valid) {
+            socket.emit('snapshot_rejected', {
+                protocolVersion: PROTOCOL_VERSION,
+                matchId: parsed.matchId,
+                reason: parsed.reason,
+            });
+            return;
+        }
+        const snapshot = manager.createSnapshotForSocket(
+            socket.id,
+            parsed.matchId,
+        );
+        if (!snapshot) {
+            socket.emit('snapshot_rejected', {
+                protocolVersion: PROTOCOL_VERSION,
+                matchId: parsed.matchId,
+                reason: 'not_room_player',
+            });
+            return;
+        }
+        socket.emit('authoritative_snapshot', snapshot);
+    });
+
     socket.on('request_match', (payload) => {
         const parsed = parseMatchRequest(payload);
         if (!parsed.valid) {
@@ -205,20 +281,8 @@ const handleSocketConnection = (
             });
             return;
         }
-        const playerId = parsed.playerId;
-
-        const snapshot = manager.reconnectPlayer(playerId, socket.id);
-        if (snapshot) {
-            socket.join(snapshot.matchId);
-            const room = manager.getRoomBySocketId(socket.id);
-            registerRoom(room);
-            socket.emit('authoritative_snapshot', snapshot);
-            notifyOpponent(io, room, socket.id, 'opponent_reconnected');
-            return;
-        }
-
         const player: Player = {
-            id: playerId,
+            id: parsed.playerId,
             socketId: socket.id,
             name: 'Anonymous player',
         };
@@ -394,6 +458,54 @@ const parseMovePayload = (payload: unknown): MovePayloadParseResult => {
     };
 };
 
+const parseResumeRequest = (payload: unknown): ResumeRequestParseResult => {
+    try {
+        const parsedPlayer = parseMatchRequest(payload);
+        const matchId = getMatchId(payload);
+        if (!parsedPlayer.valid) {
+            return {
+                valid: false,
+                matchId,
+                reason: parsedPlayer.reason,
+            };
+        }
+        if (!isWireIdentifier(matchId)) {
+            return {
+                valid: false,
+                matchId,
+                reason: 'invalid_payload',
+            };
+        }
+        return {
+            valid: true,
+            playerId: parsedPlayer.playerId,
+            matchId,
+        };
+    } catch {
+        return { valid: false, matchId: '', reason: 'invalid_payload' };
+    }
+};
+
+const parseSnapshotRequest = (
+    payload: unknown,
+): SnapshotRequestParseResult => {
+    try {
+        if (!isRecord(payload)) {
+            return { valid: false, matchId: '', reason: 'invalid_payload' };
+        }
+        const matchId = getMatchId(payload);
+        if (payload.protocolVersion !== PROTOCOL_VERSION) {
+            return { valid: false, matchId, reason: 'invalid_protocol' };
+        }
+        if (!isWireIdentifier(matchId)) {
+            return { valid: false, matchId, reason: 'invalid_payload' };
+        }
+        return { valid: true, matchId };
+    } catch {
+        return { valid: false, matchId: '', reason: 'invalid_payload' };
+    }
+};
+
 const emitGatewayMoveRejection = (
     socket: SocketLike,
     manager: RoomManagerLike,
@@ -422,6 +534,15 @@ const getCommandId = (payload: unknown): string => {
         return typeof payload.commandId === 'string'
             ? payload.commandId
             : '';
+    } catch {
+        return '';
+    }
+};
+
+const getMatchId = (payload: unknown): string => {
+    try {
+        if (!isRecord(payload)) return '';
+        return typeof payload.matchId === 'string' ? payload.matchId : '';
     } catch {
         return '';
     }

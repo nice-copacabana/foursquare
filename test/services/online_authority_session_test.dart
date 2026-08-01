@@ -23,6 +23,26 @@ void main() {
       expect(session.state.board[1][0], isNull);
     });
 
+    test('a transport send failure can release only its pending command', () {
+      final session = _session();
+      final intent = session.createMoveIntent(
+        from: const Position(0, 0),
+        to: const Position(0, 1),
+      );
+
+      expect(session.discardPendingIntent('different-command'), isFalse);
+      expect(session.pendingCommandId, intent.commandId);
+      expect(session.discardPendingIntent(intent.commandId), isTrue);
+      expect(session.pendingCommandId, isNull);
+      expect(
+        () => session.createMoveIntent(
+          from: const Position(0, 0),
+          to: const Position(0, 1),
+        ),
+        returnsNormally,
+      );
+    });
+
     test('matching authoritative commit applies once and clears pending', () {
       final session = _session();
       session.createMoveIntent(
@@ -47,6 +67,22 @@ void main() {
         OnlineSessionUpdate.duplicate,
       );
       expect(session.state.revision, 1);
+    });
+
+    test('a non-advancing matching acknowledgement requires a snapshot', () {
+      final session = _session();
+      session.createMoveIntent(
+        from: const Position(0, 0),
+        to: const Position(0, 1),
+      );
+
+      expect(
+        session.applyDecision(
+          _committed(commandId: 'command-1', revision: 0),
+        ),
+        OnlineSessionUpdate.requiresSnapshot,
+      );
+      expect(session.pendingCommandId, 'command-1');
     });
 
     test('rejection leaves the board unchanged and exposes recovery need', () {

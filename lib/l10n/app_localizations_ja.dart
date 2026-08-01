@@ -914,4 +914,93 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get clear => '消去';
+
+  @override
+  String get onlineBattleTitle => 'オンライン対局';
+
+  @override
+  String get onlineIntroTitle => '信頼できるオンライン対局';
+
+  @override
+  String get onlineIntroBody =>
+      '盤面はサーバーの確認後にのみ更新されます。匿名 ID はマッチングと再接続にだけ使用します。';
+
+  @override
+  String get onlineFindOpponent => '対戦相手を探す';
+
+  @override
+  String get onlineConnecting => 'サーバーに接続しています…';
+
+  @override
+  String get onlineSearching => '対戦相手を探しています…';
+
+  @override
+  String get onlineCancelSearch => 'マッチングをキャンセル';
+
+  @override
+  String get onlineYourTurn => 'あなたの手番';
+
+  @override
+  String get onlineOpponentTurn => '相手の手番';
+
+  @override
+  String get onlineWaitingForServer => 'サーバーの確認を待っています…';
+
+  @override
+  String get onlineOpponentDisconnected => '相手が切断しました。サーバーの時計は進みます';
+
+  @override
+  String onlineReconnectSeconds(int seconds) {
+    return '相手はあと $seconds 秒以内に再接続できます';
+  }
+
+  @override
+  String get onlineRecovering => '正式な局面を復元しています…';
+
+  @override
+  String get onlineRetry => '再接続';
+
+  @override
+  String get onlineLeave => '対局を退出';
+
+  @override
+  String get onlineYouWin => 'あなたの勝ち';
+
+  @override
+  String get onlineYouLose => 'あなたの負け';
+
+  @override
+  String get onlineGameDraw => '引き分け';
+
+  @override
+  String get onlineFinished => '対局終了';
+
+  @override
+  String get onlineMoveRejected => 'その手はサーバーに受理されませんでした。現在の盤面から指し直してください。';
+
+  @override
+  String onlineYourSide(String side) {
+    return 'あなたは $side';
+  }
+
+  @override
+  String get onlineFailureConnection => 'オンラインサービスに接続できません';
+
+  @override
+  String get onlineFailureIdentity => '匿名オンライン ID を準備できません';
+
+  @override
+  String get onlineFailureRequest => 'リクエストを送信できませんでした。再試行してください。';
+
+  @override
+  String get onlineFailureMatch => '現在マッチングを開始できません';
+
+  @override
+  String get onlineFailureResume => '以前の対局は復元できません';
+
+  @override
+  String get onlineFailureSnapshot => '最新の局面を取得できません';
+
+  @override
+  String get onlineFailureProtocol => 'サーバーから未対応のメッセージを受信しました';
 }

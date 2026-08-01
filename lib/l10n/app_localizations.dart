@@ -1827,6 +1827,174 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'清空'**
   String get clear;
+
+  /// No description provided for @onlineBattleTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'在线对战'**
+  String get onlineBattleTitle;
+
+  /// No description provided for @onlineIntroTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'可靠在线对局'**
+  String get onlineIntroTitle;
+
+  /// No description provided for @onlineIntroBody.
+  ///
+  /// In zh, this message translates to:
+  /// **'服务器确认后才会更新棋盘。匿名身份仅用于匹配和断线恢复。'**
+  String get onlineIntroBody;
+
+  /// No description provided for @onlineFindOpponent.
+  ///
+  /// In zh, this message translates to:
+  /// **'寻找对手'**
+  String get onlineFindOpponent;
+
+  /// No description provided for @onlineConnecting.
+  ///
+  /// In zh, this message translates to:
+  /// **'正在连接服务器…'**
+  String get onlineConnecting;
+
+  /// No description provided for @onlineSearching.
+  ///
+  /// In zh, this message translates to:
+  /// **'正在寻找对手…'**
+  String get onlineSearching;
+
+  /// No description provided for @onlineCancelSearch.
+  ///
+  /// In zh, this message translates to:
+  /// **'取消匹配'**
+  String get onlineCancelSearch;
+
+  /// No description provided for @onlineYourTurn.
+  ///
+  /// In zh, this message translates to:
+  /// **'你的回合'**
+  String get onlineYourTurn;
+
+  /// No description provided for @onlineOpponentTurn.
+  ///
+  /// In zh, this message translates to:
+  /// **'对手回合'**
+  String get onlineOpponentTurn;
+
+  /// No description provided for @onlineWaitingForServer.
+  ///
+  /// In zh, this message translates to:
+  /// **'等待服务器确认…'**
+  String get onlineWaitingForServer;
+
+  /// No description provided for @onlineOpponentDisconnected.
+  ///
+  /// In zh, this message translates to:
+  /// **'对手已断线，棋局仍由服务器计时'**
+  String get onlineOpponentDisconnected;
+
+  /// No description provided for @onlineReconnectSeconds.
+  ///
+  /// In zh, this message translates to:
+  /// **'对手还可在 {seconds} 秒内重连'**
+  String onlineReconnectSeconds(int seconds);
+
+  /// No description provided for @onlineRecovering.
+  ///
+  /// In zh, this message translates to:
+  /// **'正在恢复权威棋局…'**
+  String get onlineRecovering;
+
+  /// No description provided for @onlineRetry.
+  ///
+  /// In zh, this message translates to:
+  /// **'重试连接'**
+  String get onlineRetry;
+
+  /// No description provided for @onlineLeave.
+  ///
+  /// In zh, this message translates to:
+  /// **'离开对局'**
+  String get onlineLeave;
+
+  /// No description provided for @onlineYouWin.
+  ///
+  /// In zh, this message translates to:
+  /// **'你赢了'**
+  String get onlineYouWin;
+
+  /// No description provided for @onlineYouLose.
+  ///
+  /// In zh, this message translates to:
+  /// **'你输了'**
+  String get onlineYouLose;
+
+  /// No description provided for @onlineGameDraw.
+  ///
+  /// In zh, this message translates to:
+  /// **'本局和棋'**
+  String get onlineGameDraw;
+
+  /// No description provided for @onlineFinished.
+  ///
+  /// In zh, this message translates to:
+  /// **'对局已结束'**
+  String get onlineFinished;
+
+  /// No description provided for @onlineMoveRejected.
+  ///
+  /// In zh, this message translates to:
+  /// **'服务器未接受这一步，请根据当前棋盘重试'**
+  String get onlineMoveRejected;
+
+  /// No description provided for @onlineYourSide.
+  ///
+  /// In zh, this message translates to:
+  /// **'你执 {side}'**
+  String onlineYourSide(String side);
+
+  /// No description provided for @onlineFailureConnection.
+  ///
+  /// In zh, this message translates to:
+  /// **'无法连接在线服务'**
+  String get onlineFailureConnection;
+
+  /// No description provided for @onlineFailureIdentity.
+  ///
+  /// In zh, this message translates to:
+  /// **'无法准备匿名在线身份'**
+  String get onlineFailureIdentity;
+
+  /// No description provided for @onlineFailureRequest.
+  ///
+  /// In zh, this message translates to:
+  /// **'请求未发送，请重试'**
+  String get onlineFailureRequest;
+
+  /// No description provided for @onlineFailureMatch.
+  ///
+  /// In zh, this message translates to:
+  /// **'当前无法开始匹配'**
+  String get onlineFailureMatch;
+
+  /// No description provided for @onlineFailureResume.
+  ///
+  /// In zh, this message translates to:
+  /// **'原对局已无法恢复'**
+  String get onlineFailureResume;
+
+  /// No description provided for @onlineFailureSnapshot.
+  ///
+  /// In zh, this message translates to:
+  /// **'无法取得最新棋局'**
+  String get onlineFailureSnapshot;
+
+  /// No description provided for @onlineFailureProtocol.
+  ///
+  /// In zh, this message translates to:
+  /// **'收到无法识别的服务器消息'**
+  String get onlineFailureProtocol;
 }
 
 class _AppLocalizationsDelegate

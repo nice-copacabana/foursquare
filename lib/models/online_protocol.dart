@@ -175,10 +175,21 @@ class OnlineGameState {
         'playing state cannot contain winner or endReason',
       );
     }
-    if (status == OnlineGameStatus.finished && endReason == null) {
+    if (status == OnlineGameStatus.finished &&
+        (winner == null || endReason == null)) {
       throw const OnlineProtocolException(
         OnlineProtocolError.missingField,
-        'finished state requires endReason',
+        'finished state requires winner and endReason',
+      );
+    }
+    if (status == OnlineGameStatus.finished &&
+        ((endReason == OnlineGameEndReason.noCaptureLimit &&
+                winner != OnlineGameWinner.draw) ||
+            (endReason != OnlineGameEndReason.noCaptureLimit &&
+                winner == OnlineGameWinner.draw))) {
+      throw const OnlineProtocolException(
+        OnlineProtocolError.invalidField,
+        'winner and endReason must describe the same terminal result',
       );
     }
 

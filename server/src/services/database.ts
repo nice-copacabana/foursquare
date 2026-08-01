@@ -18,13 +18,32 @@ type FinishedMatchRecord = {
     moves: RecordedMove[];
 };
 
+type DatabaseClient = {
+    user: {
+        upsert: (args: {
+            where: { username: string };
+            update: Record<string, never>;
+            create: { username: string };
+        }) => Promise<{ id: string }>;
+    };
+    match: {
+        upsert: (args: {
+            where: { externalId: string };
+            update: Record<string, never>;
+            create: Record<string, unknown>;
+        }) => Promise<unknown>;
+    };
+};
+
 const prisma = new PrismaClient();
 
 export class DatabaseService {
-    constructor() { }
+    public constructor(
+        private readonly client: DatabaseClient = prisma as unknown as DatabaseClient,
+    ) { }
 
     async findOrCreateUser(userId: string) {
-        return prisma.user.upsert({
+        return this.client.user.upsert({
             where: { username: userId },
             update: {},
             create: { username: userId },
@@ -42,7 +61,7 @@ export class DatabaseService {
                 ? p2.id
                 : null;
 
-        return prisma.match.upsert({
+        return this.client.match.upsert({
             where: { externalId: record.matchId },
             update: {},
             create: {

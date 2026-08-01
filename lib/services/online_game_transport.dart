@@ -22,6 +22,13 @@ enum OnlineMatchRejectionReason {
   identityInUse,
   socketInUse,
   notQueued,
+  resumeNotFound,
+}
+
+enum OnlineSnapshotRejectionReason {
+  invalidProtocol,
+  invalidPayload,
+  notRoomPlayer,
 }
 
 sealed class OnlineGameTransportEvent {
@@ -49,6 +56,16 @@ class OnlineSnapshotReceived extends OnlineGameTransportEvent {
   const OnlineSnapshotReceived({
     required this.snapshot,
     required this.source,
+  });
+}
+
+class OnlineSnapshotRejected extends OnlineGameTransportEvent {
+  final String matchId;
+  final OnlineSnapshotRejectionReason reason;
+
+  const OnlineSnapshotRejected({
+    required this.matchId,
+    required this.reason,
   });
 }
 
@@ -128,9 +145,35 @@ abstract interface class OnlineGameSocket {
 
 typedef OnlineGameSocketFactory = OnlineGameSocket Function(String serverUrl);
 
+abstract interface class OnlineGameTransportClient {
+  Stream<OnlineGameTransportEvent> get events;
+
+  Stream<OnlineTransportConnection> get connectionStates;
+
+  OnlineTransportConnection get connectionState;
+
+  bool get isConnected;
+
+  Future<bool> connect();
+
+  bool requestMatch(String playerId);
+
+  bool resumeMatch(String playerId, String matchId);
+
+  bool requestSnapshot(String matchId);
+
+  bool cancelMatch(String playerId);
+
+  bool submitMove(OnlineMoveIntent intent);
+
+  Future<void> disconnect();
+
+  Future<void> dispose();
+}
+
 /// Owns connection truth, wire event names, and protocol parsing so callers
 /// only deal in authoritative domain messages.
-class OnlineGameTransport {
+class OnlineGameTransport implements OnlineGameTransportClient {
   final String serverUrl;
   final Duration connectTimeout;
   final OnlineGameSocketFactory _socketFactory;
@@ -156,16 +199,21 @@ class OnlineGameTransport {
   })  : _socketFactory = socketFactory ?? _createSocket,
         _connectTimerFactory = connectTimerFactory ?? _createTimer;
 
+  @override
   Stream<OnlineGameTransportEvent> get events => _eventController.stream;
 
+  @override
   Stream<OnlineTransportConnection> get connectionStates =>
       _connectionController.stream;
 
+  @override
   OnlineTransportConnection get connectionState => _connectionState;
 
+  @override
   bool get isConnected =>
       _connectionState == OnlineTransportConnection.connected;
 
+  @override
   Future<bool> connect() {
     if (_disposed) return Future<bool>.value(false);
     if (isConnected && _socket?.connected == true) {
@@ -202,6 +250,7 @@ class OnlineGameTransport {
     return completer.future;
   }
 
+  @override
   bool requestMatch(String playerId) => _emitWhenConnected(
         'request_match',
         {
@@ -210,6 +259,26 @@ class OnlineGameTransport {
         },
       );
 
+  @override
+  bool resumeMatch(String playerId, String matchId) => _emitWhenConnected(
+        'resume_match',
+        {
+          'protocolVersion': OnlineProtocol.currentVersion,
+          'playerId': playerId,
+          'matchId': matchId,
+        },
+      );
+
+  @override
+  bool requestSnapshot(String matchId) => _emitWhenConnected(
+        'request_snapshot',
+        {
+          'protocolVersion': OnlineProtocol.currentVersion,
+          'matchId': matchId,
+        },
+      );
+
+  @override
   bool cancelMatch(String playerId) => _emitWhenConnected(
         'cancel_match',
         {
@@ -218,11 +287,13 @@ class OnlineGameTransport {
         },
       );
 
+  @override
   bool submitMove(OnlineMoveIntent intent) => _emitWhenConnected(
         'submit_move',
         intent.toJson(),
       );
 
+  @override
   Future<void> disconnect() async {
     _connectTimer?.cancel();
     _connectTimer = null;
@@ -237,6 +308,7 @@ class OnlineGameTransport {
     _setConnectionState(OnlineTransportConnection.disconnected);
   }
 
+  @override
   Future<void> dispose() async {
     if (_disposed) return;
     _disposed = true;
@@ -305,6 +377,15 @@ class OnlineGameTransport {
           snapshot: OnlineStateSnapshot.fromJson(json),
           source: OnlineSnapshotSource.authoritativeSnapshot,
         ),
+      ),
+    );
+    socket.on(
+      'snapshot_rejected',
+      (data) => _parseSocketEvent(
+        socket,
+        'snapshot_rejected',
+        data,
+        _snapshotRejectedEvent,
       ),
     );
     socket.on(
@@ -483,9 +564,26 @@ class OnlineGameTransport {
       'identity_in_use' => OnlineMatchRejectionReason.identityInUse,
       'socket_in_use' => OnlineMatchRejectionReason.socketInUse,
       'not_queued' => OnlineMatchRejectionReason.notQueued,
+      'resume_not_found' => OnlineMatchRejectionReason.resumeNotFound,
       _ => throw const FormatException(),
     };
     return OnlineMatchRejected(reason);
+  }
+
+  OnlineSnapshotRejected _snapshotRejectedEvent(
+    Map<String, dynamic> json,
+  ) {
+    _validateEnvelope(json);
+    final reason = switch (_requiredNonBlankString(json, 'reason')) {
+      'invalid_protocol' => OnlineSnapshotRejectionReason.invalidProtocol,
+      'invalid_payload' => OnlineSnapshotRejectionReason.invalidPayload,
+      'not_room_player' => OnlineSnapshotRejectionReason.notRoomPlayer,
+      _ => throw const FormatException(),
+    };
+    return OnlineSnapshotRejected(
+      matchId: _requiredNonBlankString(json, 'matchId'),
+      reason: reason,
+    );
   }
 
   OnlineGameOverReceived _gameOverEvent(Map<String, dynamic> json) {

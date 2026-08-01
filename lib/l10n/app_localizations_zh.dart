@@ -911,4 +911,92 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get clear => '清空';
+
+  @override
+  String get onlineBattleTitle => '在线对战';
+
+  @override
+  String get onlineIntroTitle => '可靠在线对局';
+
+  @override
+  String get onlineIntroBody => '服务器确认后才会更新棋盘。匿名身份仅用于匹配和断线恢复。';
+
+  @override
+  String get onlineFindOpponent => '寻找对手';
+
+  @override
+  String get onlineConnecting => '正在连接服务器…';
+
+  @override
+  String get onlineSearching => '正在寻找对手…';
+
+  @override
+  String get onlineCancelSearch => '取消匹配';
+
+  @override
+  String get onlineYourTurn => '你的回合';
+
+  @override
+  String get onlineOpponentTurn => '对手回合';
+
+  @override
+  String get onlineWaitingForServer => '等待服务器确认…';
+
+  @override
+  String get onlineOpponentDisconnected => '对手已断线，棋局仍由服务器计时';
+
+  @override
+  String onlineReconnectSeconds(int seconds) {
+    return '对手还可在 $seconds 秒内重连';
+  }
+
+  @override
+  String get onlineRecovering => '正在恢复权威棋局…';
+
+  @override
+  String get onlineRetry => '重试连接';
+
+  @override
+  String get onlineLeave => '离开对局';
+
+  @override
+  String get onlineYouWin => '你赢了';
+
+  @override
+  String get onlineYouLose => '你输了';
+
+  @override
+  String get onlineGameDraw => '本局和棋';
+
+  @override
+  String get onlineFinished => '对局已结束';
+
+  @override
+  String get onlineMoveRejected => '服务器未接受这一步，请根据当前棋盘重试';
+
+  @override
+  String onlineYourSide(String side) {
+    return '你执 $side';
+  }
+
+  @override
+  String get onlineFailureConnection => '无法连接在线服务';
+
+  @override
+  String get onlineFailureIdentity => '无法准备匿名在线身份';
+
+  @override
+  String get onlineFailureRequest => '请求未发送，请重试';
+
+  @override
+  String get onlineFailureMatch => '当前无法开始匹配';
+
+  @override
+  String get onlineFailureResume => '原对局已无法恢复';
+
+  @override
+  String get onlineFailureSnapshot => '无法取得最新棋局';
+
+  @override
+  String get onlineFailureProtocol => '收到无法识别的服务器消息';
 }

@@ -9,7 +9,7 @@
         "prisma:generate": "prisma generate",
         "db:migrate:deploy": "prisma migrate deploy",
         "build": "npm run prisma:generate && tsc",
-        "test": "npm run build && node --test dist/game/rules.test.js dist/game/room_manager.test.js dist/gateway/socket.test.js"
+        "test": "npm run build && node --test dist/game/rules.test.js dist/game/room_manager.test.js dist/gateway/socket.test.js dist/gateway/socket.integration.test.js dist/services/database.test.js"
     },
     "keywords": [],
     "author": "",
@@ -26,6 +26,7 @@
         "@types/express": "^5.0.6",
         "@types/node": "^20.8.2",
         "prisma": "^6.19.3",
+        "socket.io-client": "^4.8.3",
         "ts-node-dev": "^2.0.0",
         "typescript": "^5.2.2"
     }

@@ -287,7 +287,11 @@ test('reconnects the same anonymous player with a full unchanged snapshot', () =
     assert.equal(manager.getRoomBySocketId(white.socketId), room);
     now += 10_000;
 
-    const snapshot = manager.reconnectPlayer(black.id, 'socket-a-reconnected');
+    const snapshot = manager.resumePlayer(
+        black.id,
+        'socket-a-reconnected',
+        room.id,
+    );
 
     assert.deepEqual(snapshot, {
         protocolVersion: 1,
@@ -325,7 +329,11 @@ test('reconnect snapshot reports an opponent still in disconnect grace', () => {
     manager.removePlayer(white.socketId);
     now += 1_000;
 
-    const snapshot = manager.reconnectPlayer(black.id, 'socket-a-returned');
+    const snapshot = manager.resumePlayer(
+        black.id,
+        'socket-a-returned',
+        room.id,
+    );
 
     assert.equal(snapshot?.opponentConnected, false);
     assert.equal(
@@ -372,10 +380,14 @@ test('disconnect grace expires after 30 seconds and the disconnected player lose
     assert.equal(room.gameState.winner, 'white');
     assert.equal(room.gameState.endReason, 'disconnect');
     assert.equal(room.gameState.revision, 1);
-    assert.equal(
-        manager.reconnectPlayer(black.id, 'socket-a-too-late'),
-        undefined,
+    const terminalSnapshot = manager.resumePlayer(
+        black.id,
+        'socket-a-too-late',
+        room.id,
     );
+    assert.equal(terminalSnapshot?.state.status, 'finished');
+    assert.equal(terminalSnapshot?.state.winner, 'white');
+    assert.equal(terminalSnapshot?.state.endReason, 'disconnect');
 });
 
 test('the absolute turn deadline keeps running while a player is disconnected', () => {
@@ -392,14 +404,130 @@ test('the absolute turn deadline keeps running while a player is disconnected', 
     manager.removePlayer(black.socketId);
 
     now += 10_000;
-    const snapshot = manager.reconnectPlayer(
+    const snapshot = manager.resumePlayer(
         black.id,
         'socket-a-after-turn-deadline',
+        room.id,
     );
 
-    assert.equal(snapshot, undefined);
+    assert.equal(snapshot?.state.status, 'finished');
+    assert.equal(snapshot?.state.endReason, 'timeout');
     assert.equal(room.gameState.status, 'finished');
     assert.equal(room.gameState.winner, 'white');
     assert.equal(room.gameState.endReason, 'timeout');
     assert.equal(room.gameState.revision, 1);
+});
+
+test('creates a full snapshot only for the socket bound to the match', () => {
+    const manager = new RoomManager({
+        random: () => 0,
+        id: () => 'match-snapshot',
+        schedule: () => undefined,
+        cancelSchedule: () => undefined,
+    });
+    const room = manager.createRoom(black, white);
+
+    const snapshot = manager.createSnapshotForSocket(black.socketId, room.id);
+
+    assert.equal(snapshot?.matchId, room.id);
+    assert.equal(snapshot?.color, 'black');
+    assert.equal(snapshot?.state.revision, 0);
+    assert.equal(
+        manager.createSnapshotForSocket(white.socketId, 'different-match'),
+        undefined,
+    );
+    assert.equal(
+        manager.createSnapshotForSocket('unknown-socket', room.id),
+        undefined,
+    );
+});
+
+test('a stale disconnect timer cannot erase a newer room reconnect record', () => {
+    let now = 7_000_000;
+    let roomSequence = 0;
+    const scheduled: Array<{
+        callback: () => void;
+        delayMs: number;
+        cancelled: boolean;
+    }> = [];
+    const manager = new RoomManager({
+        now: () => now,
+        random: () => 0,
+        id: () => `match-stale-timer-${++roomSequence}`,
+        schedule: (callback, delayMs) => {
+            const task = { callback, delayMs, cancelled: false };
+            scheduled.push(task);
+            return task;
+        },
+        cancelSchedule: (handle) => {
+            (handle as { cancelled: boolean }).cancelled = true;
+        },
+    });
+    const firstRoom = manager.createRoom(black, white);
+    manager.removePlayer(black.socketId);
+    const staleDisconnectTask = scheduled.at(-1)!;
+
+    now = firstRoom.turnDeadlineEpochMs;
+    manager.handleMove(white.socketId, {
+        protocolVersion: 1,
+        matchId: firstRoom.id,
+        commandId: 'finish-first-room',
+        expectedRevision: 0,
+        from: { x: 0, y: 3 },
+        to: { x: 0, y: 2 },
+    });
+    assert.equal(firstRoom.gameState.status, 'finished');
+    assert.equal(staleDisconnectTask.cancelled, true);
+
+    const returnedBlack: Player = {
+        ...black,
+        socketId: 'socket-a-new-room',
+    };
+    const returnedWhite: Player = {
+        ...white,
+        socketId: 'socket-b-new-room',
+    };
+    const secondRoom = manager.createRoom(returnedBlack, returnedWhite);
+    manager.removePlayer(returnedBlack.socketId);
+
+    now += 1;
+    staleDisconnectTask.callback();
+    const resumed = manager.resumePlayer(
+        returnedBlack.id,
+        'socket-a-new-room-resumed',
+        secondRoom.id,
+    );
+
+    assert.equal(resumed?.matchId, secondRoom.id);
+    assert.equal(resumed?.state.status, 'playing');
+});
+
+test('disconnecting after game over does not start a reconnect timer', () => {
+    let now = 8_000_000;
+    const scheduled: Array<{ callback: () => void; delayMs: number }> = [];
+    const manager = new RoomManager({
+        now: () => now,
+        random: () => 0,
+        id: () => 'match-finished-disconnect',
+        schedule: (callback, delayMs) => {
+            const task = { callback, delayMs };
+            scheduled.push(task);
+            return task;
+        },
+        cancelSchedule: () => undefined,
+    });
+    const room = manager.createRoom(black, white);
+    now = room.turnDeadlineEpochMs;
+    manager.handleMove(black.socketId, {
+        protocolVersion: 1,
+        matchId: room.id,
+        commandId: 'finish-before-disconnect',
+        expectedRevision: 0,
+        from: { x: 0, y: 0 },
+        to: { x: 0, y: 1 },
+    });
+    const scheduledBeforeDisconnect = scheduled.length;
+
+    assert.equal(manager.removePlayer(black.socketId), undefined);
+    assert.equal(scheduled.length, scheduledBeforeDisconnect);
 });

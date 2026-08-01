@@ -146,6 +146,40 @@ void main() {
         throwsA(isA<OnlineProtocolException>()),
       );
     });
+
+    test('a finished state requires both winner and end reason', () {
+      final missingWinner = Map<String, dynamic>.from(_finishedStateJson())
+        ..remove('winner');
+
+      expect(
+        () => OnlineGameState.fromJson(missingWinner),
+        throwsA(
+          isA<OnlineProtocolException>().having(
+            (error) => error.error,
+            'error',
+            OnlineProtocolError.missingField,
+          ),
+        ),
+      );
+    });
+
+    test('terminal winner and end reason must be semantically consistent', () {
+      final drawByTimeout = Map<String, dynamic>.from(_finishedStateJson())
+        ..['winner'] = 'draw'
+        ..['endReason'] = 'timeout';
+      final winByNoCapture = Map<String, dynamic>.from(_finishedStateJson())
+        ..['winner'] = 'black'
+        ..['endReason'] = 'no_capture_limit';
+
+      expect(
+        () => OnlineGameState.fromJson(drawByTimeout),
+        throwsA(isA<OnlineProtocolException>()),
+      );
+      expect(
+        () => OnlineGameState.fromJson(winByNoCapture),
+        throwsA(isA<OnlineProtocolException>()),
+      );
+    });
   });
 }
 

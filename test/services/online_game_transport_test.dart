@@ -121,6 +121,8 @@ void main() {
       await connect;
 
       transport.requestMatch('device-12345678');
+      transport.resumeMatch('device-12345678', 'match-1');
+      transport.requestSnapshot('match-1');
       transport.cancelMatch('device-12345678');
       transport.submitMove(
         OnlineMoveIntent(
@@ -136,6 +138,15 @@ void main() {
         const EmittedEvent('request_match', {
           'protocolVersion': 1,
           'playerId': 'device-12345678',
+        }),
+        const EmittedEvent('resume_match', {
+          'protocolVersion': 1,
+          'playerId': 'device-12345678',
+          'matchId': 'match-1',
+        }),
+        const EmittedEvent('request_snapshot', {
+          'protocolVersion': 1,
+          'matchId': 'match-1',
         }),
         const EmittedEvent('cancel_match', {
           'protocolVersion': 1,
@@ -259,6 +270,32 @@ void main() {
       expect(
         (events[1] as OnlineSnapshotReceived).snapshot.state.revision,
         2,
+      );
+      await subscription.cancel();
+      await transport.dispose();
+    });
+
+    test('maps a rejected snapshot request to a stable typed event', () async {
+      final socket = FakeOnlineGameSocket();
+      final transport = _transport(socket: socket);
+      final events = <OnlineGameTransportEvent>[];
+      final subscription = transport.events.listen(events.add);
+      final connect = transport.connect();
+      socket.fireConnect();
+      await connect;
+
+      socket.fire('snapshot_rejected', {
+        'protocolVersion': 1,
+        'matchId': 'match-1',
+        'reason': 'not_room_player',
+      });
+      await Future<void>.delayed(Duration.zero);
+
+      final rejected = events.single as OnlineSnapshotRejected;
+      expect(rejected.matchId, 'match-1');
+      expect(
+        rejected.reason,
+        OnlineSnapshotRejectionReason.notRoomPlayer,
       );
       await subscription.cancel();
       await transport.dispose();

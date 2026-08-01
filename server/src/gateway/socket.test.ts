@@ -69,7 +69,8 @@ class FakeIo {
 
 class FakeRoomManager extends EventEmitter {
     public readonly calls: string[] = [];
-    public reconnectResult?: AuthoritativeSnapshot;
+    public resumeResult?: AuthoritativeSnapshot;
+    public snapshotResult?: AuthoritativeSnapshot;
     public queuedRoom: Room | null = null;
     public roomBySocket?: Room;
     public moveDecision: MoveDecision = {
@@ -84,12 +85,21 @@ class FakeRoomManager extends EventEmitter {
     public disconnectDeadlineEpochMs = 30_000;
     public removeFromQueueResult = true;
 
-    public reconnectPlayer(
+    public resumePlayer(
         playerId: string,
         socketId: string,
+        matchId: string,
     ): AuthoritativeSnapshot | undefined {
-        this.calls.push(`reconnect:${playerId}:${socketId}`);
-        return this.reconnectResult;
+        this.calls.push(`resume:${playerId}:${socketId}:${matchId}`);
+        return this.resumeResult;
+    }
+
+    public createSnapshotForSocket(
+        socketId: string,
+        matchId: string,
+    ): AuthoritativeSnapshot | undefined {
+        this.calls.push(`snapshot:${socketId}:${matchId}`);
+        return this.snapshotResult;
     }
 
     public queuePlayer(player: Player): MatchmakingResult {
@@ -169,12 +179,12 @@ const setup = () => {
     return { io, manager, persisted };
 };
 
-test('request_match reconnects before queueing and restores the room snapshot', () => {
+test('resume_match restores a retained room without entering matchmaking', () => {
     const { io, manager } = setup();
     const socket = new FakeSocket('socket-new');
     const room = createRoom('socket-new');
     manager.roomBySocket = room;
-    manager.reconnectResult = {
+    manager.resumeResult = {
         protocolVersion: PROTOCOL_VERSION,
         matchId: room.id,
         color: 'black',
@@ -184,13 +194,14 @@ test('request_match reconnects before queueing and restores the room snapshot', 
     };
 
     io.connect(socket);
-    socket.trigger('request_match', {
+    socket.trigger('resume_match', {
         protocolVersion: PROTOCOL_VERSION,
         playerId: 'player-aaaa',
+        matchId: room.id,
     });
 
     assert.deepEqual(manager.calls, [
-        'reconnect:player-aaaa:socket-new',
+        'resume:player-aaaa:socket-new:match-1',
     ]);
     assert.deepEqual(socket.joinedRooms, ['match-1']);
     assert.equal(
@@ -204,6 +215,48 @@ test('request_match reconnects before queueing and restores the room snapshot', 
         ),
         true,
     );
+});
+
+test('request_snapshot returns only the current socket authoritative view', () => {
+    const { io, manager } = setup();
+    const socket = new FakeSocket('socket-a');
+    const room = createRoom();
+    manager.snapshotResult = {
+        protocolVersion: PROTOCOL_VERSION,
+        matchId: room.id,
+        color: 'black',
+        state: room.gameState,
+        turnDeadlineEpochMs: room.turnDeadlineEpochMs,
+        opponentConnected: true,
+    };
+    io.connect(socket);
+
+    socket.trigger('request_snapshot', {
+        protocolVersion: PROTOCOL_VERSION,
+        matchId: room.id,
+    });
+
+    assert.deepEqual(manager.calls, ['snapshot:socket-a:match-1']);
+    assert.equal(
+        socket.emitted.some(
+            (event) => event.event === 'authoritative_snapshot',
+        ),
+        true,
+    );
+
+    manager.snapshotResult = undefined;
+    socket.trigger('request_snapshot', {
+        protocolVersion: PROTOCOL_VERSION,
+        matchId: room.id,
+    });
+    assert.deepEqual(socket.emitted.at(-1), {
+        event: 'snapshot_rejected',
+        payload: {
+            protocolVersion: PROTOCOL_VERSION,
+            matchId: room.id,
+            reason: 'not_room_player',
+        },
+    });
 });
 
 test('match lifecycle responses always carry the protocol version', () => {

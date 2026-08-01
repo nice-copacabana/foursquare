@@ -971,4 +971,98 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get clear => 'Clear';
+
+  @override
+  String get onlineBattleTitle => 'Online game';
+
+  @override
+  String get onlineIntroTitle => 'Reliable online play';
+
+  @override
+  String get onlineIntroBody =>
+      'The board changes only after server confirmation. Your anonymous identity is used only for matching and recovery.';
+
+  @override
+  String get onlineFindOpponent => 'Find an opponent';
+
+  @override
+  String get onlineConnecting => 'Connecting to the server…';
+
+  @override
+  String get onlineSearching => 'Looking for an opponent…';
+
+  @override
+  String get onlineCancelSearch => 'Cancel matching';
+
+  @override
+  String get onlineYourTurn => 'Your turn';
+
+  @override
+  String get onlineOpponentTurn => 'Opponent\'s turn';
+
+  @override
+  String get onlineWaitingForServer => 'Waiting for server confirmation…';
+
+  @override
+  String get onlineOpponentDisconnected =>
+      'Opponent disconnected; the server clock continues';
+
+  @override
+  String onlineReconnectSeconds(int seconds) {
+    return 'Opponent can reconnect for $seconds more seconds';
+  }
+
+  @override
+  String get onlineRecovering => 'Recovering the authoritative game…';
+
+  @override
+  String get onlineRetry => 'Retry connection';
+
+  @override
+  String get onlineLeave => 'Leave game';
+
+  @override
+  String get onlineYouWin => 'You win';
+
+  @override
+  String get onlineYouLose => 'You lose';
+
+  @override
+  String get onlineGameDraw => 'Draw';
+
+  @override
+  String get onlineFinished => 'Game finished';
+
+  @override
+  String get onlineMoveRejected =>
+      'The server did not accept that move. Try again from the current board.';
+
+  @override
+  String onlineYourSide(String side) {
+    return 'You play $side';
+  }
+
+  @override
+  String get onlineFailureConnection => 'Could not connect to online play';
+
+  @override
+  String get onlineFailureIdentity =>
+      'Could not prepare an anonymous online identity';
+
+  @override
+  String get onlineFailureRequest => 'The request was not sent. Try again.';
+
+  @override
+  String get onlineFailureMatch => 'Matching cannot start right now';
+
+  @override
+  String get onlineFailureResume =>
+      'The previous game can no longer be recovered';
+
+  @override
+  String get onlineFailureSnapshot =>
+      'Could not retrieve the latest game state';
+
+  @override
+  String get onlineFailureProtocol => 'The server sent an unsupported message';
 }

@@ -94,6 +94,12 @@ class OnlineAuthoritySession {
     return intent;
   }
 
+  bool discardPendingIntent(String commandId) {
+    if (_pendingIntent?.commandId != commandId) return false;
+    _clearPending();
+    return true;
+  }
+
   OnlineSessionUpdate applyDecision(OnlineMoveDecision decision) {
     if (decision is OnlineMoveRejected) {
       return _applyRejection(decision);
@@ -101,6 +107,10 @@ class OnlineAuthoritySession {
 
     final OnlineMoveCommitted committed = decision as OnlineMoveCommitted;
     if (committed.state.revision <= _state.revision) {
+      if (_pendingIntent?.commandId == committed.commandId &&
+          committed.state.revision == _state.revision) {
+        return OnlineSessionUpdate.requiresSnapshot;
+      }
       return OnlineSessionUpdate.duplicate;
     }
     if (committed.state.revision != _state.revision + 1 ||
