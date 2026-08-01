@@ -83,7 +83,13 @@ final class VoiceInteractionController {
   bool get hasPendingReply => _pendingReply != null;
 
   Future<void> enableAfterDisclosure() async {
-    if (_disposed || _state.phase != VoiceInteractionPhase.disabled) {
+    final canRestartInterruptedSetup =
+        _state.phase == VoiceInteractionPhase.interrupted &&
+            !_portsReady &&
+            !_interruptInFlight;
+    if (_disposed ||
+        (_state.phase != VoiceInteractionPhase.disabled &&
+            !canRestartInterruptedSetup)) {
       return;
     }
 
@@ -523,7 +529,9 @@ final class VoiceInteractionController {
   bool _isCurrent(int generation) => !_disposed && generation == _generation;
 
   static bool _isInterruptible(VoiceInteractionPhase phase) {
-    return phase == VoiceInteractionPhase.ready ||
+    return phase == VoiceInteractionPhase.requestingPermission ||
+        phase == VoiceInteractionPhase.initializing ||
+        phase == VoiceInteractionPhase.ready ||
         phase == VoiceInteractionPhase.listening ||
         phase == VoiceInteractionPhase.speaking;
   }

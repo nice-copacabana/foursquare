@@ -1103,6 +1103,29 @@ class AppLocalizationsEn extends AppLocalizations {
       'Start a new meditation game when this feature becomes available.';
 
   @override
+  String get gameVoiceTitle => 'Voice move input';
+
+  @override
+  String get gameVoiceDisclosureBody =>
+      'In AI games, one Chinese voice command at a time can select or move your pieces. Listening starts only when you press the control.';
+
+  @override
+  String get gameVoiceChineseOnly => 'Phase 4 voice input is Chinese only';
+
+  @override
+  String get gameVoiceEnable => 'Enable voice input';
+
+  @override
+  String get gameVoiceListen => 'Listen for one command';
+
+  @override
+  String get gameVoiceWaitForTurn => 'Voice input waits for your turn';
+
+  @override
+  String get gameVoiceSetupFailed =>
+      'Voice input could not be prepared. Try again on your turn.';
+
+  @override
   String get onlineBattleTitle => 'Online game';
 
   @override

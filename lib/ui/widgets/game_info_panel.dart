@@ -305,12 +305,14 @@ class _MoveHistorySection extends StatelessWidget {
           children: [
             const Icon(Icons.history, size: 16, color: Colors.grey),
             const SizedBox(width: 4),
-            Text(
-              l10n.moveHistoryCount(moveHistory.length),
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey.shade700,
-                fontWeight: FontWeight.w600,
+            Expanded(
+              child: Text(
+                l10n.moveHistoryCount(moveHistory.length),
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey.shade700,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ],

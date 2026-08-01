@@ -16,9 +16,9 @@
 | LAN 对战（含 move sync） | ✅ 已完成（cf43bea） | mDNS 注册+发现、WS 服务端、`_onLocalMove/_onOpponentMove` 真实收发 | **基本一致 ✅** |
 | 在线对战后端 | ✅ 权威同步完成 | Socket.io + 房间管理 + 服务端规则校验 + 60 秒行棋超时 + 30 秒重连宽限 | **当前纯核心一致，发布门禁未完成 ⚠️** |
 | 在线对战前端 | 历史审计曾判定落子未完成 | 当前已有权威会话、BLoC、页面落子链与传输测试；生产导航和真机联调仍未完成 | **历史问题已修正 ⚠️** |
-| 语音控制 + 冥想模式 | 历史文档曾宣称完成 | 隐藏的 Phase 4 核心、存储装配、现代东方冥想页面、候选生产 Adapter 和隐藏生产组合页已实现；旧 Bloc/页面原型已移除；平台声明/设置跳转、正式入口和真机门禁未完成 | **历史宣称已纠正 ⚠️** |
+| 语音控制 + 冥想模式 | 历史文档曾宣称完成 | 隐藏的 Phase 4 核心、PVE 输入装配、存储装配、现代东方冥想页面、候选生产 Adapter 和隐藏生产组合页已实现；旧 Bloc/页面原型已移除；普通结果播报、PVP、平台声明/设置跳转、正式入口和真机门禁未完成 | **历史宣称已纠正 ⚠️** |
 | 回放 / 存储 / i18n / 主题 | ✅ 完成 | 三语 ARB 齐全、Hive 存档真实、3 套主题 presets 齐 | **一致 ✅** |
-| **测试证据** | CHANGELOG 曾宣称未复测的覆盖率 | 当前共 73 个 `_test.dart` 文件；本次全量 `flutter test` 为 731 通过、1 跳过；未重新测量覆盖率 | **只采用当前命令证据 ⚠️** |
+| **测试证据** | CHANGELOG 曾宣称未复测的覆盖率 | 当前共 75 个 `_test.dart` 文件；本次全量 `flutter test` 为 753 通过、1 跳过；未重新测量覆盖率 | **只采用当前命令证据 ⚠️** |
 
 ---
 
@@ -136,6 +136,8 @@
 - `lib/ai/voice_game_intent.dart`
 - `lib/services/voice/voice_ports.dart`
 - `lib/services/voice/voice_interaction_controller.dart`
+- `lib/services/voice/game_voice_session.dart`
+- `lib/ui/screens/game_page.dart`
 - `lib/meditation/meditation_session.dart`
 - `lib/meditation/meditation_session_controller.dart`
 - `lib/meditation/meditation_intent_handler.dart`
@@ -152,6 +154,7 @@
 - 类型化位置、移动和控制动作采用整句白名单；用户坐标 1–4 与引擎 0–3 可逆，歧义中心、否定、多坐标和尾随内容不执行。
 - 权限、识别和播报均通过可替换端口；单次监听状态机覆盖 completion、中断、迟到回调和播报失败恢复。
 - 基于 `permission_handler`、`speech_to_text` 和 `flutter_tts` 的独立 Adapter 只在明确操作时触碰平台；权限映射 fail-closed，STT 错误不携带插件正文，TTS 的 cancel/error 不会误报播放成功，停止缺少终止回调时会熔断而非复用污染状态。
+- 普通 PVE 的隐藏语音 session 只在用途说明后的真实玩家回合创建，使用权威 `humanPlayer`；位置、完整移动和取消选择进入既有 GameBloc，完整移动不能获得 AI 授权，AI/后台/终局中断且不自动开麦。PVP 与尚无明确提交结果的控制动作保持关闭，当前不会抢先播报成功。
 - 内存权威冥想 session/controller 维护棋盘、执色/先手、完整历史、未吃计数、时钟、选择、结果和修订号；所有落子复用 `GameEngine`。
 - 开场播报完成后才启动 60 秒时钟；intent handler 提供 AI 先手/失败重试、查询、暂停/恢复和退出确认的类型化闭环。
 - 假端口已完成查询、重复、选子取消、暂停恢复、退出取消、AI 失败重试到 15 ply 自然终局的完整无屏对局。
@@ -162,8 +165,8 @@
 
 ### F. 当前测试证据（2026-08-01 修订）
 
-- `test/` 与 `integration_test/` 当前共有 73 个 `_test.dart` 文件。
-- 本次全量 `flutter test`：731 项通过、1 项显式跳过。
+- `test/` 与 `integration_test/` 当前共有 75 个 `_test.dart` 文件。
+- 本次全量 `flutter test`：753 项通过、1 项显式跳过。
 - 当前覆盖引擎、模型、Game/LAN/Online BLoC、在线协议/会话/传输、语音状态机、权威冥想核心、页面契约和发布契约。
 - `test/integration/` 已包含真实在线传输和假端口冥想语音核心流程；它们仍不能替代 staging、真实数据库、双真机和平台音频验收。
 - 本次没有重新运行覆盖率统计，因此不保留历史 95.7% 或其他主观百分比。
@@ -187,7 +190,7 @@
 
 1. **Phase 2 外部门禁**：macOS/Xcode、iOS 真机、TestFlight 和商店资料尚未完成。
 2. **Phase 3 发布闭环**：生产导航、两台完整客户端/真机联调、真实 PostgreSQL、staging、持久化恢复、TLS、限流、负载与运维演练尚未完成。
-3. **Phase 4 产品化**：候选生产 ASR/TTS Adapter 已接入隐藏生产组合页，但平台权限与设置跳转、正式入口、真机音频/隐私验收尚未完成；隐藏页面、无屏整局和持久化编排已有自动化证据。
+3. **Phase 4 产品化**：候选生产 ASR/TTS Adapter 已接入隐藏冥想组合页和普通 PVE 的延迟 session factory，但普通结果播报、PVP 受控执色、平台权限与设置跳转、正式入口、真机音频/隐私验收尚未完成；隐藏页面、无屏整局和持久化编排已有自动化证据。
 4. **正式发布资料**：包名、签名、Google Play 身份和素材按项目决定继续暂缓，不阻塞当前代码开发。
 
 ---
@@ -209,7 +212,7 @@
 
 - Phase 1/2：完成 Android/iOS 正式身份、签名、商店素材、Xcode、TestFlight 和真机发布矩阵。
 - Phase 3：完成生产导航、双完整客户端/真机联调、staging、真实 PostgreSQL、持久化恢复、TLS、限流、负载和运维演练。
-- Phase 4：继续完成平台权限与设置跳转、正式入口和真机音频/隐私验收。
+- Phase 4：继续完成普通对局基于明确提交结果的播报、PVP 受控执色决策、平台权限与设置跳转、正式入口和真机音频/隐私验收。
 - 在线与冥想现有集成测试继续下钻到双完整客户端、进程重启、真实数据库和平台设备层级。
 
 离线语音、ELO/排行榜/好友房、社交分享/观战、付费点和 Wear OS 仅为历史想法，不属于当前正式路线承诺。

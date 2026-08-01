@@ -45,17 +45,17 @@ game_bloc.dart
 
 `PlatformVoiceAdapters` 构造本身无平台副作用：权限只在明确 check/request 时访问 `Permission.microphone`，STT/TTS 实例只在 controller 进入 initialize 后创建。STT 使用 `zh-CN`、confirmation、partial result 和 cancel-on-error，缺失置信度按插件语义归一；停止采用 cancel，所有错误仅映射为稳定枚举。TTS 的 `speak()` 只由 start 后的 completion 回调成功结算，cancel/error 均失败并保留 controller 的重播路径；停止等待明确终止回调，超时后熔断该端口，避免旧回调污染下一次播报。
 
-## 4. 普通对局后续设计
+## 4. 普通对局当前实现与后续设计
 
-普通对局页面后续注入 controller/factory，不能在 Widget 测试中触发真实插件。页面只负责：
+普通对局已完成第一段隐藏 PVE 装配：`GamePage.voice` 只注入惰性 session factory，Home 的 PVP/PVE/继续游戏仍使用不带语音能力的默认构造。页面只有在真实 `GamePlaying` 已提供 `humanPlayer`、当前确为该玩家回合且用户点击用途说明后的启用按钮时，才创建候选生产 Adapter 和 controller。当前页面负责：
 
 - 展示用途说明和明确的启用按钮。
 - 展示 `disabled / ready / listening / processing / speaking / failed` 等非敏感状态。
 - 把类型化意图交给 `VoiceGameIntentDispatcher`。
-- 在后台、AI 回合、对方回合和终局时打断监听。
+- 在后台、AI 回合和终局时打断监听；回到玩家回合只恢复为 ready，不自动开麦。
 - 在页面销毁时释放 controller。
 
-语音反馈必须基于 GameBloc 已提交后的状态变化生成，不能在事件入队前抢先说“已移动”。本地 PVP 若使用“己方/对方”措辞，需要在用户启用语音时明确受控执色；PVE 使用 `humanPlayer`。
+该切片只提交位置、完整移动和取消选择事件，不把 `bloc.add()` 或下一条可能由计时/AI 产生的状态误判为成功，因此暂不播报“已移动”；普通对局的暂停、恢复、退出、查询和重复等尚未定义完成结果的语音动作保持安全无操作。后续语音反馈必须基于 GameBloc 已提交后的明确结果生成。本地 PVP 在提供明确受控执色 UX 前继续不显示语音面板，不能从当前方或先手方猜测“己方”；PVE 只使用权威状态中的 `humanPlayer`。
 
 ## 5. 冥想模式重建设计
 

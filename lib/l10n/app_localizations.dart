@@ -2062,6 +2062,48 @@ abstract class AppLocalizations {
   /// **'此功能开放后，可从新建冥想对局开始。'**
   String get meditationNoSaveBody;
 
+  /// No description provided for @gameVoiceTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'语音行棋'**
+  String get gameVoiceTitle;
+
+  /// No description provided for @gameVoiceDisclosureBody.
+  ///
+  /// In zh, this message translates to:
+  /// **'在人机对局中，可用单条中文语音选择或移动自己的棋子。每次只在按下按钮后聆听。'**
+  String get gameVoiceDisclosureBody;
+
+  /// No description provided for @gameVoiceChineseOnly.
+  ///
+  /// In zh, this message translates to:
+  /// **'Phase 4 首期仅支持中文语音输入'**
+  String get gameVoiceChineseOnly;
+
+  /// No description provided for @gameVoiceEnable.
+  ///
+  /// In zh, this message translates to:
+  /// **'启用语音行棋'**
+  String get gameVoiceEnable;
+
+  /// No description provided for @gameVoiceListen.
+  ///
+  /// In zh, this message translates to:
+  /// **'聆听一条指令'**
+  String get gameVoiceListen;
+
+  /// No description provided for @gameVoiceWaitForTurn.
+  ///
+  /// In zh, this message translates to:
+  /// **'轮到您时才可使用语音行棋'**
+  String get gameVoiceWaitForTurn;
+
+  /// No description provided for @gameVoiceSetupFailed.
+  ///
+  /// In zh, this message translates to:
+  /// **'暂时无法准备语音行棋，请在您的回合重试。'**
+  String get gameVoiceSetupFailed;
+
   /// No description provided for @onlineBattleTitle.
   ///
   /// In zh, this message translates to:

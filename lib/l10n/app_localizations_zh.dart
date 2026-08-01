@@ -1035,6 +1035,28 @@ class AppLocalizationsZh extends AppLocalizations {
   String get meditationNoSaveBody => '此功能开放后，可从新建冥想对局开始。';
 
   @override
+  String get gameVoiceTitle => '语音行棋';
+
+  @override
+  String get gameVoiceDisclosureBody =>
+      '在人机对局中，可用单条中文语音选择或移动自己的棋子。每次只在按下按钮后聆听。';
+
+  @override
+  String get gameVoiceChineseOnly => 'Phase 4 首期仅支持中文语音输入';
+
+  @override
+  String get gameVoiceEnable => '启用语音行棋';
+
+  @override
+  String get gameVoiceListen => '聆听一条指令';
+
+  @override
+  String get gameVoiceWaitForTurn => '轮到您时才可使用语音行棋';
+
+  @override
+  String get gameVoiceSetupFailed => '暂时无法准备语音行棋，请在您的回合重试。';
+
+  @override
   String get onlineBattleTitle => '在线对战';
 
   @override

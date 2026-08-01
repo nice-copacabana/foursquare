@@ -1039,6 +1039,28 @@ class AppLocalizationsJa extends AppLocalizations {
   String get meditationNoSaveBody => 'この機能の公開後、新しい瞑想対局を開始できます。';
 
   @override
+  String get gameVoiceTitle => '音声で指す';
+
+  @override
+  String get gameVoiceDisclosureBody =>
+      'AI 対局では、中国語の音声コマンドを一つずつ使って自分の駒を選択・移動できます。ボタンを押した時だけ聞き取ります。';
+
+  @override
+  String get gameVoiceChineseOnly => 'Phase 4 の音声入力は中国語のみです';
+
+  @override
+  String get gameVoiceEnable => '音声入力を有効にする';
+
+  @override
+  String get gameVoiceListen => 'コマンドを一つ聞き取る';
+
+  @override
+  String get gameVoiceWaitForTurn => 'あなたの手番になるまで音声入力は待機します';
+
+  @override
+  String get gameVoiceSetupFailed => '音声入力を準備できませんでした。あなたの手番で再試行してください。';
+
+  @override
   String get onlineBattleTitle => 'オンライン対局';
 
   @override
