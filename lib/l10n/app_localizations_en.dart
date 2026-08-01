@@ -1078,6 +1078,31 @@ class AppLocalizationsEn extends AppLocalizations {
   String get meditationFinished => 'Game finished. Confirming the game record';
 
   @override
+  String get meditationPreparingTitle => 'Preparing the quiet board';
+
+  @override
+  String get meditationPreparingBody =>
+      'Restoring the authoritative game before voice services are created.';
+
+  @override
+  String get meditationLoadFailedTitle =>
+      'The meditation game could not be prepared';
+
+  @override
+  String get meditationLoadFailedBody =>
+      'Your voice and game details were not shown. Try loading the session again.';
+
+  @override
+  String get meditationRetry => 'Try again';
+
+  @override
+  String get meditationNoSaveTitle => 'No meditation game to resume';
+
+  @override
+  String get meditationNoSaveBody =>
+      'Start a new meditation game when this feature becomes available.';
+
+  @override
   String get onlineBattleTitle => 'Online game';
 
   @override

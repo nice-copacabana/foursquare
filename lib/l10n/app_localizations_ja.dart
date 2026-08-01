@@ -1018,6 +1018,27 @@ class AppLocalizationsJa extends AppLocalizations {
   String get meditationFinished => '対局終了。対局記録を確認しています';
 
   @override
+  String get meditationPreparingTitle => '静かな盤面を準備中';
+
+  @override
+  String get meditationPreparingBody => '正式な対局を復元してから音声サービスを作成します。';
+
+  @override
+  String get meditationLoadFailedTitle => '瞑想対局を準備できませんでした';
+
+  @override
+  String get meditationLoadFailedBody => '音声や対局の詳細は表示されていません。もう一度読み込めます。';
+
+  @override
+  String get meditationRetry => 'もう一度読み込む';
+
+  @override
+  String get meditationNoSaveTitle => '再開できる瞑想対局はありません';
+
+  @override
+  String get meditationNoSaveBody => 'この機能の公開後、新しい瞑想対局を開始できます。';
+
+  @override
   String get onlineBattleTitle => 'オンライン対局';
 
   @override

@@ -25,6 +25,7 @@ class MeditationPage extends StatefulWidget {
     required this.recognition,
     required this.synthesis,
     this.now = DateTime.now,
+    this.ownsRuntime = true,
   });
 
   final MeditationSessionRuntime runtime;
@@ -32,6 +33,7 @@ class MeditationPage extends StatefulWidget {
   final VoiceRecognitionPort recognition;
   final VoiceSynthesisPort synthesis;
   final DateTime Function() now;
+  final bool ownsRuntime;
 
   @override
   State<MeditationPage> createState() => _MeditationPageState();
@@ -105,7 +107,7 @@ class _MeditationPageState extends State<MeditationPage>
     unawaited(_sessionSubscription?.cancel());
     unawaited(_voiceSubscription?.cancel());
     unawaited(_voice.dispose());
-    widget.runtime.dispose();
+    if (widget.ownsRuntime) widget.runtime.dispose();
     super.dispose();
   }
 

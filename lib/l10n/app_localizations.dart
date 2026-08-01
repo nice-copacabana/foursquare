@@ -2020,6 +2020,48 @@ abstract class AppLocalizations {
   /// **'本局已结束，正在确认对局记录'**
   String get meditationFinished;
 
+  /// No description provided for @meditationPreparingTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'正在备好静心棋局'**
+  String get meditationPreparingTitle;
+
+  /// No description provided for @meditationPreparingBody.
+  ///
+  /// In zh, this message translates to:
+  /// **'先恢复权威对局，再创建语音服务。'**
+  String get meditationPreparingBody;
+
+  /// No description provided for @meditationLoadFailedTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'暂时无法准备冥想对局'**
+  String get meditationLoadFailedTitle;
+
+  /// No description provided for @meditationLoadFailedBody.
+  ///
+  /// In zh, this message translates to:
+  /// **'语音和棋局细节没有显示，可重新加载本局。'**
+  String get meditationLoadFailedBody;
+
+  /// No description provided for @meditationRetry.
+  ///
+  /// In zh, this message translates to:
+  /// **'重新加载'**
+  String get meditationRetry;
+
+  /// No description provided for @meditationNoSaveTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'没有可继续的冥想对局'**
+  String get meditationNoSaveTitle;
+
+  /// No description provided for @meditationNoSaveBody.
+  ///
+  /// In zh, this message translates to:
+  /// **'此功能开放后，可从新建冥想对局开始。'**
+  String get meditationNoSaveBody;
+
   /// No description provided for @onlineBattleTitle.
   ///
   /// In zh, this message translates to:

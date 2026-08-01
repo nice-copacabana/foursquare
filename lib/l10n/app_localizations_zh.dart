@@ -1014,6 +1014,27 @@ class AppLocalizationsZh extends AppLocalizations {
   String get meditationFinished => '本局已结束，正在确认对局记录';
 
   @override
+  String get meditationPreparingTitle => '正在备好静心棋局';
+
+  @override
+  String get meditationPreparingBody => '先恢复权威对局，再创建语音服务。';
+
+  @override
+  String get meditationLoadFailedTitle => '暂时无法准备冥想对局';
+
+  @override
+  String get meditationLoadFailedBody => '语音和棋局细节没有显示，可重新加载本局。';
+
+  @override
+  String get meditationRetry => '重新加载';
+
+  @override
+  String get meditationNoSaveTitle => '没有可继续的冥想对局';
+
+  @override
+  String get meditationNoSaveBody => '此功能开放后，可从新建冥想对局开始。';
+
+  @override
   String get onlineBattleTitle => '在线对战';
 
   @override
