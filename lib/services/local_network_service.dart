@@ -1,14 +1,26 @@
 import 'dart:async';
 import 'dart:io';
-import 'package:nsd/nsd.dart';
+import 'package:nsd/nsd.dart' as nsd;
 import 'package:shelf/shelf_io.dart' as shelf_io;
 import 'package:shelf_web_socket/shelf_web_socket.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
-import 'package:network_info_plus/network_info_plus.dart';
 import '../models/websocket_message.dart';
 import '../services/logger_service.dart';
 
 enum LocalNetworkRole { host, client, none }
+
+/// Resolves an NSD service without relying on protected Wi-Fi metadata.
+Uri resolveLanServiceUri(nsd.Service service) {
+  final addresses = service.addresses;
+  final host = addresses != null && addresses.isNotEmpty
+      ? addresses.first.address
+      : service.host;
+  final port = service.port;
+  if (host == null || host.isEmpty || port == null) {
+    throw const FormatException('LAN service has no resolved host or port');
+  }
+  return Uri(scheme: 'ws', host: host, port: port);
+}
 
 class LocalNetworkService {
   static final LocalNetworkService _instance = LocalNetworkService._internal();
@@ -21,13 +33,13 @@ class LocalNetworkService {
 
   // Host properties
   HttpServer? _server;
-  Registration? _registration;
+  nsd.Registration? _registration;
   WebSocketChannel? _connectedClient; // 1v1 support for now
 
   // Client properties
-  Discovery? _discovery;
+  nsd.Discovery? _discovery;
   WebSocketChannel? _clientChannel;
-  final List<Service> _foundServices = [];
+  final List<nsd.Service> _foundServices = [];
 
   // State Streams
   final _connectionStateController =
@@ -38,8 +50,8 @@ class LocalNetworkService {
   final _messageController = StreamController<WebSocketMessage>.broadcast();
   Stream<WebSocketMessage> get messageStream => _messageController.stream;
 
-  final _servicesController = StreamController<List<Service>>.broadcast();
-  Stream<List<Service>> get foundServices => _servicesController.stream;
+  final _servicesController = StreamController<List<nsd.Service>>.broadcast();
+  Stream<List<nsd.Service>> get foundServices => _servicesController.stream;
 
   static const String _serviceType = '_foursquare._tcp';
   static const int _port = 4040;
@@ -86,13 +98,11 @@ class LocalNetworkService {
       _updateConnectionState(LocalNetworkConnectionState.hosting);
 
       // 2. Register mDNS Service
-      final ip = await NetworkInfo().getWifiIP();
-      _registration = await register(
-        Service(
+      _registration = await nsd.register(
+        nsd.Service(
           name: roomName,
           type: _serviceType,
           port: _port,
-          txt: {'ip': ip ?? '0.0.0.0'},
         ),
       );
       logger.info('mDNS Service registered: $roomName', 'LocalNetworkService');
@@ -112,7 +122,7 @@ class LocalNetworkService {
     _updateConnectionState(LocalNetworkConnectionState.scanning);
 
     try {
-      _discovery = await startDiscovery(_serviceType, autoResolve: true);
+      _discovery = await nsd.startDiscovery(_serviceType, autoResolve: true);
       _discovery!.addListener(() {
         _foundServices.clear();
         _foundServices.addAll(_discovery!.services);
@@ -130,37 +140,23 @@ class LocalNetworkService {
   }
 
   /// Connect to a Host (Client Mode)
-  Future<void> connectToHost(Service service) async {
+  Future<void> connectToHost(nsd.Service service) async {
     if (_role == LocalNetworkRole.host) return;
     _role = LocalNetworkRole.client;
     _updateConnectionState(LocalNetworkConnectionState.connecting);
 
     try {
-      await stopDiscovery(); // Stop discovery after selecting
-
-      // Use IP from TXT record or resolving (NSD resolves it usually)
-      String? ip;
-      if (service.txt != null && service.txt!['ip'] != null) {
-        try {
-          ip = String.fromCharCodes(service.txt!['ip'] as List<int>);
-        } catch (_) {
-          ip = service.txt!['ip'].toString();
-        }
-      } else {
-        ip = service.host;
-        if (service.addresses.isNotEmpty) {
-          ip = service.addresses.first.address;
-        }
+      if (_discovery != null) {
+        await nsd.stopDiscovery(_discovery!);
+        _discovery = null;
       }
 
-      if (ip == null) {
-        throw Exception('Could not determine Host IP');
-      }
-
-      final uri = 'ws://$ip:${service.port}';
+      // NSD resolves the advertised host. Prefer a concrete address and let
+      // Uri format IPv4/IPv6 correctly without exposing Wi-Fi information.
+      final uri = resolveLanServiceUri(service);
       logger.info('Connecting to $uri', 'LocalNetworkService');
 
-      _clientChannel = WebSocketChannel.connect(Uri.parse(uri));
+      _clientChannel = WebSocketChannel.connect(uri);
 
       // Monitor connection via stream access? WebSocketChannel doesn't expose 'onConnected' easily.
       // But we can assume connecting state until first message or stream done?
@@ -200,7 +196,9 @@ class LocalNetworkService {
       _clientChannel!.sink.add(jsonString);
     } else {
       logger.warning(
-          'Cannot send message: Not connected', 'LocalNetworkService',);
+        'Cannot send message: Not connected',
+        'LocalNetworkService',
+      );
     }
   }
 
@@ -220,7 +218,7 @@ class LocalNetworkService {
     try {
       if (_role == LocalNetworkRole.host) {
         if (_registration != null) {
-          await unregister(_registration!);
+          await nsd.unregister(_registration!);
           _registration = null;
         }
         await _server?.close(force: true);
@@ -230,7 +228,7 @@ class LocalNetworkService {
       } else {
         _cleanupClient();
         if (_discovery != null) {
-          await stopDiscovery(_discovery!);
+          await nsd.stopDiscovery(_discovery!);
           _discovery = null;
         }
       }

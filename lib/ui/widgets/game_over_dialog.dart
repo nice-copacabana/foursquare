@@ -138,6 +138,7 @@ class GameOverDialog extends StatelessWidget {
 
   /// 获取结果图标
   IconData _getResultIcon() {
+    if (winner != null) return Icons.emoji_events;
     switch (gameResult.status) {
       case GameStatus.blackWin:
       case GameStatus.whiteWin:
@@ -151,11 +152,14 @@ class GameOverDialog extends StatelessWidget {
 
   /// 获取结果标题
   String _getResultTitle() {
+    if (winner != null) {
+      return winner == PieceType.black ? '墨方获胜！' : '玉方获胜！';
+    }
     switch (gameResult.status) {
       case GameStatus.blackWin:
-        return '黑方获胜！';
+        return '墨方获胜！';
       case GameStatus.whiteWin:
-        return '白方获胜！';
+        return '玉方获胜！';
       case GameStatus.draw:
         return '平局';
       default:

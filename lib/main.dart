@@ -9,7 +9,9 @@ import 'ui/screens/onboarding_page.dart';
 import 'services/storage_service.dart';
 import 'services/audio_coordinator.dart';
 import 'services/performance_monitor.dart';
+import 'services/diagnostics_service.dart';
 import 'theme/theme_manager.dart';
+import 'theme/theme_pack_registry.dart';
 import 'l10n/app_localizations.dart';
 import 'constants/storage_constants.dart';
 
@@ -24,16 +26,27 @@ void main() async {
   await storageService.initialize();
 
   // 加载环境变量
-  await dotenv.load(
-    fileName: kReleaseMode ? ".env.production" : ".env.development",
-  );
+  const envName = String.fromEnvironment('ENV');
+  final String envFile;
+  if (envName.isNotEmpty) {
+    envFile = '.env.$envName';
+  } else {
+    envFile = kReleaseMode ? ".env.production" : ".env.development";
+  }
+
+  await dotenv.load(fileName: envFile);
 
   await ThemeManager().initialize();
   await AudioCoordinator().initialize();
   final settings = await storageService.loadSettings();
   PerformanceMonitor().setEnabled(settings.performanceMonitoringEnabled);
 
-  runApp(const FourSquareGameApp());
+  await DiagnosticsService().run(
+    enabled: settings.performanceMonitoringEnabled,
+    dsn: dotenv.maybeGet('SENTRY_DSN'),
+    environment: kReleaseMode ? 'production' : 'development',
+    appRunner: () => runApp(const FourSquareGameApp()),
+  );
 }
 
 class FourSquareGameApp extends StatefulWidget {
@@ -45,7 +58,8 @@ class FourSquareGameApp extends StatefulWidget {
 
 class _FourSquareGameAppState extends State<FourSquareGameApp> {
   final StorageService _storageService = StorageService();
-  GameTheme _currentTheme = ThemeManager.defaultTheme;
+  final ThemePackRegistry _themeRegistry = ThemePackRegistry.phaseOne();
+  late ThemeData _currentTheme = _themeRegistry.defaultPack.themeData;
   bool _isLoading = true;
   bool _isFirstLaunch = true;
 
@@ -62,9 +76,9 @@ class _FourSquareGameAppState extends State<FourSquareGameApp> {
 
   Future<void> _loadTheme() async {
     final settings = await _storageService.loadSettings();
-    final themeType = ThemeManager.getThemeTypeByName(settings.selectedTheme);
+    final selectedTheme = _themeRegistry.resolve(settings.selectedTheme);
     setState(() {
-      _currentTheme = ThemeManager.getTheme(themeType);
+      _currentTheme = selectedTheme.themeData;
       _isLoading = false;
     });
   }
@@ -93,7 +107,7 @@ class _FourSquareGameAppState extends State<FourSquareGameApp> {
 
     return MaterialApp(
       title: '四子游戏',
-      theme: _currentTheme.materialTheme,
+      theme: _currentTheme,
       home: _isFirstLaunch ? const OnboardingPage() : const HomePage(),
       routes: {
         '/home': (context) => const HomePage(),
@@ -109,8 +123,6 @@ class _FourSquareGameAppState extends State<FourSquareGameApp> {
       ],
       supportedLocales: const [
         Locale('zh', ''), // 中文
-        Locale('en', ''), // 英文
-        Locale('ja', ''), // 日文
       ],
     );
   }

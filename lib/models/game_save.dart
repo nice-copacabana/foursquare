@@ -18,38 +18,65 @@ import 'piece_type.dart';
 
 /// 游戏存档数据模型
 class GameSave extends Equatable {
+  /// 存档结构版本；正式规则模型从 v2 开始。
+  final int schemaVersion;
   final String id;
   final DateTime saveTime;
+  final String? matchId;
+  final DateTime? startedAt;
   final BoardStateData boardState;
   final List<MoveData> moveHistory;
   final String currentPlayer; // 'black' or 'white'
+  final String startingPlayer; // 'black' or 'white'
+  final String? humanPlayer; // AI mode only
+  final int noCapturePlyCount;
+  final int turnRemainingMilliseconds;
   final String mode; // 'pvp' or 'pve'
   final String? aiDifficulty; // 'easy', 'medium', 'hard'
 
   const GameSave({
+    this.schemaVersion = 2,
     required this.id,
     required this.saveTime,
+    this.matchId,
+    this.startedAt,
     required this.boardState,
     required this.moveHistory,
     required this.currentPlayer,
+    this.startingPlayer = 'black',
+    this.humanPlayer,
+    this.noCapturePlyCount = 0,
+    this.turnRemainingMilliseconds = 60000,
     required this.mode,
     this.aiDifficulty,
   });
 
   Map<String, dynamic> toJson() => {
+        'schemaVersion': schemaVersion,
         'id': id,
         'saveTime': saveTime.toIso8601String(),
+        'matchId': matchId,
+        'startedAt': startedAt?.toUtc().toIso8601String(),
         'boardState': boardState.toJson(),
         'moveHistory': moveHistory.map((m) => m.toJson()).toList(),
         'currentPlayer': currentPlayer,
+        'startingPlayer': startingPlayer,
+        'humanPlayer': humanPlayer,
+        'noCapturePlyCount': noCapturePlyCount,
+        'turnRemainingMilliseconds': turnRemainingMilliseconds,
         'mode': mode,
         'aiDifficulty': aiDifficulty,
       };
 
   factory GameSave.fromJson(Map<String, dynamic> json) {
     return GameSave(
+      schemaVersion: json['schemaVersion'] as int? ?? 1,
       id: json['id'] as String,
       saveTime: DateTime.parse(json['saveTime'] as String),
+      matchId: json['matchId'] as String?,
+      startedAt: json['startedAt'] == null
+          ? null
+          : DateTime.parse(json['startedAt'] as String).toUtc(),
       boardState: BoardStateData.fromJson(
         Map<String, dynamic>.from(json['boardState']),
       ),
@@ -57,6 +84,11 @@ class GameSave extends Equatable {
           .map((m) => MoveData.fromJson(Map<String, dynamic>.from(m)))
           .toList(),
       currentPlayer: json['currentPlayer'] as String,
+      startingPlayer: json['startingPlayer'] as String? ?? 'black',
+      humanPlayer: json['humanPlayer'] as String?,
+      noCapturePlyCount: json['noCapturePlyCount'] as int? ?? 0,
+      turnRemainingMilliseconds:
+          json['turnRemainingMilliseconds'] as int? ?? 60000,
       mode: json['mode'] as String,
       aiDifficulty: json['aiDifficulty'] as String?,
     );
@@ -65,10 +97,17 @@ class GameSave extends Equatable {
   @override
   List<Object?> get props => [
         id,
+        schemaVersion,
         saveTime,
+        matchId,
+        startedAt,
         boardState,
         moveHistory,
         currentPlayer,
+        startingPlayer,
+        humanPlayer,
+        noCapturePlyCount,
+        turnRemainingMilliseconds,
         mode,
         aiDifficulty,
       ];
@@ -193,33 +232,74 @@ class PositionData extends Equatable {
 class MoveData extends Equatable {
   final PositionData from;
   final PositionData to;
-  final PositionData? capturedPosition;
-  final String? capturedPiece; // 'black' or 'white'
+  final List<PositionData> capturedPositions;
+  final String player;
+  final DateTime timestamp;
 
-  const MoveData({
+  /// 兼容旧存档的第一个被吃位置。
+  PositionData? get capturedPosition =>
+      capturedPositions.isEmpty ? null : capturedPositions.first;
+
+  /// 兼容旧存档中实际表示移动方的错误字段名。
+  String get capturedPiece => player;
+
+  MoveData({
     required this.from,
     required this.to,
-    this.capturedPosition,
-    this.capturedPiece,
-  });
+    List<PositionData> capturedPositions = const [],
+    PositionData? capturedPosition,
+    String? player,
+    String? capturedPiece,
+    DateTime? timestamp,
+  })  : capturedPositions = List.unmodifiable(
+          capturedPosition == null
+              ? capturedPositions
+              : <PositionData>[
+                  ...capturedPositions,
+                  if (!capturedPositions.contains(capturedPosition))
+                    capturedPosition,
+                ],
+        ),
+        player = player ?? capturedPiece ?? 'black',
+        timestamp = timestamp ?? DateTime.fromMillisecondsSinceEpoch(0);
 
   Map<String, dynamic> toJson() => {
         'from': from.toJson(),
         'to': to.toJson(),
+        'capturedPositions':
+            capturedPositions.map((position) => position.toJson()).toList(),
+        'player': player,
+        'timestamp': timestamp.toIso8601String(),
+        // 旧版本兼容字段。
         'capturedPosition': capturedPosition?.toJson(),
         'capturedPiece': capturedPiece,
       };
 
   factory MoveData.fromJson(Map<String, dynamic> json) {
+    final capturedPositionsJson = json['capturedPositions'] as List<dynamic>?;
+    final legacyCapturedPosition = json['capturedPosition'] != null
+        ? PositionData.fromJson(
+            Map<String, dynamic>.from(json['capturedPosition']),
+          )
+        : null;
     return MoveData(
       from: PositionData.fromJson(Map<String, dynamic>.from(json['from'])),
       to: PositionData.fromJson(Map<String, dynamic>.from(json['to'])),
-      capturedPosition: json['capturedPosition'] != null
-          ? PositionData.fromJson(
-              Map<String, dynamic>.from(json['capturedPosition']),
-            )
-          : null,
+      capturedPositions: capturedPositionsJson
+              ?.map(
+                (position) => PositionData.fromJson(
+                  Map<String, dynamic>.from(position),
+                ),
+              )
+              .toList(growable: false) ??
+          const [],
+      capturedPosition:
+          capturedPositionsJson == null ? legacyCapturedPosition : null,
+      player: json['player'] as String?,
       capturedPiece: json['capturedPiece'] as String?,
+      timestamp: json['timestamp'] == null
+          ? null
+          : DateTime.parse(json['timestamp'] as String),
     );
   }
 
@@ -227,10 +307,11 @@ class MoveData extends Equatable {
     return MoveData(
       from: PositionData.fromPosition(move.from),
       to: PositionData.fromPosition(move.to),
-      capturedPosition: move.capturedPiece != null
-          ? PositionData.fromPosition(move.capturedPiece!)
-          : null,
-      capturedPiece: BoardStateData._pieceTypeToString(move.player),
+      capturedPositions: move.capturedPieces
+          .map(PositionData.fromPosition)
+          .toList(growable: false),
+      player: BoardStateData._pieceTypeToString(move.player),
+      timestamp: move.timestamp,
     );
   }
 
@@ -238,16 +319,15 @@ class MoveData extends Equatable {
     return Move(
       from: from.toPosition(),
       to: to.toPosition(),
-      player: capturedPiece != null
-          ? BoardStateData._stringToPieceType(capturedPiece!)
-          : PieceType.black,
-      capturedPiece: capturedPosition?.toPosition(),
-      timestamp: DateTime.now(),
+      player: BoardStateData._stringToPieceType(player),
+      capturedPieces:
+          capturedPositions.map((position) => position.toPosition()).toList(),
+      timestamp: timestamp,
     );
   }
 
   @override
-  List<Object?> get props => [from, to, capturedPosition, capturedPiece];
+  List<Object?> get props => [from, to, capturedPositions, player, timestamp];
 }
 
 /// 游戏模式转换扩展

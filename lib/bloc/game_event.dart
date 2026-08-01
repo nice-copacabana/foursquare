@@ -45,14 +45,16 @@ class SelectPieceEvent extends GameEvent {
 class MovePieceEvent extends GameEvent {
   final Position from;
   final Position to;
+  final bool isAIMove;
 
   const MovePieceEvent({
     required this.from,
     required this.to,
+    this.isAIMove = false,
   });
 
   @override
-  List<Object?> get props => [from, to];
+  List<Object?> get props => [from, to, isAIMove];
 
   @override
   String toString() => 'MovePieceEvent(from: $from, to: $to)';
@@ -179,6 +181,34 @@ class LoadGameEvent extends GameEvent {
 
   @override
   String toString() => 'LoadGameEvent()';
+}
+
+/// Re-evaluates the current absolute turn deadline.
+class TurnClockTickEvent extends GameEvent {
+  final DateTime now;
+
+  const TurnClockTickEvent(this.now);
+
+  @override
+  List<Object?> get props => [now];
+}
+
+class PauseTurnClockEvent extends GameEvent {
+  final DateTime now;
+
+  const PauseTurnClockEvent(this.now);
+
+  @override
+  List<Object?> get props => [now];
+}
+
+class ResumeTurnClockEvent extends GameEvent {
+  final DateTime now;
+
+  const ResumeTurnClockEvent(this.now);
+
+  @override
+  List<Object?> get props => [now];
 }
 
 /// 设置更新事件

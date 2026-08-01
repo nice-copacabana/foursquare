@@ -9,6 +9,7 @@ library;
 
 import 'package:flutter/material.dart';
 import '../../models/move.dart';
+import '../../models/piece_type.dart';
 import '../../services/game_replay_service.dart';
 import '../widgets/themed_board_widget.dart';
 
@@ -18,11 +19,13 @@ class GameReplayPage extends StatefulWidget {
 
   /// 游戏模式标题
   final String gameTitle;
+  final PieceType startingPlayer;
 
   const GameReplayPage({
     super.key,
     required this.moveHistory,
     this.gameTitle = '游戏回放',
+    this.startingPlayer = PieceType.black,
   });
 
   @override
@@ -37,7 +40,10 @@ class _GameReplayPageState extends State<GameReplayPage> {
   void initState() {
     super.initState();
     _replayService = GameReplayService();
-    _replayState = _replayService.startReplay(widget.moveHistory);
+    _replayState = _replayService.startReplay(
+      widget.moveHistory,
+      startingPlayer: widget.startingPlayer,
+    );
   }
 
   @override

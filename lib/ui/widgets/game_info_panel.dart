@@ -25,6 +25,7 @@ class GameInfoPanel extends StatelessWidget {
   final bool isAIThinking;
   final double aiThinkingProgress;
   final String aiThinkingStatus;
+  final Duration turnRemaining;
 
   const GameInfoPanel({
     super.key,
@@ -40,15 +41,18 @@ class GameInfoPanel extends StatelessWidget {
     this.isAIThinking = false,
     this.aiThinkingProgress = 0.0,
     this.aiThinkingStatus = '',
+    this.turnRemaining = Duration.zero,
   });
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        color: scheme.surface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Theme.of(context).dividerColor),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.1),
@@ -65,6 +69,7 @@ class GameInfoPanel extends StatelessWidget {
           _CurrentPlayerIndicator(
             currentPlayer: currentPlayer,
             isAIThinking: isAIThinking,
+            turnRemaining: turnRemaining,
           ),
           const SizedBox(height: 16),
 
@@ -107,14 +112,17 @@ class GameInfoPanel extends StatelessWidget {
 class _CurrentPlayerIndicator extends StatelessWidget {
   final PieceType currentPlayer;
   final bool isAIThinking;
+  final Duration turnRemaining;
 
   const _CurrentPlayerIndicator({
     required this.currentPlayer,
     required this.isAIThinking,
+    required this.turnRemaining,
   });
 
   @override
   Widget build(BuildContext context) {
+    final seconds = turnRemaining.inSeconds.clamp(0, 60);
     return Row(
       children: [
         Container(
@@ -147,7 +155,7 @@ class _CurrentPlayerIndicator extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                currentPlayer == PieceType.black ? '黑方回合' : '白方回合',
+                currentPlayer == PieceType.black ? '墨方回合' : '玉方回合',
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -163,6 +171,25 @@ class _CurrentPlayerIndicator extends StatelessWidget {
                   ),
                 ),
             ],
+          ),
+        ),
+        Semantics(
+          label: '本回合剩余 $seconds 秒',
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+            decoration: BoxDecoration(
+              color: seconds <= 10
+                  ? Theme.of(context).colorScheme.errorContainer
+                  : Theme.of(context).colorScheme.primaryContainer,
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: Text(
+              '$seconds 秒',
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                fontFeatures: const [FontFeature.tabularFigures()],
+                fontWeight: FontWeight.w700,
+              ),
+            ),
           ),
         ),
       ],
@@ -186,7 +213,7 @@ class _PieceCountSection extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceAround,
       children: [
         _PieceCounter(
-          label: '黑方',
+          label: '墨方',
           count: blackCount,
           color: Colors.grey.shade800,
         ),
@@ -196,7 +223,7 @@ class _PieceCountSection extends StatelessWidget {
           color: Colors.grey.shade300,
         ),
         _PieceCounter(
-          label: '白方',
+          label: '玉方',
           count: whiteCount,
           color: Colors.white,
           borderColor: Colors.grey.shade400,
@@ -336,15 +363,20 @@ class _MoveHistorySection extends StatelessWidget {
                             '${move.from} → ${move.to}',
                             style: const TextStyle(fontSize: 12),
                           ),
-                          if (move.capturedPiece != null)
-                            const Row(
+                          if (move.captureCount > 0)
+                            Row(
                               children: [
-                                SizedBox(width: 4),
-                                Icon(
+                                const SizedBox(width: 4),
+                                const Icon(
                                   Icons.close,
                                   size: 12,
                                   color: Colors.red,
                                 ),
+                                if (move.captureCount > 1)
+                                  Text(
+                                    '${move.captureCount}',
+                                    style: const TextStyle(fontSize: 11),
+                                  ),
                               ],
                             ),
                         ],
@@ -468,36 +500,18 @@ class _ActionButtons extends StatelessWidget {
         Row(
           children: [
             Expanded(
-              child: ElevatedButton.icon(
-                onPressed: null, // 暂时禁用
+              child: OutlinedButton.icon(
+                onPressed: canUndo ? onUndo : null,
                 icon: const Icon(Icons.undo, size: 18),
                 label: const Text('撤销'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.orange.shade400,
-                  foregroundColor: Colors.white,
-                  disabledBackgroundColor: Colors.grey.shade300,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
               ),
             ),
             const SizedBox(width: 8),
             Expanded(
-              child: ElevatedButton.icon(
-                onPressed: null, // 暂时禁用
+              child: OutlinedButton.icon(
+                onPressed: canRedo ? onRedo : null,
                 icon: const Icon(Icons.redo, size: 18),
                 label: const Text('重做'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.purple.shade400,
-                  foregroundColor: Colors.white,
-                  disabledBackgroundColor: Colors.grey.shade300,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
               ),
             ),
           ],
@@ -506,18 +520,10 @@ class _ActionButtons extends StatelessWidget {
         // 重新开始按钮
         SizedBox(
           width: double.infinity,
-          child: ElevatedButton.icon(
+          child: TextButton.icon(
             onPressed: onRestart,
             icon: const Icon(Icons.refresh, size: 18),
             label: const Text('重新开始'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blue.shade400,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
           ),
         ),
       ],

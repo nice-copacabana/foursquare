@@ -1,13 +1,20 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../models/piece_type.dart';
-import '../../models/move.dart';
-import '../../bloc/lan_game_bloc.dart';
-import '../../bloc/lan_game_event.dart';
-import '../../bloc/lan_game_state.dart';
-import '../widgets/animated_board_widget.dart';
-import '../widgets/game_info_panel.dart';
-import '../widgets/game_over_dialog.dart';
+import '../../../engine/move_validator.dart';
+import '../../../models/board_state.dart';
+import '../../../models/game_result.dart';
+import '../../../models/piece_type.dart';
+import '../../../models/move.dart';
+import '../../../models/position.dart';
+import '../../../bloc/lan_game_bloc.dart';
+import '../../../bloc/lan_game_event.dart';
+import '../../../bloc/lan_game_state.dart';
+import '../../widgets/animated_board_widget.dart';
+import '../../widgets/game_info_panel.dart';
+import '../../widgets/game_over_dialog.dart';
+import '../game_replay_page.dart';
 
 class LanGamePage extends StatelessWidget {
   final bool isHost;
@@ -28,6 +35,39 @@ class LanGamePage extends StatelessWidget {
 
 class LanGameView extends StatelessWidget {
   const LanGameView({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const _LanGameViewBody();
+  }
+}
+
+class _LanGameViewBody extends StatefulWidget {
+  const _LanGameViewBody();
+
+  @override
+  State<_LanGameViewBody> createState() => _LanGameViewBodyState();
+}
+
+class _LanGameViewBodyState extends State<_LanGameViewBody> {
+  final MoveValidator _moveValidator = MoveValidator();
+  Position? _selectedPiece;
+  List<Position> _validMoves = const [];
+  Timer? _displayTicker;
+
+  @override
+  void initState() {
+    super.initState();
+    _displayTicker = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _displayTicker?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -62,38 +102,6 @@ class LanGameView extends StatelessWidget {
           }
 
           if (state is LanGamePlaying || state is LanGameFinished) {
-            BoardState? board;
-            PieceType? localColor;
-            List<Move> history = [];
-
-            if (state is LanGamePlaying) {
-              board = state.boardState;
-              localColor = state.localColor;
-              history = state.moveHistory;
-            } else if (state is LanGameFinished) {
-              board = state.finalBoard;
-              // We need localColor here ideally, but state.winner logic handles it?
-              // The finished state doesn't hold localColor.
-              // We should probably preserve playing state or make Finished extend Playing?
-              // For now, let's assume we can't easily get local color if we switch state completely.
-              // I should update LanGameFinished to include previous state info or localColor.
-              // Quick fix: LanGamePlaying persists until reset?
-              // Actually LanGameFinished is a separate state.
-              // Let's modify LanGameBlock to keep LanGamePlaying as data or make Finished hold it.
-            }
-
-            if (board != null) {
-              // If Finished, we might lose localColor reference if not careful.
-              // Checking usage: GameInfoPanel needs currentPlayer, etc.
-              // Let's rely on Bloc holding data or state structure.
-              // I'll update LanGameState to include localColor in Finished if needed.
-              // For now, let's cast safely or default.
-            }
-
-            // Simplification: Let's assume Playing state for UI rendering even if finished overlay is shown.
-            // If I change state to LanGameFinished, the builder rebuilds.
-            // I need LanGameFinished to contain the board data.
-
             return _buildGameUI(context, state);
           }
 
@@ -122,11 +130,26 @@ class LanGameView extends StatelessWidget {
 
     // Determine user interaction
     // Can only move if it's my turn AND game is playing.
-    final canMove =
-        (state is LanGamePlaying) && (board.currentPlayer == localColor);
+    final canMove = state is LanGamePlaying && state.isLocalTurn;
+    final turnRemaining =
+        state is LanGamePlaying && state.turnDeadlineUtc != null
+            ? state.turnDeadlineUtc!.difference(DateTime.now().toUtc())
+            : Duration.zero;
 
     return Column(
       children: [
+        if (state is LanGamePlaying &&
+            (!state.isSynchronized || state.isReconnecting))
+          MaterialBanner(
+            content: Text(
+              state.isReconnecting ? '连接中断，正在等待重连…' : '正在同步主机棋局…',
+            ),
+            leading: const SizedBox.square(
+              dimension: 22,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+            actions: const [SizedBox.shrink()],
+          ),
         Expanded(
           flex: 2,
           child: Center(
@@ -134,20 +157,20 @@ class LanGameView extends StatelessWidget {
               padding: const EdgeInsets.all(16.0),
               child: AnimatedBoardWidget(
                 boardState: board,
-                onMove: (from, to) {
-                  if (canMove) {
-                    context.read<LanGameBloc>().add(
-                          LanLocalPlayerMoved(Move(
-                            from: from,
-                            to: to,
-                            player: localColor,
-                          ),),
-                        );
-                  }
-                },
-                interactive: canMove,
-                // Highlight local player's pieces? or something?
-                // AnimatedBoardWidget handles piece display.
+                selectedPiece: _selectedPiece,
+                validMoves: _validMoves,
+                lastMoveFrom: history.isNotEmpty ? history.last.from : null,
+                lastMoveTo: history.isNotEmpty ? history.last.to : null,
+                capturedPiecePosition:
+                    history.isNotEmpty ? history.last.capturedPiece : null,
+                flipBoard: localColor == PieceType.white,
+                onPositionTapped: (position) => _handlePositionTapped(
+                  context,
+                  board,
+                  localColor,
+                  position,
+                  canMove,
+                ),
               ),
             ),
           ),
@@ -161,11 +184,68 @@ class LanGameView extends StatelessWidget {
             moveHistory: history,
             canUndo: false, // No undo in LAN for now
             canRedo: false,
-            onRestart: null, // Restart logic to be added
+            turnRemaining:
+                turnRemaining.isNegative ? Duration.zero : turnRemaining,
+            onRestart: null,
           ),
         ),
       ],
     );
+  }
+
+  void _handlePositionTapped(
+    BuildContext context,
+    BoardState board,
+    PieceType localColor,
+    Position position,
+    bool canMove,
+  ) {
+    if (!canMove) {
+      return;
+    }
+
+    final piece = board.getPiece(position);
+    if (_selectedPiece == null) {
+      if (piece == localColor) {
+        setState(() {
+          _selectedPiece = position;
+          _validMoves = _moveValidator.getValidMoves(board, position);
+        });
+      }
+      return;
+    }
+
+    if (_selectedPiece == position) {
+      setState(() {
+        _selectedPiece = null;
+        _validMoves = const [];
+      });
+      return;
+    }
+
+    if (piece == localColor) {
+      setState(() {
+        _selectedPiece = position;
+        _validMoves = _moveValidator.getValidMoves(board, position);
+      });
+      return;
+    }
+
+    if (_validMoves.contains(position)) {
+      context.read<LanGameBloc>().add(
+            LanLocalPlayerMoved(
+              Move.now(
+                from: _selectedPiece!,
+                to: position,
+                player: localColor,
+              ),
+            ),
+          );
+      setState(() {
+        _selectedPiece = null;
+        _validMoves = const [];
+      });
+    }
   }
 
   void _showExitDialog(BuildContext context) {
@@ -198,18 +278,56 @@ class LanGameView extends StatelessWidget {
       barrierDismissible: false,
       builder: (context) => GameOverDialog(
         winner: state.winner,
-        reason: state.reason,
+        gameResult: _toGameResult(state),
         onRestart: () {
           Navigator.pop(context);
-          // Implement restart?
-          // context.read<LanGameBloc>().add(LanRestartGame());
+          context.read<LanGameBloc>().add(LanRestartGame());
         },
         onExit: () {
           Navigator.pop(context);
           context.read<LanGameBloc>().add(LanExitGame());
           Navigator.pop(context);
         },
+        onReplay: state.moveHistory.isEmpty
+            ? null
+            : () {
+                Navigator.pop(context);
+                Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => GameReplayPage(
+                      moveHistory: state.moveHistory,
+                      startingPlayer: state.startingPlayer,
+                      gameTitle: '局域网对局回放',
+                    ),
+                  ),
+                );
+              },
       ),
+    );
+  }
+
+  GameResult _toGameResult(LanGameFinished state) {
+    if (state.authoritativeResult != null) {
+      return state.authoritativeResult!;
+    }
+    if (state.winner == PieceType.black) {
+      return GameResult.blackWin(
+        reason: state.reason,
+        moveCount: state.moveHistory.length,
+        duration: Duration.zero,
+      );
+    }
+    if (state.winner == PieceType.white) {
+      return GameResult.whiteWin(
+        reason: state.reason,
+        moveCount: state.moveHistory.length,
+        duration: Duration.zero,
+      );
+    }
+    return GameResult.draw(
+      reason: state.reason,
+      moveCount: state.moveHistory.length,
+      duration: Duration.zero,
     );
   }
 }

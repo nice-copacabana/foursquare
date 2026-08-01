@@ -2,7 +2,7 @@
 // Task: 实现WebSocket服务，管理在线对战通信 (已迁移至 Socket.io)
 
 import 'dart:async';
-import 'package:socket_io_client/socket_io_client.dart' as IO;
+import 'package:socket_io_client/socket_io_client.dart' as socket_io;
 import '../models/websocket_message.dart';
 import '../models/message_type.dart';
 import '../models/move.dart';
@@ -28,7 +28,7 @@ class WebSocketService {
   factory WebSocketService() => _instance;
   WebSocketService._internal();
 
-  IO.Socket? _socket;
+  socket_io.Socket? _socket;
   ConnectionState _state = ConnectionState.disconnected;
 
   final StreamController<WebSocketMessage> _messageController =
@@ -36,10 +36,6 @@ class WebSocketService {
 
   final StreamController<ConnectionState> _stateController =
       StreamController<ConnectionState>.broadcast();
-
-  // Socket.io has built-in reconnection, but we keep this for UI state syncing
-  Timer? _reconnectTimer;
-  String? _serverUrl;
 
   /// 获取消息流
   Stream<WebSocketMessage> get messageStream => _messageController.stream;
@@ -60,14 +56,13 @@ class WebSocketService {
       return true;
     }
 
-    _serverUrl = serverUrl;
     _updateState(ConnectionState.connecting);
 
     try {
       // Initialize Socket.io
-      _socket = IO.io(
+      _socket = socket_io.io(
         serverUrl,
-        IO.OptionBuilder()
+        socket_io.OptionBuilder()
             .setTransports(['websocket'])
             .disableAutoConnect()
             .build(),

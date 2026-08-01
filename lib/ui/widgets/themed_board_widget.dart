@@ -1,24 +1,16 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
-import '../../constants/theme_presets.dart';
+
+import '../../constants/ui_constants.dart';
 import '../../models/board_state.dart';
 import '../../models/position.dart';
-import '../../models/board_theme.dart';
 import '../../services/storage_service.dart';
-import '../../theme/theme_manager.dart';
+import '../../theme/theme_pack.dart';
+import '../../theme/theme_pack_registry.dart';
 import 'animated_board_widget.dart';
+import 'board_painter.dart';
+import 'board_widget.dart';
 
 class ThemedBoardWidget extends StatefulWidget {
-  final BoardState boardState;
-  final Position? selectedPiece;
-  final List<Position> validMoves;
-  final Position? lastMoveFrom;
-  final Position? lastMoveTo;
-  final Position? capturedPiecePosition;
-  final Function(Position) onPositionTapped;
-  final double? size;
-  final bool flipBoard;
-
   const ThemedBoardWidget({
     super.key,
     required this.boardState,
@@ -30,7 +22,22 @@ class ThemedBoardWidget extends StatefulWidget {
     this.capturedPiecePosition,
     this.size,
     this.flipBoard = false,
+    this.themePack,
   });
+
+  final BoardState boardState;
+  final Position? selectedPiece;
+  final List<Position> validMoves;
+  final Position? lastMoveFrom;
+  final Position? lastMoveTo;
+  final Position? capturedPiecePosition;
+  final ValueChanged<Position> onPositionTapped;
+  final double? size;
+  final bool flipBoard;
+
+  /// Optional injection seam used by previews, tests and future theme packs.
+  /// The phase-one registry supplies modern eastern when omitted.
+  final ThemePack? themePack;
 
   @override
   State<ThemedBoardWidget> createState() => _ThemedBoardWidgetState();
@@ -38,36 +45,17 @@ class ThemedBoardWidget extends StatefulWidget {
 
 class _ThemedBoardWidgetState extends State<ThemedBoardWidget> {
   final StorageService _storageService = StorageService();
-  final ThemeManager _themeManager = ThemeManager();
-  StreamSubscription<BoardTheme>? _themeSubscription;
-  BoardTheme _boardTheme = ThemePresets.defaultTheme;
+  final ThemePackRegistry _themeRegistry = ThemePackRegistry.phaseOne();
   bool _animationEnabled = true;
   bool _particleEnabled = true;
   bool _vibrationEnabled = true;
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _loadSettings();
-  }
+  ThemePack get _themePack => widget.themePack ?? _themeRegistry.defaultPack;
 
   @override
   void initState() {
     super.initState();
-    _boardTheme = _themeManager.currentBoardTheme;
-    _themeSubscription = _themeManager.themeStream.listen((theme) {
-      if (!mounted) return;
-      setState(() {
-        _boardTheme = theme;
-      });
-    });
     _loadSettings();
-  }
-
-  @override
-  void dispose() {
-    _themeSubscription?.cancel();
-    super.dispose();
   }
 
   Future<void> _loadSettings() async {
@@ -77,26 +65,65 @@ class _ThemedBoardWidgetState extends State<ThemedBoardWidget> {
       _animationEnabled = settings.animationEnabled;
       _particleEnabled = settings.particleEnabled;
       _vibrationEnabled = settings.vibrationEnabled;
-      _boardTheme = _themeManager.currentBoardTheme;
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBoardWidget(
-      boardState: widget.boardState,
-      selectedPiece: widget.selectedPiece,
-      validMoves: widget.validMoves,
-      lastMoveFrom: widget.lastMoveFrom,
-      lastMoveTo: widget.lastMoveTo,
-      capturedPiecePosition: widget.capturedPiecePosition,
-      onPositionTapped: widget.onPositionTapped,
-      size: widget.size,
-      vibrationEnabled: _vibrationEnabled,
-      animationEnabled: _animationEnabled,
-      particleEnabled: _particleEnabled,
-      flipBoard: widget.flipBoard,
-      theme: _boardTheme,
+    final mediaQuery = MediaQuery.maybeOf(context);
+    final systemReduceMotion = mediaQuery?.disableAnimations ?? false;
+    final reduceMotion = systemReduceMotion || !_animationEnabled;
+    final effectiveMotion = _themePack.motion.resolve(
+      reduceMotion: reduceMotion,
+    );
+    final boardSize = widget.size ?? _calculateBoardSize(context);
+
+    return SizedBox.square(
+      dimension: boardSize,
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: ExcludeSemantics(
+              child: AnimatedBoardWidget(
+                boardState: widget.boardState,
+                selectedPiece: widget.selectedPiece,
+                validMoves: widget.validMoves,
+                lastMoveFrom: widget.lastMoveFrom,
+                lastMoveTo: widget.lastMoveTo,
+                capturedPiecePosition: widget.capturedPiecePosition,
+                onPositionTapped: widget.onPositionTapped,
+                size: boardSize,
+                vibrationEnabled: _vibrationEnabled,
+                animationEnabled: effectiveMotion.moveDuration != Duration.zero,
+                particleEnabled:
+                    _particleEnabled && effectiveMotion.particlesEnabled,
+                flipBoard: widget.flipBoard,
+                theme: ThemePackBoardThemeAdapter(_themePack),
+              ),
+            ),
+          ),
+          Positioned.fill(
+            child: BoardSemanticsOverlay(
+              boardState: widget.boardState,
+              selectedPiece: widget.selectedPiece,
+              validMoves: widget.validMoves,
+              lastMoveFrom: widget.lastMoveFrom,
+              lastMoveTo: widget.lastMoveTo,
+              flipBoard: widget.flipBoard,
+              onPositionTapped: widget.onPositionTapped,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  double _calculateBoardSize(BuildContext context) {
+    final screenSize = MediaQuery.sizeOf(context);
+    final shortestSide = screenSize.shortestSide;
+    return (shortestSide * UIConstants.boardScreenRatio).clamp(
+      UIConstants.boardMinSize,
+      UIConstants.boardMaxSize,
     );
   }
 }

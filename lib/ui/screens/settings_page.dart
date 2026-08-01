@@ -16,10 +16,9 @@ import '../../services/storage_service.dart';
 import '../../services/audio_coordinator.dart';
 import '../../services/performance_monitor.dart';
 import '../../services/resource_warmup_service.dart';
-import '../../theme/theme_manager.dart';
+import '../../services/diagnostics_service.dart';
 import '../../models/audio_settings.dart';
 import '../../models/display_settings.dart';
-import '../../constants/theme_presets.dart';
 import '../../constants/storage_constants.dart';
 import 'onboarding_page.dart';
 
@@ -34,7 +33,6 @@ class SettingsPage extends StatefulWidget {
 class _SettingsPageState extends State<SettingsPage> {
   final StorageService _storageService = StorageService();
   final AudioCoordinator _audioCoordinator = AudioCoordinator();
-  final ThemeManager _themeManager = ThemeManager();
   final PerformanceMonitor _performanceMonitor = PerformanceMonitor();
   final ResourceWarmupService _resourceWarmupService = ResourceWarmupService();
 
@@ -54,7 +52,7 @@ class _SettingsPageState extends State<SettingsPage> {
     final settings = await _storageService.loadSettings();
     _audioSettings = _audioCoordinator.settings;
     _displaySettings = DisplaySettings(
-      themeId: _themeManager.currentBoardTheme.id,
+      themeId: 'modern_eastern',
       animationEnabled: settings.animationEnabled,
       particleEnabled: settings.particleEnabled,
       vibrationEnabled: settings.vibrationEnabled,
@@ -79,7 +77,6 @@ class _SettingsPageState extends State<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
         title: const Text('设置'),
         elevation: 0,
@@ -88,23 +85,29 @@ class _SettingsPageState extends State<SettingsPage> {
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
               padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  _buildSoundSettingsGroup(),
-                  const SizedBox(height: 16),
-                  _buildVibrationSettingsGroup(),
-                  const SizedBox(height: 16),
-                  _buildAIDifficultyGroup(),
-                  const SizedBox(height: 16),
-                  _buildThemeGroup(),
-                  const SizedBox(height: 16),
-                  _buildPerformanceGroup(),
-                  const SizedBox(height: 16),
-                  _buildAboutGroup(),
-                  const SizedBox(height: 16),
-                  _buildDangerZoneGroup(),
-                  const SizedBox(height: 32),
-                ],
+              child: Align(
+                alignment: Alignment.topCenter,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 760),
+                  child: Column(
+                    children: [
+                      _buildSoundSettingsGroup(),
+                      const SizedBox(height: 16),
+                      _buildVibrationSettingsGroup(),
+                      const SizedBox(height: 16),
+                      _buildAIDifficultyGroup(),
+                      const SizedBox(height: 16),
+                      _buildThemeGroup(),
+                      const SizedBox(height: 16),
+                      _buildPerformanceGroup(),
+                      const SizedBox(height: 16),
+                      _buildAboutGroup(),
+                      const SizedBox(height: 16),
+                      _buildDangerZoneGroup(),
+                      const SizedBox(height: 32),
+                    ],
+                  ),
+                ),
               ),
             ),
     );
@@ -129,11 +132,13 @@ class _SettingsPageState extends State<SettingsPage> {
           _SettingsSlider(
             label: '音效音量',
             value: _audioSettings.soundVolume,
-            onChanged: (value) async {
-              final newSettings = _audioSettings.copyWith(soundVolume: value);
-              await _audioCoordinator.updateSettings(newSettings);
-              setState(() => _audioSettings = newSettings);
-            },
+            onChanged: (value) => setState(
+              () =>
+                  _audioSettings = _audioSettings.copyWith(soundVolume: value),
+            ),
+            onChangeEnd: (value) => _audioCoordinator.updateSettings(
+              _audioSettings.copyWith(soundVolume: value),
+            ),
           ),
         ],
         const Divider(),
@@ -152,24 +157,15 @@ class _SettingsPageState extends State<SettingsPage> {
           _SettingsSlider(
             label: '音乐音量',
             value: _audioSettings.musicVolume,
-            onChanged: (value) async {
-              final newSettings = _audioSettings.copyWith(musicVolume: value);
-              await _audioCoordinator.updateSettings(newSettings);
-              setState(() => _audioSettings = newSettings);
-            },
+            onChanged: (value) => setState(
+              () =>
+                  _audioSettings = _audioSettings.copyWith(musicVolume: value),
+            ),
+            onChangeEnd: (value) => _audioCoordinator.updateSettings(
+              _audioSettings.copyWith(musicVolume: value),
+            ),
           ),
         ],
-        const Divider(),
-        _SettingsSwitch(
-          label: '语音播报',
-          subtitle: '游戏过程语音提示',
-          value: _audioSettings.voiceEnabled,
-          onChanged: (value) async {
-            final newSettings = _audioSettings.copyWith(voiceEnabled: value);
-            await _audioCoordinator.updateSettings(newSettings);
-            setState(() => _audioSettings = newSettings);
-          },
-        ),
       ],
     );
   }
@@ -216,31 +212,13 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Widget _buildThemeGroup() {
-    const allThemes = ThemePresets.all;
     return _SettingsGroup(
       title: '棋盘主题',
       children: [
-        _SettingsSelector(
-          label: '主题风格',
-          subtitle: '选择喜欢的棋盘风格',
-          options: allThemes.map((t) => t.id).toList(),
-          optionLabels: {for (var t in allThemes) t.id: t.name},
-          value: _displaySettings.themeId,
-          onChanged: (value) async {
-            await _themeManager.setBoardThemeById(value);
-            setState(() {
-              _displaySettings = _displaySettings.copyWith(themeId: value);
-            });
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    '已切换到${allThemes.firstWhere((t) => t.id == value).name}主题',
-                  ),
-                ),
-              );
-            }
-          },
+        const ListTile(
+          leading: Icon(Icons.brush_outlined),
+          title: Text('现代东方棋艺'),
+          subtitle: Text('一期默认主题；更多主题将在后续版本开放'),
         ),
         const Divider(),
         _SettingsSwitch(
@@ -258,8 +236,8 @@ class _SettingsPageState extends State<SettingsPage> {
         ),
         const Divider(),
         _SettingsSwitch(
-          label: '????????????',
-          subtitle: '?????????????????????',
+          label: '粒子效果',
+          subtitle: '吃子与胜负反馈中的装饰效果',
           value: _displaySettings.particleEnabled,
           onChanged: (value) {
             setState(() {
@@ -276,14 +254,15 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Widget _buildPerformanceGroup() {
     return _SettingsGroup(
-      title: '???????????????',
+      title: '隐私与性能',
       children: [
         _SettingsSwitch(
-          label: '????????????',
-          subtitle: '??????????????????????????????',
+          label: '匿名诊断',
+          subtitle: '发送脱敏崩溃与性能信息；不含棋局内容和广告标识',
           value: _settings.performanceMonitoringEnabled,
-          onChanged: (value) {
+          onChanged: (value) async {
             _performanceMonitor.setEnabled(value);
+            await DiagnosticsService().setEnabled(value);
             _updateSetting(
               _settings.copyWith(performanceMonitoringEnabled: value),
             );
@@ -291,8 +270,8 @@ class _SettingsPageState extends State<SettingsPage> {
         ),
         const Divider(),
         _SettingsSwitch(
-          label: '???????????????',
-          subtitle: '??????????????????????????????',
+          label: '资源预加载',
+          subtitle: '提前加载棋盘与音频资源，减少首次操作等待',
           value: _settings.resourceWarmupEnabled,
           onChanged: (value) async {
             _updateSetting(_settings.copyWith(resourceWarmupEnabled: value));
@@ -313,12 +292,6 @@ class _SettingsPageState extends State<SettingsPage> {
           label: '版本号',
           value: '0.1.0',
           icon: Icons.info_outline,
-        ),
-        const Divider(),
-        const _SettingsItem(
-          label: '开发者',
-          value: 'Qoder AI',
-          icon: Icons.code,
         ),
         const Divider(),
         ListTile(
@@ -346,25 +319,26 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Widget _buildDangerZoneGroup() {
+    final error = Theme.of(context).colorScheme.error;
     return _SettingsGroup(
       title: '危险操作',
-      titleColor: Colors.red,
+      titleColor: error,
       children: [
         ListTile(
-          leading: const Icon(Icons.delete_outline, color: Colors.red),
-          title: const Text(
+          leading: Icon(Icons.delete_outline, color: error),
+          title: Text(
             '清空统计数据',
-            style: TextStyle(color: Colors.red),
+            style: TextStyle(color: error),
           ),
           trailing: const Icon(Icons.arrow_forward_ios, size: 16),
           onTap: _confirmResetStatistics,
         ),
         const Divider(),
         ListTile(
-          leading: const Icon(Icons.restart_alt, color: Colors.red),
-          title: const Text(
+          leading: Icon(Icons.restart_alt, color: error),
+          title: Text(
             '重置所有设置',
-            style: TextStyle(color: Colors.red),
+            style: TextStyle(color: error),
           ),
           trailing: const Icon(Icons.arrow_forward_ios, size: 16),
           onTap: _confirmResetAll,
@@ -378,7 +352,7 @@ class _SettingsPageState extends State<SettingsPage> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('清空统计数据'),
-        content: const Text('确定要清空所有游戏统计数据吗？此操作无法撤销。'),
+        content: const Text('将清空累计统计和最近 20 局回放。此操作无法撤销。'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -386,7 +360,9 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.error,
+            ),
             child: const Text('清空'),
           ),
         ],
@@ -397,7 +373,7 @@ class _SettingsPageState extends State<SettingsPage> {
       await _storageService.resetStatistics();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('统计数据已清空')),
+          const SnackBar(content: Text('统计与最近对局已清空')),
         );
       }
     }
@@ -416,7 +392,9 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.error,
+            ),
             child: const Text('重置'),
           ),
         ],
@@ -464,6 +442,8 @@ class _SettingsGroup extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -471,25 +451,13 @@ class _SettingsGroup extends StatelessWidget {
           padding: const EdgeInsets.only(left: 16, bottom: 8),
           child: Text(
             title,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: titleColor ?? Colors.grey.shade700,
+            style: theme.textTheme.labelLarge?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: titleColor ?? scheme.onSurfaceVariant,
             ),
           ),
         ),
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
+        Card(
           child: Column(
             children: children,
           ),
@@ -535,6 +503,7 @@ class _SettingsSlider extends StatelessWidget {
     required this.label,
     required this.value,
     required this.onChanged,
+    this.onChangeEnd,
   });
 
   @override
@@ -588,6 +557,7 @@ class _SettingsSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return ListTile(
       title: Text(label),
       subtitle: subtitle != null ? Text(subtitle!) : null,
@@ -597,7 +567,7 @@ class _SettingsSelector extends StatelessWidget {
           Text(
             optionLabels[value] ?? value,
             style: TextStyle(
-              color: Colors.grey.shade600,
+              color: scheme.onSurfaceVariant,
               fontSize: 14,
             ),
           ),
@@ -610,21 +580,23 @@ class _SettingsSelector extends StatelessWidget {
           context: context,
           builder: (context) => AlertDialog(
             title: Text(label),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: options.map((option) {
-                return RadioListTile<String>(
-                  title: Text(optionLabels[option] ?? option),
-                  value: option,
-                  groupValue: value,
-                  onChanged: (newValue) {
-                    if (newValue != null) {
-                      onChanged(newValue);
-                      Navigator.pop(context);
-                    }
-                  },
-                );
-              }).toList(),
+            content: RadioGroup<String>(
+              groupValue: value,
+              onChanged: (newValue) {
+                if (newValue != null) {
+                  onChanged(newValue);
+                  Navigator.pop(context);
+                }
+              },
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: options.map((option) {
+                  return RadioListTile<String>(
+                    title: Text(optionLabels[option] ?? option),
+                    value: option,
+                  );
+                }).toList(),
+              ),
             ),
           ),
         );
@@ -647,13 +619,14 @@ class _SettingsItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return ListTile(
       leading: icon != null ? Icon(icon) : null,
       title: Text(label),
       trailing: Text(
         value,
         style: TextStyle(
-          color: Colors.grey.shade600,
+          color: scheme.onSurfaceVariant,
           fontSize: 14,
         ),
       ),

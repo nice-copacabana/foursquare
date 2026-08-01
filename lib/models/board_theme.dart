@@ -87,13 +87,13 @@ class BoardTheme extends Equatable {
     return {
       'id': id,
       'name': name,
-      'backgroundColor': backgroundColor.value,
-      'gridColor': gridColor.value,
+      'backgroundColor': backgroundColor.toARGB32(),
+      'gridColor': gridColor.toARGB32(),
       'gridLineWidth': gridLineWidth,
       'pieceStyle': pieceStyle.name,
-      'selectionColor': selectionColor.value,
-      'moveHintColor': moveHintColor.value,
-      'lastMoveColor': lastMoveColor.value,
+      'selectionColor': selectionColor.toARGB32(),
+      'moveHintColor': moveHintColor.toARGB32(),
+      'lastMoveColor': lastMoveColor.toARGB32(),
       'backgroundTexture': backgroundTexture,
     };
   }

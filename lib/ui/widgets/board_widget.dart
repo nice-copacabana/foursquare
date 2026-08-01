@@ -3,9 +3,11 @@
 
 import 'package:flutter/material.dart';
 import '../../models/board_state.dart';
+import '../../models/piece_type.dart';
 import '../../models/position.dart';
 import '../../constants/ui_constants.dart';
 import '../../constants/game_constants.dart';
+import '../../theme/theme_pack.dart';
 import 'board_painter.dart';
 
 /// 棋盘Widget
@@ -19,6 +21,7 @@ class BoardWidget extends StatelessWidget {
   final Position? lastMoveTo;
   final Function(Position) onPositionTapped;
   final double? size;
+  final ThemePack? themePack;
 
   /// 是否翻转棋盘视角（让白方在下方）
   final bool flipBoard;
@@ -32,6 +35,7 @@ class BoardWidget extends StatelessWidget {
     this.lastMoveFrom,
     this.lastMoveTo,
     this.size,
+    this.themePack,
     this.flipBoard = false,
   });
 
@@ -40,8 +44,7 @@ class BoardWidget extends StatelessWidget {
     // 计算棋盘尺寸
     final boardSize = size ?? _calculateBoardSize(context);
 
-    Widget boardContent = GestureDetector(
-      onTapUp: (details) => _handleTap(details, boardSize),
+    Widget boardVisual = ExcludeSemantics(
       child: CustomPaint(
         painter: BoardPainter(
           boardState: boardState,
@@ -49,6 +52,7 @@ class BoardWidget extends StatelessWidget {
           validMoves: validMoves,
           lastMoveFrom: lastMoveFrom,
           lastMoveTo: lastMoveTo,
+          themePack: themePack,
         ),
         size: Size(boardSize, boardSize),
       ),
@@ -56,11 +60,26 @@ class BoardWidget extends StatelessWidget {
 
     // 如果需要翻转视角，旋转180度
     if (flipBoard) {
-      boardContent = Transform.rotate(
+      boardVisual = Transform.rotate(
         angle: 3.14159, // 180度 = π弧度
-        child: boardContent,
+        child: boardVisual,
       );
     }
+
+    final boardContent = Stack(
+      children: [
+        boardVisual,
+        BoardSemanticsOverlay(
+          boardState: boardState,
+          selectedPiece: selectedPiece,
+          validMoves: validMoves,
+          lastMoveFrom: lastMoveFrom,
+          lastMoveTo: lastMoveTo,
+          flipBoard: flipBoard,
+          onPositionTapped: onPositionTapped,
+        ),
+      ],
+    );
 
     return Center(
       child: RepaintBoundary(
@@ -90,31 +109,101 @@ class BoardWidget extends StatelessWidget {
       UIConstants.boardMaxSize,
     );
   }
+}
 
-  /// 处理点击事件
-  void _handleTap(TapUpDetails details, double boardSize) {
-    final cellSize = boardSize / GameConstants.boardSize;
-    var localPos = details.localPosition;
+/// Accessible interaction layer shared by static and animated board hosts.
+class BoardSemanticsOverlay extends StatelessWidget {
+  const BoardSemanticsOverlay({
+    super.key,
+    required this.boardState,
+    required this.onPositionTapped,
+    this.selectedPiece,
+    this.validMoves = const [],
+    this.lastMoveFrom,
+    this.lastMoveTo,
+    this.flipBoard = false,
+  });
 
-    // 如果棋盘已翻转，需要反转坐标
-    if (flipBoard) {
-      localPos = Offset(
-        boardSize - localPos.dx,
-        boardSize - localPos.dy,
-      );
-    }
+  final BoardState boardState;
+  final Position? selectedPiece;
+  final List<Position> validMoves;
+  final Position? lastMoveFrom;
+  final Position? lastMoveTo;
+  final ValueChanged<Position> onPositionTapped;
+  final bool flipBoard;
 
-    // 将屏幕坐标转换为棋盘坐标
-    final x = (localPos.dx / cellSize).floor();
-    final y = (localPos.dy / cellSize).floor();
+  @override
+  Widget build(BuildContext context) {
+    return GridView.count(
+      crossAxisCount: GameConstants.boardSize,
+      padding: EdgeInsets.zero,
+      physics: const NeverScrollableScrollPhysics(),
+      children: [
+        for (var displayY = 0; displayY < GameConstants.boardSize; displayY++)
+          for (var displayX = 0; displayX < GameConstants.boardSize; displayX++)
+            _buildCell(displayX, displayY),
+      ],
+    );
+  }
 
-    // 检查坐标是否在棋盘范围内
-    if (x >= 0 &&
-        x < GameConstants.boardSize &&
-        y >= 0 &&
-        y < GameConstants.boardSize) {
-      final position = Position(x, y);
-      onPositionTapped(position);
-    }
+  Widget _buildCell(int displayX, int displayY) {
+    final logicalPosition = flipBoard
+        ? Position(
+            GameConstants.boardSize - displayX - 1,
+            GameConstants.boardSize - displayY - 1,
+          )
+        : Position(displayX, displayY);
+    final piece = boardState.getPiece(logicalPosition);
+    final isSelected = selectedPiece == logicalPosition;
+    final isValidMove = validMoves.contains(logicalPosition);
+    final isSelectable = piece == boardState.currentPlayer;
+    final isActionable = isSelectable || isValidMove;
+
+    return Semantics(
+      label: _semanticLabel(
+        displayX: displayX,
+        displayY: displayY,
+        logicalPosition: logicalPosition,
+        piece: piece,
+        isSelected: isSelected,
+        isValidMove: isValidMove,
+        isSelectable: isSelectable,
+      ),
+      button: isActionable,
+      enabled: isActionable,
+      selected: isSelected,
+      onTap: isActionable ? () => onPositionTapped(logicalPosition) : null,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        excludeFromSemantics: true,
+        onTap: () => onPositionTapped(logicalPosition),
+        child: const SizedBox.expand(),
+      ),
+    );
+  }
+
+  String _semanticLabel({
+    required int displayX,
+    required int displayY,
+    required Position logicalPosition,
+    required PieceType piece,
+    required bool isSelected,
+    required bool isValidMove,
+    required bool isSelectable,
+  }) {
+    final parts = <String>[
+      '第 ${displayY + 1} 行第 ${displayX + 1} 列',
+      switch (piece) {
+        PieceType.black => '墨方棋子',
+        PieceType.white => '玉方棋子',
+        PieceType.empty => '空位',
+      },
+    ];
+    if (isSelected) parts.add('已选中');
+    if (isValidMove) parts.add('可落子');
+    if (isSelectable) parts.add('可选择');
+    if (logicalPosition == lastMoveFrom) parts.add('上一步起点');
+    if (logicalPosition == lastMoveTo) parts.add('上一步终点');
+    return parts.join('，');
   }
 }

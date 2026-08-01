@@ -15,6 +15,15 @@ enum MessageType {
   /// 移动指令
   move,
 
+  /// LAN 权威协议消息，payload 为完整 LanProtocolMessage JSON
+  lanProtocol,
+
+  /// LAN 客户端请求主机发送全量快照
+  lanSnapshotRequest,
+
+  /// LAN 客户端请求主机开始复局
+  lanRestartRequest,
+
   /// 游戏结束
   gameOver,
 
@@ -56,6 +65,12 @@ extension MessageTypeExtension on MessageType {
         return '匹配取消';
       case MessageType.move:
         return '移动';
+      case MessageType.lanProtocol:
+        return 'LAN权威协议';
+      case MessageType.lanSnapshotRequest:
+        return 'LAN快照请求';
+      case MessageType.lanRestartRequest:
+        return 'LAN复局请求';
       case MessageType.gameOver:
         return '游戏结束';
       case MessageType.disconnect:
@@ -74,6 +89,8 @@ extension MessageTypeExtension on MessageType {
     switch (this) {
       case MessageType.matchRequest:
       case MessageType.move:
+      case MessageType.lanSnapshotRequest:
+      case MessageType.lanRestartRequest:
       case MessageType.heartbeat:
         return true;
       default:

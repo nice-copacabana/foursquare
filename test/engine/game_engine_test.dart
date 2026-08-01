@@ -4,6 +4,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:foursquare/engine/game_engine.dart';
 import 'package:foursquare/models/board_state.dart';
+import 'package:foursquare/models/game_result.dart';
 import 'package:foursquare/models/position.dart';
 import 'package:foursquare/models/piece_type.dart';
 
@@ -302,53 +303,24 @@ void main() {
       });
 
       test('吃子导致胜利', () {
-        // 设置一个快速胜利的场景
-        var testBoard = BoardState.initial();
-        // 只留黑方2个棋子，白方4个棋子
-        testBoard = testBoard
-            .removePiece(const Position(1, 0))
-            .removePiece(const Position(2, 0));
-
-        // 设置吃子场景
-        testBoard = testBoard
-            .setPiece(const Position(0, 1), PieceType.white)
-            .setPiece(const Position(1, 1), PieceType.white)
+        final testBoard = BoardState.initial()
+            .setPiece(const Position(0, 3), PieceType.empty)
+            .setPiece(const Position(1, 3), PieceType.empty)
+            .setPiece(const Position(3, 3), PieceType.empty)
+            .setPiece(const Position(0, 1), PieceType.black)
             .setPiece(const Position(2, 1), PieceType.black)
-            .switchPlayer();
+            .setPiece(const Position(3, 1), PieceType.white);
 
-        // 白方移动吃掉黑方棋子
         final result = engine.executeMove(
           testBoard,
           const Position(0, 1),
-          const Position(0, 2),
+          const Position(1, 1),
         );
 
         expect(result.success, true);
-        expect(result.newBoard, isNotNull);
-
-        var currentBoard = result.newBoard!;
-
-        // 再设置吃子吃掉最后一个黑方棋子
-        currentBoard = currentBoard
-            .setPiece(const Position(1, 2), PieceType.white)
-            .setPiece(const Position(2, 2), PieceType.white)
-            .setPiece(const Position(3, 2), PieceType.black)
-            .switchPlayer();
-
-        final finalResult = engine.executeMove(
-          currentBoard,
-          const Position(1, 2),
-          const Position(1, 3),
-        );
-
-        expect(finalResult.success, true);
-        expect(finalResult.newBoard, isNotNull);
-
-        // 检查是否结束（黑方只剩1个棋子）
-        final gameResult = engine.checkGameOver(finalResult.newBoard!);
-        if (gameResult != null) {
-          expect(gameResult.winner, PieceType.white);
-        }
+        expect(result.gameOver, true);
+        expect(result.gameResult!.winner, PieceType.black);
+        expect(result.gameResult!.endReason, GameEndReason.pieceCount);
       });
     });
 

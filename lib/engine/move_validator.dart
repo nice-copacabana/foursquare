@@ -97,7 +97,10 @@ class MoveValidator {
 
     // 为每个棋子计算可移动位置
     for (final piece in pieces) {
-      final moves = getValidMoves(board, piece);
+      final moves = piece
+          .getAdjacentPositions()
+          .where(board.isEmpty)
+          .toList(growable: false);
       if (moves.isNotEmpty) {
         result[piece] = moves;
       }

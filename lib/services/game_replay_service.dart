@@ -7,8 +7,10 @@
 /// - 记录回放状态
 library;
 
+import '../engine/game_engine.dart';
 import '../models/board_state.dart';
 import '../models/move.dart';
+import '../models/piece_type.dart';
 
 /// 回放状态
 class ReplayState {
@@ -78,6 +80,8 @@ class GameReplayService {
   /// 完整的移动历史
   List<Move> _moveHistory = [];
 
+  PieceType _startingPlayer = PieceType.black;
+
   /// 当前回放状态
   ReplayState _state = ReplayState(
     currentStep: -1,
@@ -90,12 +94,16 @@ class GameReplayService {
   ReplayState get state => _state;
 
   /// 初始化回放（使用完整的移动历史）
-  ReplayState startReplay(List<Move> moveHistory) {
+  ReplayState startReplay(
+    List<Move> moveHistory, {
+    PieceType startingPlayer = PieceType.black,
+  }) {
     _moveHistory = List.from(moveHistory);
+    _startingPlayer = startingPlayer;
     _state = ReplayState(
       currentStep: -1,
       totalSteps: _moveHistory.length,
-      boardState: BoardState.initial(),
+      boardState: BoardState.initial(currentPlayer: _startingPlayer),
       isReplaying: true,
     );
     return _state;
@@ -109,14 +117,7 @@ class GameReplayService {
 
     final nextStep = _state.currentStep + 1;
     final move = _moveHistory[nextStep];
-
-    // 基于当前棋盘执行移动
-    BoardState newBoard = _state.boardState.movePiece(move.from, move.to);
-
-    // 如果有吃子，移除被吃的棋子
-    if (move.hasCapture && move.capturedPiece != null) {
-      newBoard = newBoard.removePiece(move.capturedPiece!);
-    }
+    final newBoard = _rebuildBoard(nextStep);
 
     _state = _state.copyWith(
       currentStep: nextStep,
@@ -135,22 +136,8 @@ class GameReplayService {
 
     final prevStep = _state.currentStep - 1;
 
-    // 重新构建到prevStep的棋盘状态
-    BoardState newBoard = BoardState.initial();
-    Move? currentMove;
-
-    for (int i = 0; i <= prevStep; i++) {
-      final move = _moveHistory[i];
-      newBoard = newBoard.movePiece(move.from, move.to);
-
-      if (move.hasCapture && move.capturedPiece != null) {
-        newBoard = newBoard.removePiece(move.capturedPiece!);
-      }
-
-      if (i == prevStep) {
-        currentMove = move;
-      }
-    }
+    final newBoard = _rebuildBoard(prevStep);
+    final currentMove = prevStep >= 0 ? _moveHistory[prevStep] : null;
 
     _state = _state.copyWith(
       currentStep: prevStep,
@@ -166,7 +153,7 @@ class GameReplayService {
   ReplayState goToStart() {
     _state = _state.copyWith(
       currentStep: -1,
-      boardState: BoardState.initial(),
+      boardState: BoardState.initial(currentPlayer: _startingPlayer),
       clearCurrentMove: true,
     );
     return _state;
@@ -178,16 +165,7 @@ class GameReplayService {
       return _state;
     }
 
-    // 重新构建整个游戏到最后
-    BoardState newBoard = BoardState.initial();
-
-    for (final move in _moveHistory) {
-      newBoard = newBoard.movePiece(move.from, move.to);
-
-      if (move.hasCapture && move.capturedPiece != null) {
-        newBoard = newBoard.removePiece(move.capturedPiece!);
-      }
-    }
+    final newBoard = _rebuildBoard(_moveHistory.length - 1);
 
     _state = _state.copyWith(
       currentStep: _moveHistory.length - 1,
@@ -208,17 +186,7 @@ class GameReplayService {
       return goToStart();
     }
 
-    // 重新构建到step的棋盘状态
-    BoardState newBoard = BoardState.initial();
-
-    for (int i = 0; i <= step; i++) {
-      final move = _moveHistory[i];
-      newBoard = newBoard.movePiece(move.from, move.to);
-
-      if (move.hasCapture && move.capturedPiece != null) {
-        newBoard = newBoard.removePiece(move.capturedPiece!);
-      }
-    }
+    final newBoard = _rebuildBoard(step);
 
     _state = _state.copyWith(
       currentStep: step,
@@ -227,6 +195,30 @@ class GameReplayService {
     );
 
     return _state;
+  }
+
+  BoardState _rebuildBoard(int lastStep) {
+    var board = BoardState.initial(currentPlayer: _startingPlayer);
+    if (lastStep < 0) return board;
+
+    final engine = GameEngine()..startNewGame();
+    var noCapturePlyCount = 0;
+    for (int i = 0; i <= lastStep; i++) {
+      final move = _moveHistory[i];
+      final result = engine.executeMove(
+        board,
+        move.from,
+        move.to,
+        capturedPiecesOverride: move.capturedPieces,
+        noCapturePlyCount: noCapturePlyCount,
+      );
+      if (!result.success || result.newBoard == null) {
+        throw StateError('Invalid replay move at step $i');
+      }
+      board = result.newBoard!;
+      noCapturePlyCount = result.noCapturePlyCount;
+    }
+    return board;
   }
 
   /// 退出回放模式

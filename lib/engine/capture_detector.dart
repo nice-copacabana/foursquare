@@ -21,88 +21,116 @@ class CaptureDetector {
     Position(1, 0), // 右
   ];
 
-  /// 检测移动后是否可以吃子
+  /// Detects captures created by the piece that has just moved.
   ///
-  /// 参数：
-  /// - board: 当前棋盘状态
-  /// - movedPiece: 刚移动到的棋子位置
-  /// - player: 移动方
-  ///
-  /// 返回：被吃棋子的位置，如果没有吃子则返回null
-  ///
-  /// 吃子规则：
-  /// 1. 必须形成"己-己-敌"的连续三子
-  /// 2. 移动的棋子必须是前两个"己"之一
-  /// 3. 不能形成"敌-己-己"模式(敌方在己方之前)
-  Position? detectCapture(
-    BoardState board,
-    Position movedPiece,
-    PieceType player,
-  ) {
+  /// The formal rules evaluate the complete four-cell row and column through
+  /// [movedPiece]. A list is returned because one move may capture once on
+  /// each axis.
+  List<Position> detectCaptures(
+    BoardState board, {
+    required Position movedPiece,
+    required PieceType player,
+  }) {
     if (!movedPiece.isValid() || player == PieceType.empty) {
-      return null;
+      return const [];
     }
 
+    final row = List<Position>.generate(
+      4,
+      (x) => Position(x, movedPiece.y),
+    );
+    final captured = <Position>[];
+    final rowCapture = _detectLineCapture(
+      board,
+      line: row,
+      movedPiece: movedPiece,
+      player: player,
+    );
+    if (rowCapture != null) {
+      captured.add(rowCapture);
+    }
+
+    final column = List<Position>.generate(
+      4,
+      (y) => Position(movedPiece.x, y),
+    );
+    final columnCapture = _detectLineCapture(
+      board,
+      line: column,
+      movedPiece: movedPiece,
+      player: player,
+    );
+    if (columnCapture != null) {
+      captured.add(columnCapture);
+    }
+
+    return captured;
+  }
+
+  Position? _detectLineCapture(
+    BoardState board, {
+    required List<Position> line,
+    required Position movedPiece,
+    required PieceType player,
+  }) {
     final enemy = player.getOpponent();
+    final pieces = line.map(board.getPiece).toList(growable: false);
+    final patterns = <({List<PieceType> pieces, int capturedIndex})>[
+      (
+        pieces: [player, player, enemy, PieceType.empty],
+        capturedIndex: 2,
+      ),
+      (
+        pieces: [PieceType.empty, player, player, enemy],
+        capturedIndex: 3,
+      ),
+      (
+        pieces: [PieceType.empty, enemy, player, player],
+        capturedIndex: 1,
+      ),
+      (
+        pieces: [enemy, player, player, PieceType.empty],
+        capturedIndex: 0,
+      ),
+    ];
 
-    // 检查四个方向
-    for (final direction in _directions) {
-      // 情况1: 移动的棋子在第一个位置 (移动-己-敌)
-      final pos1 = movedPiece;
-      final pos2 = Position(pos1.x + direction.x, pos1.y + direction.y);
-      final pos3 = Position(pos2.x + direction.x, pos2.y + direction.y);
-
-      if (_isValidCapture(board, pos1, pos2, pos3, player, enemy)) {
-        // 检查是否形成了"敌-己-己"模式(不允许)
-        final posBeforeEnemy =
-            Position(pos3.x + direction.x, pos3.y + direction.y);
-        if (posBeforeEnemy.isValid() &&
-            board.getPiece(posBeforeEnemy) == enemy) {
-          // 形成了"己-己-敌-敌"模式,不应吃子
-          continue;
+    for (final pattern in patterns) {
+      if (_samePieces(pieces, pattern.pieces)) {
+        final playerPositions = <Position>[
+          for (var index = 0; index < line.length; index++)
+            if (pattern.pieces[index] == player) line[index],
+        ];
+        if (playerPositions.contains(movedPiece)) {
+          return line[pattern.capturedIndex];
         }
-
-        // 检查反方向是否有敌方棋子
-        final posBack = Position(pos1.x - direction.x, pos1.y - direction.y);
-        if (posBack.isValid() && board.getPiece(posBack) == enemy) {
-          // 形成了"敌-己-己-敌"模式,不应吃子
-          continue;
-        }
-
-        return pos3;
-      }
-
-      // 情况2: 移动的棋子在第二个位置 (己-移动-敌)
-      final pos0 = Position(pos1.x - direction.x, pos1.y - direction.y);
-
-      if (_isValidCapture(board, pos0, pos1, pos2, player, enemy)) {
-        return pos2;
       }
     }
 
     return null;
   }
 
-  /// 验证是否形成有效的吃子情况
-  ///
-  /// 检查三个位置是否形成"己-己-敌"的模式
-  bool _isValidCapture(
-    BoardState board,
-    Position pos1,
-    Position pos2,
-    Position pos3,
-    PieceType player,
-    PieceType enemy,
-  ) {
-    // 检查位置有效性
-    if (!pos1.isValid() || !pos2.isValid() || !pos3.isValid()) {
-      return false;
+  bool _samePieces(List<PieceType> actual, List<PieceType> expected) {
+    for (var index = 0; index < actual.length; index++) {
+      if (actual[index] != expected[index]) {
+        return false;
+      }
     }
+    return true;
+  }
 
-    // 检查是否形成"己-己-敌"
-    return board.getPiece(pos1) == player &&
-        board.getPiece(pos2) == player &&
-        board.getPiece(pos3) == enemy;
+  /// 旧单吃接口，仅供尚未迁移的调用方读取第一个结果。
+  @Deprecated('Use detectCaptures to preserve horizontal and vertical captures')
+  Position? detectCapture(
+    BoardState board,
+    Position movedPiece,
+    PieceType player,
+  ) {
+    final captures = detectCaptures(
+      board,
+      movedPiece: movedPiece,
+      player: player,
+    );
+    return captures.isEmpty ? null : captures.first;
   }
 
   /// 检测所有可能的吃子机会
@@ -127,11 +155,15 @@ class CaptureDetector {
         final newBoard = board.movePiece(piece, target);
 
         // 检测是否能吃子
-        final captured = detectCapture(newBoard, target, player);
+        final captures = detectCaptures(
+          newBoard,
+          movedPiece: target,
+          player: player,
+        );
 
-        if (captured != null) {
+        if (captures.isNotEmpty) {
           result[piece] ??= {};
-          result[piece]![target] = captured;
+          result[piece]![target] = captures.first;
         }
       }
     }

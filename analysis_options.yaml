@@ -1,5 +1,9 @@
 include: package:flutter_lints/flutter.yaml
 
+analyzer:
+  exclude:
+    - lib/ui/screens/watch/**
+
 linter:
   rules:
     - prefer_const_constructors

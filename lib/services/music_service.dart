@@ -8,6 +8,7 @@
 library;
 
 import 'package:audioplayers/audioplayers.dart';
+import 'logger_service.dart';
 
 /// 音乐主题类型
 enum MusicTheme {
@@ -38,7 +39,7 @@ class MusicService {
   factory MusicService() => _instance;
   MusicService._internal();
 
-  final AudioPlayer _player = AudioPlayer();
+  AudioPlayer? _player;
 
   bool _enabled = true;
   double _volume = 0.4;
@@ -57,18 +58,19 @@ class MusicService {
 
   /// 初始化音乐服务
   Future<void> initialize() async {
-    await _player.setVolume(_volume);
+    final player = _player ??= AudioPlayer();
+    await player.setVolume(_volume);
 
     // 设置循环播放
-    await _player.setReleaseMode(ReleaseMode.loop);
+    await player.setReleaseMode(ReleaseMode.loop);
 
     // 监听播放完成事件
-    _player.onPlayerComplete.listen((_) {
+    player.onPlayerComplete.listen((_) {
       _isPlaying = false;
     });
 
     // 监听播放状态变化
-    _player.onPlayerStateChanged.listen((state) {
+    player.onPlayerStateChanged.listen((state) {
       _isPlaying = state == PlayerState.playing;
     });
   }
@@ -84,42 +86,47 @@ class MusicService {
 
     final musicFile = _musicFiles[theme];
     if (musicFile == null) return;
+    final player = _player;
+    if (player == null) {
+      _currentTheme = theme;
+      return;
+    }
 
     try {
       // 停止当前播放
-      await _player.stop();
+      await player.stop();
 
       // 设置新的音乐源
-      await _player.setSource(AssetSource(musicFile));
+      await player.setSource(AssetSource(musicFile));
 
       // 开始播放
-      await _player.resume();
+      await player.resume();
 
       _currentTheme = theme;
       _isPlaying = true;
     } catch (e) {
-      print('Failed to play music: $musicFile - $e');
+      logger.error('播放音乐失败: $musicFile', 'MusicService', e);
       _isPlaying = false;
     }
   }
 
   /// 停止音乐
   Future<void> stopMusic() async {
-    await _player.stop();
+    await _player?.stop();
     _isPlaying = false;
     _currentTheme = null;
   }
 
   /// 暂停音乐
   Future<void> pauseMusic() async {
-    await _player.pause();
+    await _player?.pause();
     _isPlaying = false;
   }
 
   /// 恢复音乐
   Future<void> resumeMusic() async {
-    if (_enabled && !_isPlaying) {
-      await _player.resume();
+    if (_enabled && !_isPlaying && _player != null) {
+      await _player!.resume();
       _isPlaying = true;
     }
   }
@@ -146,7 +153,7 @@ class MusicService {
   /// 设置音量 (0.0 - 1.0)
   Future<void> setVolume(double volume) async {
     _volume = volume.clamp(0.0, 1.0);
-    await _player.setVolume(_volume);
+    await _player?.setVolume(_volume);
   }
 
   /// 获取音量
@@ -164,9 +171,14 @@ class MusicService {
     Duration duration = const Duration(seconds: 2),
   }) async {
     if (!_enabled) return;
+    final player = _player;
+    if (player == null) {
+      _currentTheme = theme;
+      return;
+    }
 
     final targetVolume = _volume;
-    await _player.setVolume(0);
+    await player.setVolume(0);
     await playMusic(theme);
 
     // 逐渐增加音量
@@ -177,13 +189,15 @@ class MusicService {
     for (int i = 1; i <= steps; i++) {
       await Future.delayed(Duration(milliseconds: stepDuration));
       if (!_isPlaying) break;
-      await _player.setVolume(volumeStep * i);
+      await player.setVolume(volumeStep * i);
     }
   }
 
   /// 淡出效果停止
   Future<void> fadeOut({Duration duration = const Duration(seconds: 2)}) async {
     if (!_isPlaying) return;
+    final player = _player;
+    if (player == null) return;
 
     final currentVolume = _volume;
 
@@ -194,15 +208,16 @@ class MusicService {
 
     for (int i = steps - 1; i >= 0; i--) {
       await Future.delayed(Duration(milliseconds: stepDuration));
-      await _player.setVolume(volumeStep * i);
+      await player.setVolume(volumeStep * i);
     }
 
     await stopMusic();
-    await _player.setVolume(currentVolume);
+    await player.setVolume(currentVolume);
   }
 
   /// 释放资源
   Future<void> dispose() async {
-    await _player.dispose();
+    await _player?.dispose();
+    _player = null;
   }
 }

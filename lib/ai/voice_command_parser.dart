@@ -172,15 +172,12 @@ class VoiceCommandParser {
   /// 当精确解析失败时，返回可能的候选位置列表
   static List<Position> fuzzyMatch(String command) {
     final candidates = <Position>[];
+    final cleaned = command.replaceAll(RegExp(r'[\s，,。.]'), '');
 
     // 尝试提取所有可能的数字
     for (int x = 0; x < 4; x++) {
       for (int y = 0; y < 4; y++) {
-        // 检查命令中是否包含相关的数字或字母
-        final xStr = _getNumberString(x);
-        final yStr = _getNumberString(y);
-
-        if (command.contains(xStr) && command.contains(yStr)) {
+        if (_containsNumber(cleaned, x) && _containsNumber(cleaned, y)) {
           candidates.add(Position(x, y));
         }
       }
@@ -189,12 +186,11 @@ class VoiceCommandParser {
     return candidates;
   }
 
-  /// 获取数字的字符串表示（包括中文）
-  static String _getNumberString(int num) {
-    final chineseNum = _chineseNumbers.entries
-        .firstWhere((e) => e.value == num, orElse: () => const MapEntry('', -1))
-        .key;
-    return '$num$chineseNum';
+  static bool _containsNumber(String command, int number) {
+    final forms = _chineseNumbers.entries
+        .where((entry) => entry.value == number)
+        .map((entry) => entry.key);
+    return forms.any(command.contains);
   }
 
   /// 格式化位置为语音文本（用于播报）

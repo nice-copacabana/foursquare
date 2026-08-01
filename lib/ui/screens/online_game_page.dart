@@ -8,6 +8,7 @@ import '../../bloc/online_game_event.dart';
 import '../../bloc/online_game_state.dart';
 import '../../models/piece_type.dart';
 import '../../models/position.dart';
+import '../widgets/themed_board_widget.dart';
 
 /// 在线对战游戏页面
 ///
@@ -113,7 +114,7 @@ class OnlineGamePage extends StatelessWidget {
                     SizedBox(
                       width: size,
                       height: size,
-                      child: ThemedThemedBoardWidget(
+                      child: ThemedBoardWidget(
                         boardState: state.boardState,
                         selectedPiece: null, // 在线对战不显示选中状态
                         validMoves: const [],

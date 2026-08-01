@@ -17,6 +17,7 @@ import '../models/position.dart';
 import '../models/piece_type.dart';
 import '../models/game_result.dart';
 import '../models/move.dart';
+import '../services/turn_clock.dart';
 import 'game_event.dart';
 
 /// 游戏状态基类
@@ -35,6 +36,12 @@ abstract class GameState extends Equatable {
 
   /// 移动历史记录
   final List<Move> moveHistory;
+
+  /// 连续未发生吃子的独立回合数（ply）。
+  final int noCapturePlyCount;
+
+  /// 当前回合的绝对截止时间或离线暂停后的剩余时间。
+  final TurnClock? turnClock;
 
   /// 撤销栈（已撤销的移动）
   final List<Move> undoStack;
@@ -75,6 +82,13 @@ abstract class GameState extends Equatable {
   /// 先手方（仅在双人对战模式下有意义）
   final PieceType? firstPlayer;
 
+  /// AI 模式下玩家实际执色。
+  final PieceType? humanPlayer;
+
+  /// 当前对局的稳定标识和开始时间，用于完成记录幂等归档。
+  final String? matchId;
+  final DateTime? startedAt;
+
   /// 最后识别的语音指令
   final String? lastVoiceCommand;
 
@@ -87,6 +101,8 @@ abstract class GameState extends Equatable {
     this.selectedPiece,
     this.validMoves = const [],
     this.moveHistory = const [],
+    this.noCapturePlyCount = 0,
+    this.turnClock,
     this.undoStack = const [],
     this.lastMove,
     this.lastCapturedPosition,
@@ -100,6 +116,9 @@ abstract class GameState extends Equatable {
     this.lastVoiceCommand,
     this.voiceCommandConfidence = 0.0,
     this.firstPlayer,
+    this.humanPlayer,
+    this.matchId,
+    this.startedAt,
   });
 
   /// 当前玩家
@@ -121,7 +140,8 @@ abstract class GameState extends Equatable {
   int get whitePieceCount => boardState.whitePieces.length;
 
   /// 是否是AI的回合
-  bool get isAITurn => mode == GameMode.pve && currentPlayer == PieceType.white;
+  bool get isAITurn =>
+      mode == GameMode.pve && currentPlayer != (humanPlayer ?? PieceType.black);
 
   @override
   List<Object?> get props => [
@@ -130,6 +150,8 @@ abstract class GameState extends Equatable {
         selectedPiece,
         validMoves,
         moveHistory,
+        noCapturePlyCount,
+        turnClock,
         undoStack,
         lastMove,
         lastCapturedPosition,
@@ -143,6 +165,9 @@ abstract class GameState extends Equatable {
         lastVoiceCommand,
         voiceCommandConfidence,
         firstPlayer,
+        humanPlayer,
+        matchId,
+        startedAt,
       ];
 }
 
@@ -166,6 +191,8 @@ class GamePlaying extends GameState {
     super.selectedPiece,
     super.validMoves,
     super.moveHistory,
+    super.noCapturePlyCount,
+    super.turnClock,
     super.undoStack,
     super.lastMove,
     super.lastCapturedPosition,
@@ -177,6 +204,9 @@ class GamePlaying extends GameState {
     super.lastVoiceCommand,
     super.voiceCommandConfidence,
     super.firstPlayer,
+    super.humanPlayer,
+    super.matchId,
+    super.startedAt,
   }) : super(
           isGameOver: false,
           gameResult: null,
@@ -190,6 +220,8 @@ class GamePlaying extends GameState {
     bool clearSelectedPiece = false,
     List<Position>? validMoves,
     List<Move>? moveHistory,
+    int? noCapturePlyCount,
+    TurnClock? turnClock,
     List<Move>? undoStack,
     Move? lastMove,
     bool clearLastMove = false,
@@ -204,6 +236,9 @@ class GamePlaying extends GameState {
     bool clearLastVoiceCommand = false,
     double? voiceCommandConfidence,
     PieceType? firstPlayer,
+    PieceType? humanPlayer,
+    String? matchId,
+    DateTime? startedAt,
   }) {
     return GamePlaying(
       boardState: boardState ?? this.boardState,
@@ -212,6 +247,8 @@ class GamePlaying extends GameState {
           clearSelectedPiece ? null : (selectedPiece ?? this.selectedPiece),
       validMoves: validMoves ?? this.validMoves,
       moveHistory: moveHistory ?? this.moveHistory,
+      noCapturePlyCount: noCapturePlyCount ?? this.noCapturePlyCount,
+      turnClock: turnClock ?? this.turnClock,
       undoStack: undoStack ?? this.undoStack,
       lastMove: clearLastMove ? null : (lastMove ?? this.lastMove),
       lastCapturedPosition: clearLastCapturedPosition
@@ -229,6 +266,9 @@ class GamePlaying extends GameState {
       voiceCommandConfidence:
           voiceCommandConfidence ?? this.voiceCommandConfidence,
       firstPlayer: firstPlayer ?? this.firstPlayer,
+      humanPlayer: humanPlayer ?? this.humanPlayer,
+      matchId: matchId ?? this.matchId,
+      startedAt: startedAt ?? this.startedAt,
     );
   }
 
@@ -245,9 +285,15 @@ class GameOver extends GameState {
     required super.mode,
     required GameResult gameResult,
     super.moveHistory,
+    super.noCapturePlyCount,
+    super.turnClock,
     super.lastMove,
     super.lastCapturedPosition,
     super.aiDifficulty,
+    super.firstPlayer,
+    super.humanPlayer,
+    super.matchId,
+    super.startedAt,
   }) : super(
           isGameOver: true,
           gameResult: gameResult,
@@ -263,26 +309,20 @@ class GameOver extends GameState {
       mode: playing.mode,
       gameResult: gameResult,
       moveHistory: playing.moveHistory,
+      noCapturePlyCount: playing.noCapturePlyCount,
+      turnClock: playing.turnClock,
       lastMove: playing.lastMove,
       lastCapturedPosition: playing.lastCapturedPosition,
       aiDifficulty: playing.aiDifficulty,
+      firstPlayer: playing.firstPlayer,
+      humanPlayer: playing.humanPlayer,
+      matchId: playing.matchId,
+      startedAt: playing.startedAt,
     );
   }
 
   /// 获胜方
-  PieceType? get winner {
-    if (gameResult == null) return null;
-    switch (gameResult!.status) {
-      case GameStatus.blackWin:
-        return PieceType.black;
-      case GameStatus.whiteWin:
-        return PieceType.white;
-      case GameStatus.draw:
-        return null;
-      default:
-        return null;
-    }
-  }
+  PieceType? get winner => gameResult?.winner;
 
   /// 是否平局
   bool get isDraw => gameResult?.status == GameStatus.draw;

@@ -56,11 +56,11 @@ class _OnboardingPageState extends State<OnboardingPage> {
                   });
                 },
                 children: const [
-                  _WelcomePage(),
-                  _RulesBoardPage(),
-                  _RulesMovementPage(),
-                  _RulesCapturePage(),
-                  _FeaturesPage(),
+                  _ScrollableOnboardingPage(child: _WelcomePage()),
+                  _ScrollableOnboardingPage(child: _RulesBoardPage()),
+                  _ScrollableOnboardingPage(child: _RulesMovementPage()),
+                  _ScrollableOnboardingPage(child: _RulesCapturePage()),
+                  _ScrollableOnboardingPage(child: _FeaturesPage()),
                 ],
               ),
             ),
@@ -90,10 +90,10 @@ class _OnboardingPageState extends State<OnboardingPage> {
                       label: const Text('上一页'),
                     )
                   else
-                    const SizedBox(width: 100),
+                    const Spacer(),
 
                   // 下一页/开始按钮
-                  ElevatedButton(
+                  FilledButton(
                     onPressed: () {
                       if (_currentPage < 4) {
                         _pageController.nextPage(
@@ -131,6 +131,25 @@ class _OnboardingPageState extends State<OnboardingPage> {
   }
 }
 
+class _ScrollableOnboardingPage extends StatelessWidget {
+  const _ScrollableOnboardingPage({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) => SingleChildScrollView(
+        physics: const ClampingScrollPhysics(),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minHeight: constraints.maxHeight),
+          child: child,
+        ),
+      ),
+    );
+  }
+}
+
 /// 页面指示器
 class _PageIndicator extends StatelessWidget {
   final int currentPage;
@@ -143,6 +162,7 @@ class _PageIndicator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: List.generate(
@@ -152,9 +172,8 @@ class _PageIndicator extends StatelessWidget {
           width: currentPage == index ? 24 : 8,
           height: 8,
           decoration: BoxDecoration(
-            color: currentPage == index
-                ? Theme.of(context).primaryColor
-                : Colors.grey.shade300,
+            color:
+                currentPage == index ? scheme.primary : scheme.outlineVariant,
             borderRadius: BorderRadius.circular(4),
           ),
         ),
@@ -169,6 +188,8 @@ class _WelcomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     return Padding(
       padding: UIConstants.paddingLarge,
       child: Column(
@@ -179,9 +200,10 @@ class _WelcomePage extends StatelessWidget {
             width: 200,
             height: 200,
             decoration: BoxDecoration(
-              color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
+              color: scheme.surfaceContainer,
               borderRadius:
                   BorderRadius.circular(UIConstants.borderRadiusLarge),
+              border: Border.all(color: scheme.outlineVariant),
             ),
             child: const Center(
               child: GameIcon(
@@ -193,22 +215,22 @@ class _WelcomePage extends StatelessWidget {
           const SizedBox(height: 32),
           Text(
             '四子游戏',
-            style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+            style: theme.textTheme.headlineLarge?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
           ),
           const SizedBox(height: 16),
           Text(
             '策略对弈，智胜四方',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: Colors.grey.shade600,
-                ),
+            style: theme.textTheme.titleMedium?.copyWith(
+              color: scheme.onSurfaceVariant,
+            ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 48),
           Text(
             '欢迎来到四子游戏！\n让我们快速了解游戏规则',
-            style: Theme.of(context).textTheme.bodyLarge,
+            style: theme.textTheme.bodyLarge,
             textAlign: TextAlign.center,
           ),
         ],
@@ -223,6 +245,7 @@ class _RulesBoardPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Padding(
       padding: UIConstants.paddingLarge,
       child: Column(
@@ -241,13 +264,13 @@ class _RulesBoardPage extends StatelessWidget {
             width: 240,
             height: 240,
             decoration: BoxDecoration(
-              color: UIConstants.boardBackgroundColor,
+              color: scheme.surfaceContainerHighest,
               borderRadius:
                   BorderRadius.circular(UIConstants.borderRadiusLarge),
-              boxShadow: [UIConstants.boardShadow],
+              border: Border.all(color: scheme.outlineVariant),
             ),
             child: CustomPaint(
-              painter: _BoardDemoPainter(),
+              painter: _BoardDemoPainter(gridColor: scheme.primary),
             ),
           ),
 
@@ -257,12 +280,12 @@ class _RulesBoardPage extends StatelessWidget {
               width: 32,
               height: 32,
               decoration: BoxDecoration(
-                color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
+                color: scheme.primaryContainer,
                 borderRadius: BorderRadius.circular(4),
               ),
               child: GameIcon(
                 size: 32,
-                gridColor: Theme.of(context).primaryColor,
+                gridColor: scheme.primary,
                 showPieces: false,
               ),
             ),
@@ -287,6 +310,7 @@ class _RulesMovementPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Padding(
       padding: UIConstants.paddingLarge,
       child: Column(
@@ -305,7 +329,7 @@ class _RulesMovementPage extends StatelessWidget {
             width: 200,
             height: 200,
             decoration: BoxDecoration(
-              color: Colors.grey.shade100,
+              color: scheme.surfaceContainer,
               borderRadius:
                   BorderRadius.circular(UIConstants.borderRadiusLarge),
             ),
@@ -369,6 +393,7 @@ class _RulesCapturePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Padding(
       padding: UIConstants.paddingLarge,
       child: Column(
@@ -382,45 +407,57 @@ class _RulesCapturePage extends StatelessWidget {
           ),
           const SizedBox(height: 32),
 
-          // 吃子示意图：己方2子 + 对方1子 = 3子连线
+          // 吃子示意图：完整四格“己-己-敌-空”。
           Container(
             width: 240,
             height: 120,
             decoration: BoxDecoration(
-              color: Colors.grey.shade100,
+              color: scheme.surfaceContainer,
               borderRadius:
                   BorderRadius.circular(UIConstants.borderRadiusLarge),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                _buildPiece(Colors.black),
-                _buildPiece(Colors.black),
-                _buildPiece(Colors.white),
-                Icon(Icons.arrow_forward, color: Colors.red.shade400, size: 32),
-                _buildPiece(Colors.white, opacity: 0.3),
+                _buildPiece(Colors.black, scheme.outline),
+                _buildPiece(Colors.black, scheme.outline),
+                _buildPiece(Colors.white, scheme.outline),
+                Container(
+                  width: 32,
+                  height: 32,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    border: Border.all(color: scheme.outline),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: const Text('空'),
+                ),
               ],
             ),
           ),
 
           const SizedBox(height: 32),
           const _InfoCard(
-            icon: Icons.filter_3,
-            title: '三子连线',
-            description: '当己方2子与对方1子连成一线时',
+            icon: Icons.grid_4x4,
+            title: '精确四格排列',
+            description: '形成“己-己-敌-空”或它的规定反向排列时吃掉敌子',
           ),
           const SizedBox(height: 16),
           const _InfoCard(
             icon: Icons.close,
-            title: '吃掉最远端敌子',
-            description: '可以吃掉对方距离最远的一个棋子',
+            title: '落子必须参与',
+            description: '刚移动的棋子必须属于相邻双子；横纵可同时吃子',
           ),
         ],
       ),
     );
   }
 
-  Widget _buildPiece(Color color, {double opacity = 1.0}) {
+  Widget _buildPiece(
+    Color color,
+    Color borderColor, {
+    double opacity = 1.0,
+  }) {
     return Container(
       width: 32,
       height: 32,
@@ -428,7 +465,7 @@ class _RulesCapturePage extends StatelessWidget {
         color: color.withValues(alpha: opacity),
         shape: BoxShape.circle,
         border: Border.all(
-          color: Colors.grey.shade400,
+          color: borderColor,
           width: 2,
         ),
       ),
@@ -458,28 +495,24 @@ class _FeaturesPage extends StatelessWidget {
             icon: Icons.smart_toy,
             title: 'AI对战',
             description: '3种难度的AI陪你练习',
-            color: Colors.blue,
           ),
           const SizedBox(height: 16),
           const _FeatureCard(
             icon: Icons.replay,
             title: '游戏回放',
             description: '回顾每一步精彩对局',
-            color: Colors.green,
           ),
           const SizedBox(height: 16),
           const _FeatureCard(
             icon: Icons.palette,
-            title: '多种主题',
-            description: '个性化你的游戏界面',
-            color: Colors.purple,
+            title: '现代东方棋艺',
+            description: '一期统一视觉，后续将扩展更多主题',
           ),
           const SizedBox(height: 16),
           const _FeatureCard(
             icon: Icons.bar_chart,
             title: '战绩统计',
             description: '查看你的游戏数据',
-            color: Colors.orange,
           ),
         ],
       ),
@@ -506,23 +539,18 @@ class _InfoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: scheme.surface,
         borderRadius: BorderRadius.circular(UIConstants.borderRadiusMedium),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        border: Border.all(color: scheme.outlineVariant),
       ),
       child: Row(
         children: [
-          customIcon ??
-              Icon(icon!, size: 32, color: Theme.of(context).primaryColor),
+          customIcon ?? Icon(icon!, size: 32, color: scheme.primary),
           const SizedBox(width: 16),
           Expanded(
             child: Column(
@@ -530,17 +558,13 @@ class _InfoCard extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: theme.textTheme.titleMedium,
                 ),
                 const SizedBox(height: 4),
                 Text(
                   description,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey.shade600,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: scheme.onSurfaceVariant,
                   ),
                 ),
               ],
@@ -557,34 +581,33 @@ class _FeatureCard extends StatelessWidget {
   final IconData icon;
   final String title;
   final String description;
-  final Color color;
-
   const _FeatureCard({
     required this.icon,
     required this.title,
     required this.description,
-    required this.color,
   });
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
+        color: scheme.surface,
         borderRadius: BorderRadius.circular(UIConstants.borderRadiusMedium),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
+        border: Border.all(color: scheme.outlineVariant),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: color,
+              color: scheme.secondaryContainer,
               borderRadius:
                   BorderRadius.circular(UIConstants.borderRadiusSmall),
             ),
-            child: Icon(icon, size: 24, color: Colors.white),
+            child: Icon(icon, size: 24, color: scheme.onSecondaryContainer),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -593,17 +616,13 @@ class _FeatureCard extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: theme.textTheme.titleMedium,
                 ),
                 const SizedBox(height: 4),
                 Text(
                   description,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey.shade600,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: scheme.onSurfaceVariant,
                   ),
                 ),
               ],
@@ -626,20 +645,24 @@ class _DirectionArrow extends StatelessWidget {
     return Icon(
       icon,
       size: 32,
-      color: Colors.green.shade400,
+      color: Theme.of(context).colorScheme.secondary,
     );
   }
 }
 
 /// 棋盘演示绘制器
 class _BoardDemoPainter extends CustomPainter {
+  const _BoardDemoPainter({required this.gridColor});
+
+  final Color gridColor;
+
   @override
   void paint(Canvas canvas, Size size) {
     final cellSize = size.width / 4;
 
     // 绘制网格
     final gridPaint = Paint()
-      ..color = UIConstants.boardGridColor
+      ..color = gridColor
       ..strokeWidth = UIConstants.gridLineWidth
       ..style = PaintingStyle.stroke;
 
@@ -695,5 +718,6 @@ class _BoardDemoPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(_BoardDemoPainter oldDelegate) =>
+      oldDelegate.gridColor != gridColor;
 }

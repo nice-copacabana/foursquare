@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import '../../models/lan_protocol.dart';
 import '../../models/move.dart';
 
 abstract class LanGameEvent extends Equatable {
@@ -37,6 +38,25 @@ class LanOpponentMoved extends LanGameEvent {
 
 /// Opponent disconnected
 class LanOpponentDisconnected extends LanGameEvent {}
+
+/// A typed authority message received through the transport envelope.
+class LanProtocolReceived extends LanGameEvent {
+  final LanProtocolMessage message;
+
+  const LanProtocolReceived(this.message);
+
+  @override
+  List<Object?> get props => [message];
+}
+
+/// Client requested a complete host snapshot.
+class LanSnapshotRequested extends LanGameEvent {}
+
+/// Connection became available again.
+class LanConnectionRestored extends LanGameEvent {}
+
+/// Drives host absolute deadlines; exposed for deterministic tests.
+class LanAuthorityTick extends LanGameEvent {}
 
 /// Restart requested
 class LanRestartGame extends LanGameEvent {}

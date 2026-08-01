@@ -19,11 +19,15 @@ import 'package:foursquare/bloc/game_state.dart';
 import 'package:foursquare/models/position.dart';
 import 'package:foursquare/models/piece_type.dart';
 import 'package:foursquare/models/board_state.dart';
+import 'package:foursquare/models/game_save.dart';
+import 'package:foursquare/models/game_result.dart';
+import 'package:foursquare/models/game_record.dart';
 import 'package:foursquare/models/move.dart';
 import 'package:foursquare/engine/game_engine.dart';
 import 'package:foursquare/engine/move_validator.dart';
 import 'package:foursquare/services/audio_coordinator.dart' as audio;
 import 'package:foursquare/services/storage_service.dart';
+import 'package:foursquare/services/turn_clock.dart';
 import 'package:foursquare/models/audio_settings.dart';
 
 // Mock classes
@@ -35,6 +39,10 @@ class MockAudioCoordinator extends Mock implements audio.AudioCoordinator {}
 
 class MockStorageService extends Mock implements StorageService {}
 
+class FakeGameSave extends Fake implements GameSave {}
+
+class FakeGameRecord extends Fake implements GameRecord {}
+
 void main() {
   // 注册fallback值以支持mocktail的any()匹配器
   setUpAll(() {
@@ -43,6 +51,8 @@ void main() {
     registerFallbackValue(BoardState.initial());
     registerFallbackValue(const Position(0, 0));
     registerFallbackValue(AudioSettings.defaultSettings);
+    registerFallbackValue(FakeGameSave());
+    registerFallbackValue(FakeGameRecord());
   });
 
   group('GameBloc', () {
@@ -67,6 +77,20 @@ void main() {
           .thenAnswer((_) async {});
       when(() => audioCoordinator.settings)
           .thenReturn(AudioSettings.defaultSettings);
+      when(() => storageService.saveGame(any())).thenAnswer((_) async => true);
+      when(() => storageService.deleteGameSave()).thenAnswer((_) async => true);
+      when(() => storageService.archiveGame(any()))
+          .thenAnswer((_) async => true);
+      when(
+        () => storageService.updateStatistics(
+          isWin: any(named: 'isWin'),
+          isLoss: any(named: 'isLoss'),
+          isDraw: any(named: 'isDraw'),
+          moves: any(named: 'moves'),
+          captures: any(named: 'captures'),
+          difficulty: any(named: 'difficulty'),
+        ),
+      ).thenAnswer((_) async => true);
     });
 
     test('初始状态应该是 GameInitial', () {
@@ -89,6 +113,7 @@ void main() {
         moveValidator: moveValidator,
         audioCoordinator: audioCoordinator,
         storageService: storageService,
+        startingPlayerPicker: () => PieceType.white,
       ),
       act: (bloc) => bloc.add(const NewGameEvent(mode: GameMode.pvp)),
       expect: () => [
@@ -97,8 +122,9 @@ void main() {
             .having(
               (s) => s.boardState.currentPlayer,
               'currentPlayer',
-              PieceType.black,
+              PieceType.white,
             )
+            .having((s) => s.firstPlayer, 'firstPlayer', PieceType.white)
             .having((s) => s.moveHistory.length, 'moveHistory', 0),
       ],
       verify: (_) {
@@ -107,6 +133,8 @@ void main() {
         ).called(1);
         verify(() => audioCoordinator.onSceneChange(audio.GameScene.gameplay))
             .called(1);
+        verify(() => storageService.deleteGameSave()).called(1);
+        verifyNever(() => storageService.archiveGame(any()));
       },
     );
 
@@ -145,6 +173,7 @@ void main() {
         ).called(1);
         verify(() => audioCoordinator.onSceneChange(audio.GameScene.gameplay))
             .called(1);
+        verify(() => storageService.deleteGameSave()).called(1);
       },
     );
 
@@ -386,6 +415,241 @@ void main() {
     );
 
     blocTest<GameBloc, GameState>(
+      '有效落子应该把连续未吃子计数同步回公开状态',
+      build: () => GameBloc(
+        gameEngine: GameEngine(),
+        moveValidator: MoveValidator(),
+        audioCoordinator: audioCoordinator,
+        storageService: storageService,
+      ),
+      seed: () => GamePlaying(
+        boardState: BoardState.initial()
+            .setPiece(const Position(0, 1), PieceType.black)
+            .setPiece(const Position(2, 1), PieceType.black)
+            .setPiece(const Position(3, 1), PieceType.white),
+        mode: GameMode.pvp,
+        moveHistory: const [],
+        noCapturePlyCount: 49,
+      ),
+      act: (bloc) => bloc.add(
+        const MovePieceEvent(
+          from: Position(0, 1),
+          to: Position(1, 1),
+        ),
+      ),
+      expect: () => [
+        isA<GamePlaying>()
+            .having(
+              (state) => state.noCapturePlyCount,
+              'noCapturePlyCount',
+              0,
+            )
+            .having(
+              (state) => state.lastMove!.captureCount,
+              'captureCount',
+              1,
+            ),
+      ],
+    );
+
+    blocTest<GameBloc, GameState>(
+      '每次有效落子后自动覆盖单槽存档',
+      build: () => GameBloc(
+        gameEngine: GameEngine(),
+        moveValidator: MoveValidator(),
+        audioCoordinator: audioCoordinator,
+        storageService: storageService,
+      ),
+      seed: () => GamePlaying(
+        boardState: BoardState.initial(),
+        mode: GameMode.pvp,
+        moveHistory: const [],
+        firstPlayer: PieceType.black,
+      ),
+      act: (bloc) => bloc.add(
+        const MovePieceEvent(
+          from: Position(0, 0),
+          to: Position(0, 1),
+        ),
+      ),
+      expect: () => [isA<GamePlaying>()],
+      verify: (_) {
+        final captured = verify(
+          () => storageService.saveGame(captureAny()),
+        ).captured.single as GameSave;
+        expect(captured.moveHistory, hasLength(1));
+        expect(captured.currentPlayer, 'white');
+        expect(captured.startingPlayer, 'black');
+        expect(captured.noCapturePlyCount, 1);
+      },
+    );
+
+    blocTest<GameBloc, GameState>(
+      '回合到达60秒边界时当前行棋方立即判负',
+      build: () => GameBloc(
+        gameEngine: GameEngine(),
+        moveValidator: MoveValidator(),
+        audioCoordinator: audioCoordinator,
+        storageService: storageService,
+      ),
+      seed: () {
+        final startedAt = DateTime.utc(2026, 8, 1, 12);
+        return GamePlaying(
+          boardState: BoardState.initial(),
+          mode: GameMode.pvp,
+          moveHistory: const [],
+          turnClock: TurnClock.started(startedAt),
+        );
+      },
+      act: (bloc) => bloc.add(
+        TurnClockTickEvent(DateTime.utc(2026, 8, 1, 12, 1)),
+      ),
+      expect: () => [
+        isA<GameOver>()
+            .having(
+              (state) => state.gameResult!.status,
+              'status',
+              GameStatus.timeout,
+            )
+            .having(
+              (state) => state.gameResult!.winner,
+              'winner',
+              PieceType.white,
+            ),
+      ],
+      verify: (_) {
+        verify(
+          () => storageService.updateStatistics(
+            isWin: true,
+            isLoss: false,
+            isDraw: false,
+            moves: 0,
+            captures: 0,
+            difficulty: null,
+          ),
+        ).called(1);
+        verify(() => storageService.deleteGameSave()).called(1);
+        final record = verify(
+          () => storageService.archiveGame(captureAny()),
+        ).captured.single as GameRecord;
+        expect(record.result.status, GameStatus.timeout);
+        expect(record.result.winner, PieceType.white);
+      },
+    );
+
+    blocTest<GameBloc, GameState>(
+      '截止时刻落子必须先判超时且不改变棋盘',
+      build: () => GameBloc(
+        gameEngine: GameEngine(),
+        moveValidator: MoveValidator(),
+        audioCoordinator: audioCoordinator,
+        storageService: storageService,
+        now: () => DateTime.utc(2026, 8, 1, 12, 1),
+      ),
+      seed: () => GamePlaying(
+        boardState: BoardState.initial(),
+        mode: GameMode.pvp,
+        moveHistory: const [],
+        turnClock: TurnClock.started(DateTime.utc(2026, 8, 1, 12)),
+      ),
+      act: (bloc) => bloc.add(
+        const MovePieceEvent(
+          from: Position(0, 0),
+          to: Position(0, 1),
+        ),
+      ),
+      expect: () => [
+        isA<GameOver>()
+            .having(
+              (state) => state.gameResult!.status,
+              'status',
+              GameStatus.timeout,
+            )
+            .having(
+              (state) => state.boardState,
+              'unchanged board',
+              BoardState.initial(),
+            ),
+      ],
+    );
+
+    blocTest<GameBloc, GameState>(
+      '终局存档恢复时立即结束并清除存档',
+      setUp: () {
+        final terminalBoard = BoardState.initial()
+            .removePiece(const Position(1, 0))
+            .removePiece(const Position(2, 0))
+            .removePiece(const Position(3, 0));
+        when(() => storageService.loadGame()).thenAnswer(
+          (_) async => GameSave(
+            id: 'terminal-save',
+            saveTime: DateTime.utc(2026, 8, 1),
+            boardState: BoardStateData.fromBoardState(terminalBoard),
+            moveHistory: const [],
+            currentPlayer: 'black',
+            mode: 'pvp',
+          ),
+        );
+      },
+      build: () => GameBloc(
+        gameEngine: GameEngine(),
+        moveValidator: MoveValidator(),
+        audioCoordinator: audioCoordinator,
+        storageService: storageService,
+      ),
+      act: (bloc) => bloc.add(const LoadGameEvent()),
+      expect: () => [
+        isA<GameOver>()
+            .having(
+              (state) => state.gameResult!.winner,
+              'winner',
+              PieceType.white,
+            )
+            .having(
+              (state) => state.gameResult!.endReason,
+              'end reason',
+              GameEndReason.pieceCount,
+            ),
+      ],
+      verify: (_) {
+        verify(() => storageService.deleteGameSave()).called(1);
+      },
+    );
+
+    blocTest<GameBloc, GameState>(
+      '离线对局进入后台时暂停回合时钟',
+      build: () => GameBloc(
+        gameEngine: GameEngine(),
+        moveValidator: MoveValidator(),
+        audioCoordinator: audioCoordinator,
+        storageService: storageService,
+      ),
+      seed: () {
+        final startedAt = DateTime.utc(2026, 8, 1, 12);
+        return GamePlaying(
+          boardState: BoardState.initial(),
+          mode: GameMode.pvp,
+          moveHistory: const [],
+          turnClock: TurnClock.started(startedAt),
+        );
+      },
+      act: (bloc) => bloc.add(
+        PauseTurnClockEvent(DateTime.utc(2026, 8, 1, 12, 0, 10)),
+      ),
+      expect: () => [
+        isA<GamePlaying>()
+            .having((state) => state.turnClock!.isPaused, 'isPaused', isTrue)
+            .having(
+              (state) => state.turnClock!.remainingAt(
+                DateTime.utc(2026, 8, 1, 13),
+              ),
+              'remaining',
+              const Duration(seconds: 50),
+            ),
+      ],
+    );
+
+    blocTest<GameBloc, GameState>(
       '撤销移动应该恢复到之前的状态',
       build: () {
         // Mock executeMove for replay
@@ -443,6 +707,117 @@ void main() {
         ).called(1);
       },
     );
+
+    blocTest<GameBloc, GameState>(
+      '白方先手对局撤销后恢复真实初始行棋方',
+      build: () => GameBloc(
+        gameEngine: GameEngine(),
+        moveValidator: MoveValidator(),
+        audioCoordinator: audioCoordinator,
+        storageService: storageService,
+      ),
+      seed: () {
+        final move = Move.now(
+          from: const Position(0, 3),
+          to: const Position(0, 2),
+          player: PieceType.white,
+        );
+        return GamePlaying(
+          boardState: BoardState.initial(currentPlayer: PieceType.white)
+              .movePiece(move.from, move.to)
+              .switchPlayer(),
+          mode: GameMode.pvp,
+          moveHistory: [move],
+          firstPlayer: PieceType.white,
+        );
+      },
+      act: (bloc) => bloc.add(const UndoMoveEvent()),
+      expect: () => [
+        isA<GamePlaying>()
+            .having(
+              (state) => state.currentPlayer,
+              'currentPlayer',
+              PieceType.white,
+            )
+            .having(
+              (state) => state.boardState.getPiece(const Position(0, 3)),
+              'restoredPiece',
+              PieceType.white,
+            ),
+      ],
+    );
+
+    blocTest<GameBloc, GameState>(
+      'AI模式撤销两步后一次重做恢复两步',
+      build: () => GameBloc(
+        gameEngine: GameEngine(),
+        moveValidator: MoveValidator(),
+        audioCoordinator: audioCoordinator,
+        storageService: storageService,
+      ),
+      seed: () {
+        final blackMove = Move.now(
+          from: const Position(0, 0),
+          to: const Position(0, 1),
+          player: PieceType.black,
+        );
+        final whiteMove = Move.now(
+          from: const Position(0, 3),
+          to: const Position(0, 2),
+          player: PieceType.white,
+        );
+        return GamePlaying(
+          boardState: BoardState.initial(),
+          mode: GameMode.pve,
+          moveHistory: const [],
+          undoStack: [blackMove, whiteMove],
+          firstPlayer: PieceType.black,
+          humanPlayer: PieceType.black,
+        );
+      },
+      act: (bloc) => bloc.add(const RedoMoveEvent()),
+      expect: () => [
+        isA<GamePlaying>()
+            .having((state) => state.moveHistory.length, 'move count', 2)
+            .having((state) => state.undoStack, 'redo stack', isEmpty),
+      ],
+    );
+
+    test('恢复到AI回合的存档后会自动继续行棋', () async {
+      final savedAt = DateTime.utc(2026, 8, 1, 12);
+      final board = BoardState.initial(currentPlayer: PieceType.white);
+      when(() => storageService.loadGame()).thenAnswer(
+        (_) async => GameSave(
+          id: 'ai-turn-save',
+          saveTime: savedAt,
+          startedAt: savedAt,
+          boardState: BoardStateData.fromBoardState(board),
+          moveHistory: const [],
+          currentPlayer: 'white',
+          startingPlayer: 'black',
+          humanPlayer: 'black',
+          mode: 'pve',
+          aiDifficulty: 'easy',
+        ),
+      );
+      final bloc = GameBloc(
+        gameEngine: GameEngine(),
+        moveValidator: MoveValidator(),
+        audioCoordinator: audioCoordinator,
+        storageService: storageService,
+      );
+
+      bloc.add(const LoadGameEvent());
+      final continued = await bloc.stream
+          .where((state) => state is GamePlaying)
+          .cast<GamePlaying>()
+          .firstWhere((state) => state.moveHistory.length == 1)
+          .timeout(const Duration(seconds: 5));
+
+      expect(continued.currentPlayer, PieceType.black);
+      expect(continued.moveHistory.single.player, PieceType.white);
+      await bloc.close();
+    });
 
     blocTest<GameBloc, GameState>(
       '设置变更应该更新音频服务',

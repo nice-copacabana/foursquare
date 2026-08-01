@@ -11,7 +11,7 @@ import 'piece_type.dart';
 /// - 起始位置
 /// - 目标位置
 /// - 移动方
-/// - 被吃棋子位置（可选）
+/// - 被吃棋子位置（横向后纵向，最多两个）
 /// - 移动时间
 class Move extends Equatable {
   /// 起始位置
@@ -23,52 +23,74 @@ class Move extends Equatable {
   /// 移动方
   final PieceType player;
 
-  /// 被吃棋子位置（可选）
-  final Position? capturedPiece;
+  /// 被吃棋子位置，顺序固定为横向后纵向。
+  final List<Position> capturedPieces;
+
+  /// 兼容旧调用方和旧协议的首个被吃棋子。
+  Position? get capturedPiece =>
+      capturedPieces.isEmpty ? null : capturedPieces.first;
 
   /// 移动时间
   final DateTime timestamp;
 
-  const Move({
+  Move({
     required this.from,
     required this.to,
     required this.player,
-    this.capturedPiece,
+    List<Position> capturedPieces = const [],
+    Position? capturedPiece,
     required this.timestamp,
-  });
+  }) : capturedPieces = List.unmodifiable(
+          capturedPiece == null
+              ? capturedPieces
+              : <Position>[
+                  ...capturedPieces,
+                  if (!capturedPieces.contains(capturedPiece)) capturedPiece,
+                ],
+        );
 
   /// 创建移动记录（使用当前时间）
   factory Move.now({
     required Position from,
     required Position to,
     required PieceType player,
+    List<Position> capturedPieces = const [],
     Position? capturedPiece,
   }) {
     return Move(
       from: from,
       to: to,
       player: player,
+      capturedPieces: capturedPieces,
       capturedPiece: capturedPiece,
       timestamp: DateTime.now(),
     );
   }
 
   /// 是否有吃子
-  bool get hasCapture => capturedPiece != null;
+  bool get hasCapture => capturedPieces.isNotEmpty;
+
+  /// 本次落子吃掉的棋子数量。
+  int get captureCount => capturedPieces.length;
 
   /// 创建副本
   Move copyWith({
     Position? from,
     Position? to,
     PieceType? player,
+    List<Position>? capturedPieces,
     Position? capturedPiece,
+    bool clearCapturedPieces = false,
     DateTime? timestamp,
   }) {
     return Move(
       from: from ?? this.from,
       to: to ?? this.to,
       player: player ?? this.player,
-      capturedPiece: capturedPiece ?? this.capturedPiece,
+      capturedPieces: clearCapturedPieces
+          ? const []
+          : capturedPieces ?? this.capturedPieces,
+      capturedPiece: capturedPiece,
       timestamp: timestamp ?? this.timestamp,
     );
   }
@@ -79,6 +101,10 @@ class Move extends Equatable {
       'from': {'x': from.x, 'y': from.y},
       'to': {'x': to.x, 'y': to.y},
       'player': player.name,
+      'capturedPieces': capturedPieces
+          .map((position) => {'x': position.x, 'y': position.y})
+          .toList(growable: false),
+      // 暂时保留单值字段，供旧版本客户端读取。
       'capturedPiece': capturedPiece != null
           ? {'x': capturedPiece!.x, 'y': capturedPiece!.y}
           : null,
@@ -90,7 +116,24 @@ class Move extends Equatable {
   factory Move.fromJson(Map<String, dynamic> json) {
     final fromMap = json['from'] as Map<String, dynamic>;
     final toMap = json['to'] as Map<String, dynamic>;
+    final capturedList = json['capturedPieces'] as List<dynamic>?;
     final capturedMap = json['capturedPiece'] as Map<String, dynamic>?;
+    final capturedPieces = capturedList != null
+        ? capturedList
+            .map(
+              (item) => Position(
+                (item as Map<String, dynamic>)['x'] as int,
+                item['y'] as int,
+              ),
+            )
+            .toList(growable: false)
+        : <Position>[
+            if (capturedMap != null)
+              Position(
+                capturedMap['x'] as int,
+                capturedMap['y'] as int,
+              ),
+          ];
 
     return Move(
       from: Position(fromMap['x'] as int, fromMap['y'] as int),
@@ -98,9 +141,7 @@ class Move extends Equatable {
       player: PieceType.values.firstWhere(
         (e) => e.name == json['player'],
       ),
-      capturedPiece: capturedMap != null
-          ? Position(capturedMap['x'] as int, capturedMap['y'] as int)
-          : null,
+      capturedPieces: capturedPieces,
       timestamp: DateTime.parse(json['timestamp'] as String),
     );
   }
@@ -111,17 +152,20 @@ class Move extends Equatable {
     buffer.write('${player.getDisplayName()}从');
     buffer.write('(${from.x},${from.y})移至(${to.x},${to.y})');
     if (hasCapture) {
-      buffer.write('，吃掉(${capturedPiece!.x},${capturedPiece!.y})');
+      final positions = capturedPieces
+          .map((position) => '(${position.x},${position.y})')
+          .join('、');
+      buffer.write('，吃掉$positions');
     }
     return buffer.toString();
   }
 
   @override
-  List<Object?> get props => [from, to, player, capturedPiece, timestamp];
+  List<Object?> get props => [from, to, player, capturedPieces, timestamp];
 
   @override
   String toString() {
     return 'Move(from: $from, to: $to, player: $player, '
-        'captured: $capturedPiece, time: $timestamp)';
+        'captured: $capturedPieces, time: $timestamp)';
   }
 }

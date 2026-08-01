@@ -11,7 +11,13 @@
 /// - 数据重置
 library;
 
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
+import 'package:hive/hive.dart';
+import 'package:foursquare/models/game_record.dart';
+import 'package:foursquare/models/game_result.dart';
+import 'package:foursquare/models/piece_type.dart';
 import 'package:foursquare/services/storage_service.dart';
 
 void main() {
@@ -162,4 +168,77 @@ void main() {
       expect(identical(service1, service2), true);
     });
   });
+
+  group('完成对局幂等提交', () {
+    late Directory temporaryDirectory;
+    late Box<dynamic> statisticsBox;
+    late StorageService storageService;
+
+    setUp(() async {
+      temporaryDirectory = await Directory.systemTemp.createTemp(
+        'foursquare-storage-test-',
+      );
+      Hive.init(temporaryDirectory.path);
+      statisticsBox = await Hive.openBox<dynamic>('statistics-test');
+      storageService = StorageService.forTesting(
+        statisticsBox: statisticsBox,
+      );
+    });
+
+    tearDown(() async {
+      await statisticsBox.close();
+      await temporaryDirectory.delete(recursive: true);
+    });
+
+    test('同一gameId重复提交只新增一次历史和一次统计', () async {
+      final record = _lanRecord('lan-game-1');
+
+      expect(await storageService.recordCompletedGame(record), true);
+      expect(await storageService.recordCompletedGame(record), true);
+
+      final statistics = await storageService.loadStatistics();
+      final history = await storageService.loadGameHistory();
+      expect(statistics.totalGames, 1);
+      expect(statistics.wins, 1);
+      expect(statistics.losses, 0);
+      expect(history.map((item) => item.id), ['lan-game-1']);
+    });
+
+    test('并发提交不会重复统计同一gameId或丢失其他对局', () async {
+      final first = _lanRecord('lan-game-1');
+      final second = _lanRecord('lan-game-2');
+
+      final results = await Future.wait([
+        storageService.recordCompletedGame(first),
+        storageService.recordCompletedGame(first),
+        storageService.recordCompletedGame(second),
+      ]);
+
+      expect(results, everyElement(true));
+      final statistics = await storageService.loadStatistics();
+      final history = await storageService.loadGameHistory();
+      expect(statistics.totalGames, 2);
+      expect(statistics.wins, 2);
+      expect(history.map((item) => item.id).toSet(), {
+        'lan-game-1',
+        'lan-game-2',
+      });
+    });
+  });
+}
+
+GameRecord _lanRecord(String id) {
+  return GameRecord(
+    id: id,
+    completedAt: DateTime.utc(2026, 8, 1, 12),
+    mode: 'lan',
+    startingPlayer: PieceType.black,
+    humanPlayer: PieceType.black,
+    result: GameResult.blackWin(
+      reason: '白方只剩一枚棋子',
+      moveCount: 12,
+      duration: const Duration(minutes: 3),
+    ),
+    moves: const [],
+  );
 }

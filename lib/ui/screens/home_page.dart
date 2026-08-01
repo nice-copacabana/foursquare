@@ -1,29 +1,28 @@
-/// Home Page - 主菜单页面
-///
-/// 职责：
-/// - 显示游戏标题和Logo
-/// - 提供游戏模式选择入口
-/// - 提供设置、规则、统计入口
-library;
-
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
+
 import '../../bloc/game_event.dart';
-import '../../bloc/meditation_mode_bloc.dart';
-import '../../bloc/meditation_mode_event.dart';
-import '../widgets/game_icon.dart';
-import '../../services/storage_service.dart';
 import '../../services/resource_warmup_service.dart';
+import '../../services/storage_service.dart';
+import '../../theme/theme_pack.dart';
+import '../../theme/theme_pack_registry.dart';
+import '../layouts/adaptive_breakpoints.dart';
+import '../widgets/game_icon.dart';
 import 'game_page.dart';
-import 'statistics_page.dart';
+import 'lan/lan_lobby_page.dart';
 import 'rules_page.dart';
 import 'settings_page.dart';
-import 'meditation_game_page.dart';
-import 'lan/lan_lobby_page.dart';
+import 'statistics_page.dart';
 
-/// 主菜单页面
+/// Phase-one home: offline play, LAN play and local utilities.
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  const HomePage({
+    super.key,
+    this.hasSavedGame,
+    this.enableResourceWarmup = true,
+  });
+
+  final Future<bool> Function()? hasSavedGame;
+  final bool enableResourceWarmup;
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -32,57 +31,85 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final StorageService _storageService = StorageService();
   final ResourceWarmupService _resourceWarmupService = ResourceWarmupService();
+  final ThemePack _themePack = ThemePackRegistry.phaseOne().defaultPack;
+
+  bool _hasSavedGame = false;
+  bool _saveStateLoaded = false;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _warmupResources();
+    _refreshSavedGame();
+    if (widget.enableResourceWarmup) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _warmupResources());
+    }
+  }
+
+  Future<void> _refreshSavedGame() async {
+    final hasSave =
+        await (widget.hasSavedGame ?? _storageService.hasSavedGame)();
+    if (!mounted) return;
+    setState(() {
+      _hasSavedGame = hasSave;
+      _saveStateLoaded = true;
     });
   }
 
   Future<void> _warmupResources() async {
     final settings = await _storageService.loadSettings();
-    if (!mounted) return;
-    if (settings.resourceWarmupEnabled) {
-      await _resourceWarmupService.warmup(context);
-    }
+    if (!mounted || !settings.resourceWarmupEnabled) return;
+    await _resourceWarmupService.warmup(context);
   }
 
   @override
   Widget build(BuildContext context) {
+    final colors = _themePack.colors;
     return Scaffold(
-      body: Container(
+      body: DecoratedBox(
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Colors.blue.shade700,
-              Colors.blue.shade900,
-              Colors.indigo.shade900,
-            ],
+          gradient: RadialGradient(
+            center: const Alignment(-0.65, -0.85),
+            radius: 1.5,
+            colors: [colors.paperRaised, colors.paperBase],
           ),
         ),
-        child: SafeArea(
-          child: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // 游戏Logo和标题
-                  _buildHeader(),
-                  const SizedBox(height: 60),
-
-                  // 主菜单按钮
-                  _buildMenuButtons(context),
-                  const SizedBox(height: 40),
-
-                  // 版本信息
-                  _buildFooter(),
-                ],
-              ),
+        child: CustomPaint(
+          painter: _PaperGrainPainter(colors.divider),
+          child: SafeArea(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final maxWidth = AdaptiveBreakpoints.contentMaxWidth(
+                  constraints.maxWidth,
+                );
+                return Center(
+                  child: SingleChildScrollView(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: _themePack.spacing.large,
+                      vertical: _themePack.spacing.extraLarge,
+                    ),
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: maxWidth),
+                      child: Column(
+                        children: [
+                          _buildHeader(),
+                          SizedBox(height: _themePack.spacing.extraLarge),
+                          _buildPrimaryActions(constraints.maxWidth),
+                          SizedBox(height: _themePack.spacing.large),
+                          _buildUtilities(),
+                          SizedBox(height: _themePack.spacing.large),
+                          Text(
+                            '现代东方棋艺 · 开发版本 0.1.0',
+                            style:
+                                Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: colors.inkMuted,
+                                    ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
             ),
           ),
         ),
@@ -91,407 +118,249 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildHeader() {
-    return Column(
-      children: [
-        // Logo图标
-        Container(
-          width: 120,
-          height: 120,
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.2),
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.3),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
-              ),
-            ],
-          ),
-          child: const Padding(
-            padding: EdgeInsets.all(20),
-            child: GameIcon(
-              size: 80,
-              gridColor: Colors.white,
-              showPieces: false,
-            ),
-          ),
-        ),
-        const SizedBox(height: 24),
-
-        // 游戏标题
-        const Text(
-          '四子游戏',
-          style: TextStyle(
-            fontSize: 48,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-            letterSpacing: 4,
-            shadows: [
-              Shadow(
-                color: Colors.black26,
-                blurRadius: 10,
-                offset: Offset(0, 4),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'Four Square Chess',
-          style: TextStyle(
-            fontSize: 16,
-            color: Colors.white.withValues(alpha: 0.8),
-            letterSpacing: 2,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildMenuButtons(BuildContext context) {
-    return Column(
-      children: [
-        _MenuButton(
-          icon: Icons.people,
-          label: '双人对战',
-          subtitle: '本地对战',
-          gradient: LinearGradient(
-            colors: [Colors.orange.shade400, Colors.deepOrange.shade600],
-          ),
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const GamePage(mode: GameMode.pvp),
-              ),
-            );
-          },
-        ),
-        const SizedBox(height: 16),
-        _MenuButton(
-          icon: Icons.computer,
-          label: '人机对战',
-          subtitle: '挑战AI',
-          gradient: LinearGradient(
-            colors: [Colors.blue.shade400, Colors.indigo.shade600],
-          ),
-          onPressed: () {
-            _showDifficultyDialog(context);
-          },
-        ),
-        const SizedBox(height: 16),
-        _MenuButton(
-          icon: Icons.self_improvement,
-          label: '冥想模式',
-          subtitle: '语音交互对弈',
-          gradient: LinearGradient(
-            colors: [Colors.purple.shade400, Colors.deepPurple.shade600],
-          ),
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => BlocProvider(
-                  create: (context) =>
-                      MeditationModeBloc()..add(const StartMeditationGame()),
-                  child: const MeditationGamePage(),
+    final colors = _themePack.colors;
+    return Semantics(
+      header: true,
+      child: Column(
+        children: [
+          Container(
+            width: 92,
+            height: 92,
+            padding: const EdgeInsets.all(15),
+            decoration: BoxDecoration(
+              color: colors.paperRaised,
+              borderRadius: BorderRadius.circular(28),
+              border: Border.all(color: colors.bronze, width: 1.5),
+              boxShadow: [
+                BoxShadow(
+                  color: colors.inkPrimary.withValues(alpha: 0.1),
+                  blurRadius: 24,
+                  offset: const Offset(0, 10),
                 ),
-              ),
-            );
-          },
-        ),
-        const SizedBox(height: 16),
-        _MenuButton(
-          icon: Icons.wifi,
-          label: '局域网对战',
-          subtitle: '面对面联机',
-          gradient: LinearGradient(
-            colors: [Colors.teal.shade400, Colors.green.shade600],
+              ],
+            ),
+            child: GameIcon(
+              size: 62,
+              gridColor: colors.jade,
+              showPieces: true,
+            ),
           ),
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const LanLobbyPage(),
-              ),
-            );
-          },
-        ),
-        const SizedBox(height: 16),
-        Row(
-          children: [
-            Expanded(
-              child: _SecondaryButton(
-                icon: Icons.bar_chart,
-                label: '统计',
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const StatisticsPage(),
-                    ),
-                  );
-                },
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: _SecondaryButton(
-                icon: Icons.book,
-                label: '规则',
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const RulesPage(),
-                    ),
-                  );
-                },
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: _SecondaryButton(
-                icon: Icons.settings,
-                label: '设置',
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const SettingsPage(),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-      ],
+          const SizedBox(height: 20),
+          Text('四子棋', style: Theme.of(context).textTheme.displaySmall),
+          const SizedBox(height: 6),
+          Text(
+            '移 · 围 · 取 · 胜',
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  color: colors.cinnabar,
+                  letterSpacing: 6,
+                ),
+          ),
+          const SizedBox(height: 12),
+          Container(width: 44, height: 2, color: colors.bronze),
+        ],
+      ),
     );
   }
 
-  Widget _buildFooter() {
-    return Column(
+  Widget _buildPrimaryActions(double width) {
+    final actions = <Widget>[
+      if (_saveStateLoaded && _hasSavedGame)
+        _ModeCard(
+          key: const Key('continue_game_button'),
+          themePack: _themePack,
+          icon: Icons.play_arrow_rounded,
+          title: '继续游戏',
+          subtitle: '从上次落子继续',
+          emphasized: true,
+          onTap: () => _openGame(const GamePage(resumeSavedGame: true)),
+        ),
+      _ModeCard(
+        themePack: _themePack,
+        icon: Icons.people_outline_rounded,
+        title: '双人对战',
+        subtitle: '同屏轮流落子',
+        onTap: () => _openGame(const GamePage(mode: GameMode.pvp)),
+      ),
+      _ModeCard(
+        themePack: _themePack,
+        icon: Icons.smart_toy_outlined,
+        title: '人机对战',
+        subtitle: '简单 · 中等 · 困难',
+        onTap: _showDifficultyDialog,
+      ),
+      _ModeCard(
+        themePack: _themePack,
+        icon: Icons.wifi_tethering_rounded,
+        title: '局域网对战',
+        subtitle: '同一网络面对面对弈',
+        onTap: () => _openPage(const LanLobbyPage()),
+      ),
+    ];
+
+    if (AdaptiveBreakpoints.homeColumnCount(width) == 1) {
+      return Column(
+        children: actions
+            .expand((action) => [action, const SizedBox(height: 12)])
+            .toList()
+          ..removeLast(),
+      );
+    }
+
+    return GridView.count(
+      crossAxisCount: 2,
+      crossAxisSpacing: 16,
+      mainAxisSpacing: 16,
+      childAspectRatio: 2.8,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      children: actions,
+    );
+  }
+
+  Widget _buildUtilities() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Text(
-          'Version 0.1.0',
-          style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.5),
-            fontSize: 12,
-          ),
+        _UtilityButton(
+          icon: Icons.insights_outlined,
+          label: '战绩',
+          onPressed: () => _openPage(const StatisticsPage()),
         ),
-        const SizedBox(height: 4),
-        Text(
-          'Made with Flutter',
-          style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.5),
-            fontSize: 12,
-          ),
+        _UtilityButton(
+          icon: Icons.menu_book_outlined,
+          label: '规则',
+          onPressed: () => _openPage(const RulesPage()),
+        ),
+        _UtilityButton(
+          icon: Icons.tune_rounded,
+          label: '设置',
+          onPressed: () => _openPage(const SettingsPage()),
         ),
       ],
     );
   }
 
-  void _showDifficultyDialog(BuildContext context) {
-    showDialog(
+  Future<void> _openGame(GamePage page) async {
+    await _openPage(page);
+    await _refreshSavedGame();
+  }
+
+  Future<void> _openPage(Widget page) {
+    return Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => page),
+    );
+  }
+
+  Future<void> _showDifficultyDialog() async {
+    final difficulty = await showDialog<String>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('选择难度'),
+      builder: (context) => const AlertDialog(
+        title: const Text('选择棋力'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _DifficultyOption(
-              title: '简单',
-              subtitle: 'AI会犯一些错误',
-              color: Colors.green,
-              onTap: () {
-                Navigator.pop(dialogContext);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const GamePage(
-                      mode: GameMode.pve,
-                      aiDifficulty: 'easy',
-                    ),
-                  ),
-                );
-              },
-            ),
-            const Divider(),
-            _DifficultyOption(
-              title: '中等',
-              subtitle: 'AI会认真思考',
-              color: Colors.orange,
-              onTap: () {
-                Navigator.pop(dialogContext);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const GamePage(
-                      mode: GameMode.pve,
-                      aiDifficulty: 'medium',
-                    ),
-                  ),
-                );
-              },
-            ),
-            const Divider(),
-            _DifficultyOption(
-              title: '困难',
-              subtitle: 'AI会使用最优策略',
-              color: Colors.red,
-              onTap: () {
-                Navigator.pop(dialogContext);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const GamePage(
-                      mode: GameMode.pve,
-                      aiDifficulty: 'hard',
-                    ),
-                  ),
-                );
-              },
-            ),
+            _DifficultyTile(value: 'easy', title: '简单', subtitle: '熟悉规则与走法'),
+            _DifficultyTile(value: 'medium', title: '中等', subtitle: '平衡思考与速度'),
+            _DifficultyTile(value: 'hard', title: '困难', subtitle: '更深入地计算局面'),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('取消'),
-          ),
-        ],
       ),
     );
-  }
-
-  void _showRulesDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('游戏规则'),
-        content: const SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                '游戏目标',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-              ),
-              SizedBox(height: 8),
-              Text('吃掉对方的所有棋子，或使对方无子可走。'),
-              SizedBox(height: 16),
-              Text(
-                '基本规则',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-              ),
-              SizedBox(height: 8),
-              Text('1. 棋盘为4×4网格\n'
-                  '2. 黑方先手，双方轮流移动\n'
-                  '3. 每次只能移动一个棋子到相邻空位\n'
-                  '4. 不能斜向移动'),
-              SizedBox(height: 16),
-              Text(
-                '吃子规则',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-              ),
-              SizedBox(height: 8),
-              Text('当移动后形成"己-己-敌"三子连线时（横向或纵向），\n'
-                  '可以吃掉最远端的敌方棋子。\n\n'
-                  '注意：移动的棋子必须参与连线。'),
-              SizedBox(height: 16),
-              Text(
-                '胜负判定',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-              ),
-              SizedBox(height: 8),
-              Text('• 对方棋子全部被吃掉 → 获胜\n'
-                  '• 对方无子可走 → 获胜\n'
-                  '• 双方都无法吃子且重复50步 → 平局'),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('知道了'),
-          ),
-        ],
-      ),
+    if (!mounted || difficulty == null) return;
+    await _openGame(
+      GamePage(mode: GameMode.pve, aiDifficulty: difficulty),
     );
   }
 }
 
-/// 主菜单按钮
-class _MenuButton extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String subtitle;
-  final Gradient gradient;
-  final VoidCallback onPressed;
-
-  const _MenuButton({
+class _ModeCard extends StatelessWidget {
+  const _ModeCard({
+    super.key,
+    required this.themePack,
     required this.icon,
-    required this.label,
+    required this.title,
     required this.subtitle,
-    required this.gradient,
-    required this.onPressed,
+    required this.onTap,
+    this.emphasized = false,
   });
+
+  final ThemePack themePack;
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+  final bool emphasized;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      constraints: const BoxConstraints(maxWidth: 400),
-      child: ElevatedButton(
-        onPressed: onPressed,
-        style: ElevatedButton.styleFrom(
-          padding: EdgeInsets.zero,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          elevation: 8,
-        ),
-        child: Ink(
-          decoration: BoxDecoration(
-            gradient: gradient,
-            borderRadius: BorderRadius.circular(16),
-          ),
+    final colors = themePack.colors;
+    return Semantics(
+      button: true,
+      label: '$title，$subtitle',
+      child: Material(
+        color: emphasized ? colors.jade : colors.paperRaised,
+        borderRadius: BorderRadius.circular(themePack.shapes.panelRadius),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(themePack.shapes.panelRadius),
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+            constraints: BoxConstraints(
+              minHeight: themePack.spacing.minimumTapTarget + 28,
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(themePack.shapes.panelRadius),
+              border: Border.all(
+                color: emphasized ? colors.jade : colors.divider,
+              ),
+            ),
             child: Row(
               children: [
-                Icon(icon, size: 40, color: Colors.white),
-                const SizedBox(width: 20),
+                Container(
+                  width: 46,
+                  height: 46,
+                  decoration: BoxDecoration(
+                    color: emphasized
+                        ? colors.paperRaised.withValues(alpha: 0.14)
+                        : colors.paperBase,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Icon(
+                    icon,
+                    color: emphasized ? colors.paperRaised : colors.jade,
+                  ),
+                ),
+                const SizedBox(width: 16),
                 Expanded(
                   child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        label,
-                        style: const TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
+                        title,
+                        style:
+                            Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  color: emphasized
+                                      ? colors.paperRaised
+                                      : colors.inkPrimary,
+                                  fontWeight: FontWeight.w700,
+                                ),
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 3),
                       Text(
                         subtitle,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.white.withValues(alpha: 0.9),
-                        ),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: emphasized
+                                  ? colors.paperRaised.withValues(alpha: 0.78)
+                                  : colors.inkMuted,
+                            ),
                       ),
                     ],
                   ),
                 ),
-                const Icon(
-                  Icons.arrow_forward_ios,
-                  color: Colors.white,
-                  size: 20,
+                Icon(
+                  Icons.arrow_forward_rounded,
+                  color: emphasized ? colors.paperRaised : colors.bronze,
                 ),
               ],
             ),
@@ -502,74 +371,68 @@ class _MenuButton extends StatelessWidget {
   }
 }
 
-/// 次要按钮
-class _SecondaryButton extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final VoidCallback onPressed;
-
-  const _SecondaryButton({
+class _UtilityButton extends StatelessWidget {
+  const _UtilityButton({
     required this.icon,
     required this.label,
     required this.onPressed,
   });
 
+  final IconData icon;
+  final String label;
+  final VoidCallback onPressed;
+
   @override
   Widget build(BuildContext context) {
-    return ElevatedButton(
-      onPressed: onPressed,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.white.withValues(alpha: 0.2),
-        foregroundColor: Colors.white,
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        elevation: 4,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 28),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: const TextStyle(fontSize: 12),
-          ),
-        ],
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: TextButton.icon(
+        onPressed: onPressed,
+        icon: Icon(icon),
+        label: Text(label),
       ),
     );
   }
 }
 
-/// 难度选项
-class _DifficultyOption extends StatelessWidget {
-  final String title;
-  final String subtitle;
-  final Color color;
-  final VoidCallback onTap;
-
-  const _DifficultyOption({
+class _DifficultyTile extends StatelessWidget {
+  const _DifficultyTile({
+    required this.value,
     required this.title,
     required this.subtitle,
-    required this.color,
-    required this.onTap,
   });
+
+  final String value;
+  final String title;
+  final String subtitle;
 
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      leading: CircleAvatar(
-        backgroundColor: color,
-        child: const Icon(Icons.emoji_events, color: Colors.white),
-      ),
-      title: Text(
-        title,
-        style: const TextStyle(fontWeight: FontWeight.bold),
-      ),
+      title: Text(title),
       subtitle: Text(subtitle),
-      trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-      onTap: onTap,
+      trailing: const Icon(Icons.chevron_right_rounded),
+      onTap: () => Navigator.pop(context, value),
     );
   }
+}
+
+class _PaperGrainPainter extends CustomPainter {
+  const _PaperGrainPainter(this.color);
+
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color.withValues(alpha: 0.16)
+      ..strokeWidth = 0.6;
+    for (double y = 28; y < size.height; y += 38) {
+      canvas.drawLine(Offset(0, y), Offset(size.width, y + 5), paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(_PaperGrainPainter oldDelegate) =>
+      oldDelegate.color != color;
 }

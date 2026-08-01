@@ -17,9 +17,9 @@ void main() {
       expect(result, equals(const Position(1, 2)));
     });
 
-    test('应该解析"横三竖四"格式', () {
+    test('超出4×4内部坐标的"横三竖四"应拒绝', () {
       final result = VoiceCommandParser.parse('横三竖四');
-      expect(result, equals(const Position(3, 4)));
+      expect(result, isNull);
     });
 
     test('应该解析"行2列3"格式', () {
@@ -128,9 +128,9 @@ void main() {
       expect(result, equals(const Position(1, 1)));
     });
 
-    test('应该解析"下在横三竖四"', () {
+    test('自然语言中的越界坐标也应拒绝', () {
       final result = VoiceCommandParser.parse('下在横三竖四');
-      expect(result, equals(const Position(3, 4)));
+      expect(result, isNull);
     });
   });
 

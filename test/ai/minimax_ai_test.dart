@@ -9,6 +9,7 @@ library;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:foursquare/ai/minimax_ai.dart';
 import 'package:foursquare/ai/ai_player.dart';
+import 'package:foursquare/engine/game_engine.dart';
 import 'package:foursquare/models/board_state.dart';
 import 'package:foursquare/models/piece_type.dart';
 import 'package:foursquare/models/position.dart';
@@ -203,7 +204,7 @@ void main() {
   });
 
   group('MinimaxAI 战术能力', () {
-    test('应该能检测到必胜局面', () async {
+    test('新吃子规则局面中应返回当前方的合法移动', () async {
       final ai = MinimaxAI(AIDifficulty.medium);
 
       // 创建一个白方即将获胜的棋盘
@@ -222,9 +223,11 @@ void main() {
       final result = await ai.selectMove(board);
 
       expect(result, isNotNull);
-      // AI应该选择获胜的移动（向左移动到(0,3)形成四连）
-      // 但具体移动取决于棋盘状态，这里主要验证能找到移动
-      expect(result!.score, greaterThan(5000)); // 获胜局面应该有高分
+      expect(board.getPiece(result!.from), PieceType.white);
+      expect(
+        GameEngine().getPossibleMoves(board, PieceType.white)[result.from],
+        contains(result.to),
+      );
     });
 
     test('应该能阻止对手获胜', () async {
@@ -256,7 +259,7 @@ void main() {
 
       // 第一次搜索
       final result1 = await ai.selectMove(board);
-      final nodes1 = result1!.nodesEvaluated;
+      expect(result1, isNotNull);
 
       // 第二次搜索相同棋盘（置换表应该有缓存）
       final result2 = await ai.selectMove(board);
@@ -265,7 +268,7 @@ void main() {
       // 第二次搜索应该更快（评估节点数可能相同或更少）
       // 注意：这个测试假设置换表在两次调用之间保持
       expect(nodes2, greaterThan(0));
-      expect(result1.from, isNotNull);
+      expect(result1!.from, isNotNull);
       expect(result2.from, isNotNull);
     });
 

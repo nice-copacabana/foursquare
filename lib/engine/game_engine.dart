@@ -17,8 +17,12 @@ class MoveResult {
   /// 移动记录（如果成功）
   final Move? move;
 
-  /// 被吃棋子位置（如果有）
-  final Position? captured;
+  /// 被吃棋子位置，顺序固定为横向后纵向。
+  final List<Position> capturedPieces;
+
+  /// 兼容旧调用方的首个被吃棋子。
+  Position? get captured =>
+      capturedPieces.isEmpty ? null : capturedPieces.first;
 
   /// 游戏是否结束
   final bool gameOver;
@@ -26,36 +30,52 @@ class MoveResult {
   /// 游戏结果（如果结束）
   final GameResult? gameResult;
 
+  /// 连续未吃子的独立回合数（ply）。
+  final int noCapturePlyCount;
+
   /// 错误信息（如果失败）
   final String? error;
 
   /// 新的棋盘状态
   final BoardState? newBoard;
 
-  const MoveResult({
+  MoveResult({
     required this.success,
     this.move,
-    this.captured,
+    List<Position> capturedPieces = const [],
+    Position? captured,
     this.gameOver = false,
     this.gameResult,
+    this.noCapturePlyCount = 0,
     this.error,
     this.newBoard,
-  });
+  }) : capturedPieces = List.unmodifiable(
+          captured == null
+              ? capturedPieces
+              : <Position>[
+                  ...capturedPieces,
+                  if (!capturedPieces.contains(captured)) captured,
+                ],
+        );
 
   /// 创建成功结果
   factory MoveResult.success({
     required Move move,
+    List<Position> capturedPieces = const [],
     Position? captured,
     required bool gameOver,
     GameResult? gameResult,
+    int noCapturePlyCount = 0,
     required BoardState newBoard,
   }) {
     return MoveResult(
       success: true,
       move: move,
+      capturedPieces: capturedPieces,
       captured: captured,
       gameOver: gameOver,
       gameResult: gameResult,
+      noCapturePlyCount: noCapturePlyCount,
       newBoard: newBoard,
     );
   }
@@ -91,9 +111,21 @@ class GameEngine {
         _captureDetector = CaptureDetector();
 
   /// 开始新游戏
-  void startNewGame() {
+  void startNewGame({DateTime? startedAt}) {
     _moveHistory.clear();
-    _startTime = DateTime.now();
+    _startTime = startedAt ?? DateTime.now();
+  }
+
+  /// Restores the bookkeeping used for terminal metadata after loading or
+  /// rebuilding a game. Board state remains owned by the caller.
+  void restoreGame(
+    Iterable<Move> moveHistory, {
+    DateTime? startedAt,
+  }) {
+    _moveHistory
+      ..clear()
+      ..addAll(moveHistory);
+    _startTime = startedAt ?? DateTime.now();
   }
 
   /// 执行移动
@@ -107,6 +139,8 @@ class GameEngine {
     Position from,
     Position to, {
     Position? capturedPieceOverride,
+    List<Position>? capturedPiecesOverride,
+    int noCapturePlyCount = 0,
   }) {
     // 1. 验证移动合法性
     if (!_validator.isValidMove(board, from, to)) {
@@ -118,45 +152,61 @@ class GameEngine {
     final player = board.currentPlayer;
 
     // 3. 检测吃子 (如果有Override则优先使用)
-    Position? capturedPos;
-    if (capturedPieceOverride != null) {
-      capturedPos = capturedPieceOverride;
+    final List<Position> capturedPositions;
+    if (capturedPiecesOverride != null) {
+      capturedPositions = List.of(capturedPiecesOverride);
+    } else if (capturedPieceOverride != null) {
+      capturedPositions = [capturedPieceOverride];
     } else {
-      capturedPos = _captureDetector.detectCapture(
+      capturedPositions = _captureDetector.detectCaptures(
         newBoard,
-        to,
-        player,
+        movedPiece: to,
+        player: player,
       );
     }
 
-    // 4. 如果有吃子，移除被吃棋子
-    if (capturedPos != null) {
-      newBoard = newBoard.removePiece(capturedPos);
+    // 4. 横向后纵向一次性移除全部被吃棋子
+    for (final capturedPosition in capturedPositions) {
+      newBoard = newBoard.removePiece(capturedPosition);
     }
+    final nextNoCapturePlyCount =
+        capturedPositions.isEmpty ? noCapturePlyCount + 1 : 0;
 
     // 5. 创建移动记录
     final move = Move.now(
       from: from,
       to: to,
       player: player,
-      capturedPiece: capturedPos,
+      capturedPieces: capturedPositions,
     );
     _moveHistory.add(move);
 
     // 6. 检查游戏是否结束
-    final gameResult = checkGameOver(newBoard);
-    final gameOver = gameResult != null;
+    var gameResult = checkGameOver(newBoard);
 
-    // 7. 如果游戏未结束，切换玩家
-    if (!gameOver) {
-      newBoard = newBoard.switchPlayer();
+    // 棋子数胜负优先于连续未吃子和棋。
+    if (gameResult == null && nextNoCapturePlyCount >= 50) {
+      gameResult = GameResult.draw(
+        reason: '连续50手未发生吃子',
+        endReason: GameEndReason.noCaptureLimit,
+        moveCount: _moveHistory.length,
+        duration: gameDuration,
+      );
     }
+
+    // 7. 棋子数量未触发终局时，先切换到下一方，再判断其是否有路可走。
+    if (gameResult == null) {
+      newBoard = newBoard.switchPlayer();
+      gameResult = checkGameOver(newBoard);
+    }
+    final gameOver = gameResult != null;
 
     return MoveResult.success(
       move: move,
-      captured: capturedPos,
+      capturedPieces: capturedPositions,
       gameOver: gameOver,
       gameResult: gameResult,
+      noCapturePlyCount: nextNoCapturePlyCount,
       newBoard: newBoard,
     );
   }
@@ -174,19 +224,37 @@ class GameEngine {
         ? DateTime.now().difference(_startTime!)
         : Duration.zero;
 
-    // 黑方棋子被吃完
-    if (blackCount == 0) {
+    // 任一方仅剩一个或更少棋子时立即判负。
+    if (blackCount <= 1) {
       return GameResult.whiteWin(
-        reason: '黑方棋子全部被吃',
+        reason: '黑方仅剩一个或更少棋子',
         moveCount: _moveHistory.length,
         duration: duration,
       );
     }
 
-    // 白方棋子被吃完
-    if (whiteCount == 0) {
+    if (whiteCount <= 1) {
       return GameResult.blackWin(
-        reason: '白方棋子全部被吃',
+        reason: '白方仅剩一个或更少棋子',
+        moveCount: _moveHistory.length,
+        duration: duration,
+      );
+    }
+
+    if (!_validator.hasValidMoves(board, board.currentPlayer)) {
+      final loser = board.currentPlayer;
+      final reason = '${loser.getDisplayName()}无合法移动';
+      if (loser == PieceType.black) {
+        return GameResult.whiteWin(
+          reason: reason,
+          endReason: GameEndReason.noLegalMoves,
+          moveCount: _moveHistory.length,
+          duration: duration,
+        );
+      }
+      return GameResult.blackWin(
+        reason: reason,
+        endReason: GameEndReason.noLegalMoves,
         moveCount: _moveHistory.length,
         duration: duration,
       );
@@ -231,14 +299,14 @@ class GameEngine {
     final player = board.currentPlayer;
 
     // 检测并执行吃子
-    final capturedPos = _captureDetector.detectCapture(
+    final capturedPositions = _captureDetector.detectCaptures(
       newBoard,
-      to,
-      player,
+      movedPiece: to,
+      player: player,
     );
 
-    if (capturedPos != null) {
-      newBoard = newBoard.removePiece(capturedPos);
+    for (final capturedPosition in capturedPositions) {
+      newBoard = newBoard.removePiece(capturedPosition);
     }
 
     // 切换玩家

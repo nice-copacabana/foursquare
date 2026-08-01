@@ -25,6 +25,16 @@ enum GameStatus {
   abandoned,
 }
 
+/// 机器可读的终局原因；界面文案不得作为规则或协议判断依据。
+enum GameEndReason {
+  pieceCount,
+  noLegalMoves,
+  noCaptureLimit,
+  timeout,
+  disconnect,
+  abandoned,
+}
+
 extension GameStatusExtension on GameStatus {
   /// 游戏是否结束
   bool get isGameOver {
@@ -68,6 +78,9 @@ class GameResult extends Equatable {
   /// 胜负原因
   final String reason;
 
+  /// 机器可读的终局原因。
+  final GameEndReason endReason;
+
   /// 总步数
   final int moveCount;
 
@@ -78,6 +91,7 @@ class GameResult extends Equatable {
     required this.status,
     this.winner,
     required this.reason,
+    this.endReason = GameEndReason.pieceCount,
     required this.moveCount,
     required this.duration,
   });
@@ -85,6 +99,7 @@ class GameResult extends Equatable {
   /// 创建黑方胜利结果
   factory GameResult.blackWin({
     required String reason,
+    GameEndReason endReason = GameEndReason.pieceCount,
     required int moveCount,
     required Duration duration,
   }) {
@@ -92,6 +107,7 @@ class GameResult extends Equatable {
       status: GameStatus.blackWin,
       winner: PieceType.black,
       reason: reason,
+      endReason: endReason,
       moveCount: moveCount,
       duration: duration,
     );
@@ -100,6 +116,7 @@ class GameResult extends Equatable {
   /// 创建白方胜利结果
   factory GameResult.whiteWin({
     required String reason,
+    GameEndReason endReason = GameEndReason.pieceCount,
     required int moveCount,
     required Duration duration,
   }) {
@@ -107,6 +124,7 @@ class GameResult extends Equatable {
       status: GameStatus.whiteWin,
       winner: PieceType.white,
       reason: reason,
+      endReason: endReason,
       moveCount: moveCount,
       duration: duration,
     );
@@ -115,6 +133,7 @@ class GameResult extends Equatable {
   /// 创建平局结果
   factory GameResult.draw({
     required String reason,
+    GameEndReason endReason = GameEndReason.noCaptureLimit,
     required int moveCount,
     required Duration duration,
   }) {
@@ -122,6 +141,7 @@ class GameResult extends Equatable {
       status: GameStatus.draw,
       winner: null,
       reason: reason,
+      endReason: endReason,
       moveCount: moveCount,
       duration: duration,
     );
@@ -137,6 +157,7 @@ class GameResult extends Equatable {
       status: GameStatus.timeout,
       winner: timeoutPlayer.getOpponent(),
       reason: '${timeoutPlayer.getDisplayName()}超时',
+      endReason: GameEndReason.timeout,
       moveCount: moveCount,
       duration: duration,
     );
@@ -152,6 +173,7 @@ class GameResult extends Equatable {
       status: GameStatus.abandoned,
       winner: abandonedPlayer.getOpponent(),
       reason: '${abandonedPlayer.getDisplayName()}认输',
+      endReason: GameEndReason.abandoned,
       moveCount: moveCount,
       duration: duration,
     );
@@ -159,6 +181,17 @@ class GameResult extends Equatable {
 
   /// 游戏是否结束
   bool get isGameOver => status.isGameOver;
+
+  GameResult copyWith({Duration? duration}) {
+    return GameResult(
+      status: status,
+      winner: winner,
+      reason: reason,
+      endReason: endReason,
+      moveCount: moveCount,
+      duration: duration ?? this.duration,
+    );
+  }
 
   /// 获取结果摘要文本
   String getSummary() {
@@ -194,6 +227,7 @@ class GameResult extends Equatable {
       'status': status.name,
       'winner': winner?.name,
       'reason': reason,
+      'endReason': endReason.name,
       'moveCount': moveCount,
       'duration': duration.inMilliseconds,
     };
@@ -211,13 +245,44 @@ class GameResult extends Equatable {
             )
           : null,
       reason: json['reason'] as String,
+      endReason: json['endReason'] == null
+          ? _legacyEndReason(
+              GameStatus.values.firstWhere(
+                (status) => status.name == json['status'],
+              ),
+            )
+          : GameEndReason.values.firstWhere(
+              (reason) => reason.name == json['endReason'],
+            ),
       moveCount: json['moveCount'] as int,
       duration: Duration(milliseconds: json['duration'] as int),
     );
   }
 
   @override
-  List<Object?> get props => [status, winner, reason, moveCount, duration];
+  List<Object?> get props => [
+        status,
+        winner,
+        reason,
+        endReason,
+        moveCount,
+        duration,
+      ];
+
+  static GameEndReason _legacyEndReason(GameStatus status) {
+    switch (status) {
+      case GameStatus.draw:
+        return GameEndReason.noCaptureLimit;
+      case GameStatus.timeout:
+        return GameEndReason.timeout;
+      case GameStatus.abandoned:
+        return GameEndReason.abandoned;
+      case GameStatus.ongoing:
+      case GameStatus.blackWin:
+      case GameStatus.whiteWin:
+        return GameEndReason.pieceCount;
+    }
+  }
 
   @override
   String toString() {

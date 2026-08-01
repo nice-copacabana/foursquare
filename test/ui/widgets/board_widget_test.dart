@@ -13,11 +13,12 @@ import 'package:foursquare/ui/widgets/board_widget.dart';
 import 'package:foursquare/models/board_state.dart';
 import 'package:foursquare/models/position.dart';
 import 'package:foursquare/models/piece_type.dart';
+import 'package:foursquare/theme/packs/modern_eastern_theme_pack.dart';
+import 'package:foursquare/ui/widgets/board_painter.dart';
 
 void main() {
   group('BoardWidget', () {
     testWidgets('应该正确渲染初始棋盘', (WidgetTester tester) async {
-      bool tapped = false;
       final boardState = BoardState.initial();
 
       await tester.pumpWidget(
@@ -25,7 +26,7 @@ void main() {
           home: Scaffold(
             body: BoardWidget(
               boardState: boardState,
-              onPositionTapped: (_) => tapped = true,
+              onPositionTapped: (_) {},
             ),
           ),
         ),
@@ -150,6 +151,60 @@ void main() {
       );
 
       expect(find.byType(BoardWidget), findsOneWidget);
+    });
+
+    testWidgets('屏幕阅读器应读出坐标、棋子和可落子状态', (WidgetTester tester) async {
+      final semantics = tester.ensureSemantics();
+      Position? tappedPosition;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: BoardWidget(
+              boardState: BoardState.initial(),
+              selectedPiece: const Position(0, 0),
+              validMoves: const [Position(0, 1)],
+              onPositionTapped: (position) => tappedPosition = position,
+            ),
+          ),
+        ),
+      );
+
+      expect(
+        find.bySemanticsLabel('第 1 行第 1 列，墨方棋子，已选中，可选择'),
+        findsOneWidget,
+      );
+      expect(
+        find.bySemanticsLabel('第 2 行第 1 列，空位，可落子'),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.bySemanticsLabel('第 2 行第 1 列，空位，可落子'));
+      expect(tappedPosition, const Position(0, 1));
+      semantics.dispose();
+    });
+
+    testWidgets('注入的主题包应到达棋盘绘制层', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: BoardWidget(
+              boardState: BoardState.initial(),
+              themePack: modernEasternThemePack,
+              onPositionTapped: (_) {},
+            ),
+          ),
+        ),
+      );
+
+      final customPaint = tester.widget<CustomPaint>(
+        find.descendant(
+          of: find.byType(BoardWidget),
+          matching: find.byType(CustomPaint),
+        ),
+      );
+      final painter = customPaint.painter! as BoardPainter;
+      expect(painter.themePack, same(modernEasternThemePack));
     });
   });
 }

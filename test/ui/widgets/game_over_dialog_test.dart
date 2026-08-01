@@ -15,9 +15,6 @@ import 'package:foursquare/models/game_result.dart';
 void main() {
   group('GameOverDialog', () {
     testWidgets('黑方获胜应该显示正确信息', (WidgetTester tester) async {
-      bool restarted = false;
-      bool exited = false;
-
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -28,15 +25,15 @@ void main() {
                 moveCount: 10,
                 duration: const Duration(minutes: 5),
               ),
-              onRestart: () => restarted = true,
-              onExit: () => exited = true,
+              onRestart: () {},
+              onExit: () {},
             ),
           ),
         ),
       );
 
       // 验证标题
-      expect(find.text('黑方获胜！'), findsOneWidget);
+      expect(find.text('墨方获胜！'), findsOneWidget);
       expect(find.text('白方无子可移动'), findsOneWidget);
 
       // 验证按钮
@@ -62,7 +59,7 @@ void main() {
         ),
       );
 
-      expect(find.text('白方获胜！'), findsOneWidget);
+      expect(find.text('玉方获胜！'), findsOneWidget);
       expect(find.text('黑方无子可移动'), findsOneWidget);
     });
 

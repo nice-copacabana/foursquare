@@ -14,6 +14,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'dart:convert';
 import '../models/game_save.dart';
+import '../models/game_record.dart';
+import '../models/game_result.dart';
+import 'logger_service.dart';
 
 /// 游戏设置数据模型
 class GameSettings {
@@ -40,7 +43,7 @@ class GameSettings {
     this.vibrationEnabled = true,
     this.animationEnabled = true,
     this.particleEnabled = true,
-    this.performanceMonitoringEnabled = false,
+    this.performanceMonitoringEnabled = true,
     this.resourceWarmupEnabled = true,
     this.selectedTheme = 'default',
     this.difficulty = 'medium',
@@ -72,7 +75,7 @@ class GameSettings {
       animationEnabled: json['animationEnabled'] ?? true,
       particleEnabled: json['particleEnabled'] ?? true,
       performanceMonitoringEnabled:
-          json['performanceMonitoringEnabled'] ?? false,
+          json['performanceMonitoringEnabled'] ?? true,
       resourceWarmupEnabled: json['resourceWarmupEnabled'] ?? true,
       selectedTheme: json['selectedTheme'] ?? 'default',
       difficulty: json['difficulty'] ?? 'medium',
@@ -215,13 +218,23 @@ class StorageService {
   factory StorageService() => _instance;
   StorageService._internal();
 
+  /// Creates an isolated instance around a caller-owned Hive box.
+  ///
+  /// Production code uses the singleton factory and [initialize]. Tests use
+  /// this constructor to exercise the real persistence semantics without
+  /// opening the application's boxes.
+  StorageService.forTesting({required Box<dynamic> statisticsBox})
+      : _statisticsBox = statisticsBox;
+
   SharedPreferences? _prefs;
   Box? _statisticsBox;
   Box? _gameSaveBox;
+  Future<void> _completedGameWriteTail = Future<void>.value();
 
   // 存储键
   static const String _keySettings = 'game_settings';
   static const String _keyStatistics = 'game_statistics';
+  static const String _keyGameHistory = 'game_history';
   static const String _keyGameSave = 'current_game_save';
   static const String _boxNameStatistics = 'statistics';
   static const String _boxNameGameSave = 'game_save';
@@ -239,17 +252,19 @@ class StorageService {
 
   /// 保存游戏设置
   Future<bool> saveSettings(GameSettings settings) async {
+    if (_prefs == null) return false;
     try {
       final json = jsonEncode(settings.toJson());
       return await _prefs!.setString(_keySettings, json);
     } catch (e) {
-      print('保存设置失败: $e');
+      logger.error('保存设置失败', 'StorageService', e);
       return false;
     }
   }
 
   /// 加载游戏设置
   Future<GameSettings> loadSettings() async {
+    if (_prefs == null) return const GameSettings();
     try {
       final json = _prefs!.getString(_keySettings);
       if (json == null) {
@@ -258,7 +273,7 @@ class StorageService {
       final map = jsonDecode(json) as Map<String, dynamic>;
       return GameSettings.fromJson(map);
     } catch (e) {
-      print('加载设置失败: $e');
+      logger.error('加载设置失败', 'StorageService', e);
       return const GameSettings();
     }
   }
@@ -269,7 +284,7 @@ class StorageService {
       await _statisticsBox!.put(_keyStatistics, statistics.toJson());
       return true;
     } catch (e) {
-      print('保存统计数据失败: $e');
+      logger.error('保存统计数据失败', 'StorageService', e);
       return false;
     }
   }
@@ -283,7 +298,7 @@ class StorageService {
       }
       return GameStatistics.fromJson(Map<String, dynamic>.from(json));
     } catch (e) {
-      print('加载统计数据失败: $e');
+      logger.error('加载统计数据失败', 'StorageService', e);
       return const GameStatistics();
     }
   }
@@ -326,7 +341,7 @@ class StorageService {
 
       return await saveStatistics(updated);
     } catch (e) {
-      print('更新统计数据失败: $e');
+      logger.error('更新统计数据失败', 'StorageService', e);
       return false;
     }
   }
@@ -335,9 +350,10 @@ class StorageService {
   Future<bool> resetStatistics() async {
     try {
       await _statisticsBox!.delete(_keyStatistics);
+      await _statisticsBox!.delete(_keyGameHistory);
       return true;
     } catch (e) {
-      print('重置统计数据失败: $e');
+      logger.error('重置统计数据失败', 'StorageService', e);
       return false;
     }
   }
@@ -347,9 +363,10 @@ class StorageService {
     try {
       await _prefs!.clear();
       await _statisticsBox!.clear();
+      await _gameSaveBox!.clear();
       return true;
     } catch (e) {
-      print('重置所有数据失败: $e');
+      logger.error('重置所有数据失败', 'StorageService', e);
       return false;
     }
   }
@@ -366,7 +383,7 @@ class StorageService {
       await _gameSaveBox!.put(_keyGameSave, gameSave.toJson());
       return true;
     } catch (e) {
-      print('保存游戏失败: $e');
+      logger.error('保存游戏失败', 'StorageService', e);
       return false;
     }
   }
@@ -380,7 +397,7 @@ class StorageService {
       }
       return GameSave.fromJson(Map<String, dynamic>.from(json));
     } catch (e) {
-      print('加载游戏失败: $e');
+      logger.error('加载游戏失败', 'StorageService', e);
       return null;
     }
   }
@@ -391,7 +408,7 @@ class StorageService {
       await _gameSaveBox!.delete(_keyGameSave);
       return true;
     } catch (e) {
-      print('删除游戏存档失败: $e');
+      logger.error('删除游戏存档失败', 'StorageService', e);
       return false;
     }
   }
@@ -401,6 +418,107 @@ class StorageService {
     try {
       return _gameSaveBox!.containsKey(_keyGameSave);
     } catch (e) {
+      return false;
+    }
+  }
+
+  /// Stores one completed match and retains only the newest 20 unique records.
+  Future<bool> archiveGame(GameRecord record) async {
+    try {
+      final records = GameRecord.retainRecent([
+        record,
+        ...await loadGameHistory(),
+      ]);
+      await _statisticsBox!.put(
+        _keyGameHistory,
+        records.map((item) => item.toJson()).toList(growable: false),
+      );
+      return true;
+    } catch (e) {
+      logger.error('保存对局历史失败', 'StorageService', e);
+      return false;
+    }
+  }
+
+  Future<List<GameRecord>> loadGameHistory() async {
+    try {
+      final raw = _statisticsBox!.get(_keyGameHistory);
+      if (raw is! List) return const [];
+      return GameRecord.retainRecent(
+        raw.map(
+          (item) => GameRecord.fromJson(
+            Map<String, dynamic>.from(item as Map),
+          ),
+        ),
+      );
+    } catch (e) {
+      logger.error('加载对局历史失败', 'StorageService', e);
+      return const [];
+    }
+  }
+
+  /// Atomically records one completed game and its statistics exactly once.
+  ///
+  /// A repeated [GameRecord.id] is a successful no-op. Statistics and history
+  /// are written with one Hive batch so callers cannot persist only half of a
+  /// completed game.
+  Future<bool> recordCompletedGame(GameRecord record) {
+    final operation = _completedGameWriteTail.then(
+      (_) => _recordCompletedGame(record),
+    );
+    _completedGameWriteTail = operation.then<void>((_) {});
+    return operation;
+  }
+
+  Future<bool> _recordCompletedGame(GameRecord record) async {
+    try {
+      final history = await loadGameHistory();
+      if (history.any((item) => item.id == record.id)) {
+        return true;
+      }
+
+      final current = await loadStatistics();
+      final winner = record.result.winner;
+      final isDraw = record.result.status == GameStatus.draw;
+      final isWin = winner != null &&
+          (record.humanPlayer == null || winner == record.humanPlayer);
+      final isLoss = winner != null &&
+          record.humanPlayer != null &&
+          winner != record.humanPlayer;
+      final captures = record.moves.fold<int>(
+        0,
+        (total, move) => total + move.captureCount,
+      );
+      final newWinStreak = isWin ? current.winStreak + 1 : 0;
+      final newDifficultyWins = Map<String, int>.from(current.difficultyWins);
+      if (isWin && record.difficulty != null) {
+        newDifficultyWins[record.difficulty!] =
+            (newDifficultyWins[record.difficulty!] ?? 0) + 1;
+      }
+      final updatedStatistics = current.copyWith(
+        totalGames: current.totalGames + 1,
+        wins: isWin ? current.wins + 1 : current.wins,
+        losses: isLoss ? current.losses + 1 : current.losses,
+        draws: isDraw ? current.draws + 1 : current.draws,
+        winStreak: newWinStreak,
+        maxWinStreak: newWinStreak > current.maxWinStreak
+            ? newWinStreak
+            : current.maxWinStreak,
+        totalMoves: current.totalMoves + record.moves.length,
+        totalCaptures: current.totalCaptures + captures,
+        lastPlayedAt: record.completedAt,
+        difficultyWins: newDifficultyWins,
+      );
+      final updatedHistory = GameRecord.retainRecent([record, ...history]);
+
+      await _statisticsBox!.putAll({
+        _keyStatistics: updatedStatistics.toJson(),
+        _keyGameHistory:
+            updatedHistory.map((item) => item.toJson()).toList(growable: false),
+      });
+      return true;
+    } catch (e) {
+      logger.error('保存完成对局失败', 'StorageService', e);
       return false;
     }
   }

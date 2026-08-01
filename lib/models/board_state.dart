@@ -36,7 +36,9 @@ class BoardState extends Equatable {
   /// 黑方初始位置: (0,0), (0,1), (0,2), (0,3)
   /// 白方初始位置: (3,0), (3,1), (3,2), (3,3)
   /// 当前玩家: 黑方（先手）
-  factory BoardState.initial() {
+  factory BoardState.initial({
+    PieceType currentPlayer = PieceType.black,
+  }) {
     final grid = List.generate(
       4,
       (y) => List.generate(
@@ -67,7 +69,7 @@ class BoardState extends Equatable {
       grid: grid,
       blackPieces: blackPieces,
       whitePieces: whitePieces,
-      currentPlayer: PieceType.black,
+      currentPlayer: currentPlayer,
     );
   }
 
