@@ -217,6 +217,127 @@ void main() {
     );
 
     blocTest<GameBloc, GameState>(
+      '统一棋盘位置事件应该选中己方棋子',
+      build: () => GameBloc(
+        gameEngine: GameEngine(),
+        moveValidator: MoveValidator(),
+        audioCoordinator: audioCoordinator,
+        storageService: storageService,
+      ),
+      seed: () => GamePlaying(
+        boardState: BoardState.initial(),
+        mode: GameMode.pvp,
+        moveHistory: const [],
+      ),
+      act: (bloc) => bloc.add(
+        const ActivateBoardPositionEvent(Position(0, 0)),
+      ),
+      expect: () => [
+        isA<GamePlaying>()
+            .having(
+              (state) => state.selectedPiece,
+              'selectedPiece',
+              const Position(0, 0),
+            )
+            .having(
+              (state) => state.validMoves,
+              'validMoves',
+              contains(const Position(0, 1)),
+            ),
+      ],
+    );
+
+    blocTest<GameBloc, GameState>(
+      '统一棋盘位置事件应该通过权威移动链完成落子',
+      build: () => GameBloc(
+        gameEngine: GameEngine(),
+        moveValidator: MoveValidator(),
+        audioCoordinator: audioCoordinator,
+        storageService: storageService,
+      ),
+      seed: () => GamePlaying(
+        boardState: BoardState.initial(),
+        mode: GameMode.pvp,
+        selectedPiece: const Position(0, 0),
+        validMoves: const [Position(0, 1)],
+        moveHistory: const [],
+      ),
+      act: (bloc) => bloc.add(
+        const ActivateBoardPositionEvent(Position(0, 1)),
+      ),
+      expect: () => [
+        isA<GamePlaying>()
+            .having(
+              (state) => state.moveHistory,
+              'moveHistory',
+              hasLength(1),
+            )
+            .having(
+              (state) => state.selectedPiece,
+              'selectedPiece',
+              isNull,
+            ),
+      ],
+      verify: (_) {
+        verify(() => storageService.saveGame(any())).called(1);
+      },
+    );
+
+    blocTest<GameBloc, GameState>(
+      '统一棋盘位置事件应该支持重选和取消',
+      build: () => GameBloc(
+        gameEngine: GameEngine(),
+        moveValidator: MoveValidator(),
+        audioCoordinator: audioCoordinator,
+        storageService: storageService,
+      ),
+      seed: () => GamePlaying(
+        boardState: BoardState.initial(),
+        mode: GameMode.pvp,
+        selectedPiece: const Position(0, 0),
+        validMoves: const [Position(0, 1)],
+        moveHistory: const [],
+      ),
+      act: (bloc) async {
+        bloc.add(const ActivateBoardPositionEvent(Position(1, 0)));
+        await Future<void>.delayed(Duration.zero);
+        bloc.add(const ActivateBoardPositionEvent(Position(1, 0)));
+      },
+      expect: () => [
+        isA<GamePlaying>().having(
+          (state) => state.selectedPiece,
+          'reselectedPiece',
+          const Position(1, 0),
+        ),
+        isA<GamePlaying>().having(
+          (state) => state.selectedPiece,
+          'clearedPiece',
+          isNull,
+        ),
+      ],
+    );
+
+    blocTest<GameBloc, GameState>(
+      'AI回合应该忽略统一棋盘位置事件',
+      build: () => GameBloc(
+        gameEngine: GameEngine(),
+        moveValidator: MoveValidator(),
+        audioCoordinator: audioCoordinator,
+        storageService: storageService,
+      ),
+      seed: () => GamePlaying(
+        boardState: BoardState.initial(currentPlayer: PieceType.black),
+        mode: GameMode.pve,
+        humanPlayer: PieceType.white,
+        moveHistory: const [],
+      ),
+      act: (bloc) => bloc.add(
+        const ActivateBoardPositionEvent(Position(0, 0)),
+      ),
+      expect: () => [],
+    );
+
+    blocTest<GameBloc, GameState>(
       '选中对方棋子不应该改变状态',
       build: () => GameBloc(
         gameEngine: gameEngine,

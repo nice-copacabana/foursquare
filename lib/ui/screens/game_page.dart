@@ -299,8 +299,7 @@ class _GamePageContentState extends State<_GamePageContent>
       lastMoveTo: state.lastMove?.to,
       capturedPiecePositions: state.lastMove?.capturedPieces ?? const [],
       flipBoard: shouldFlipBoard,
-      onPositionTapped: (position) =>
-          _handlePositionTapped(context, state, position),
+      onPositionTapped: (position) => _handlePositionTapped(context, position),
     );
   }
 
@@ -335,46 +334,9 @@ class _GamePageContentState extends State<_GamePageContent>
 
   void _handlePositionTapped(
     BuildContext context,
-    GameState state,
     Position position,
   ) {
-    if (state is! GamePlaying) return;
-    if (state.isAIThinking) return;
-
-    final bloc = context.read<GameBloc>();
-    final piece = state.boardState.getPiece(position);
-
-    // 如果有选中的棋子
-    if (state.selectedPiece != null) {
-      // 点击同一个位置 -> 取消选中
-      if (state.selectedPiece == position) {
-        bloc.add(const DeselectPieceEvent());
-      }
-      // 点击合法移动位置 -> 移动
-      else if (state.validMoves.contains(position)) {
-        bloc.add(
-          MovePieceEvent(
-            from: state.selectedPiece!,
-            to: position,
-          ),
-        );
-      }
-      // 点击己方其他棋子 -> 重新选中
-      else if (piece == state.currentPlayer) {
-        bloc.add(SelectPieceEvent(position));
-      }
-      // 其他情况 -> 取消选中
-      else {
-        bloc.add(const DeselectPieceEvent());
-      }
-    }
-    // 没有选中的棋子
-    else {
-      // 点击己方棋子 -> 选中
-      if (piece == state.currentPlayer) {
-        bloc.add(SelectPieceEvent(position));
-      }
-    }
+    context.read<GameBloc>().add(ActivateBoardPositionEvent(position));
   }
 
   void _showGameOverDialog(BuildContext context, GameOver state) {

@@ -1,9 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:foursquare/bloc/game_event.dart';
 import 'package:foursquare/bloc/meditation_mode_event.dart';
 import 'package:foursquare/bloc/meditation_mode_state.dart';
 import 'package:foursquare/models/board_state.dart';
 import 'package:foursquare/models/piece_type.dart';
+import 'package:foursquare/services/voice/voice_ports.dart';
 import 'package:foursquare/services/voice_recognition_service.dart';
 
 void main() {
@@ -20,10 +20,14 @@ void main() {
     expect(result.toString(), isNot(contains(secret)));
   });
 
-  test('ordinary voice command event string does not expose command text', () {
-    const event = VoiceCommandReceivedEvent(command: secret);
+  test('ordinary recognition sample string does not expose command text', () {
+    const sample = VoiceRecognitionSample(
+      text: secret,
+      confidence: 0.9,
+      isFinal: true,
+    );
 
-    expect(event.toString(), isNot(contains(secret)));
+    expect(sample.toString(), isNot(contains(secret)));
   });
 
   test('meditation event and processing state strings hide recognized text',
