@@ -141,6 +141,8 @@
 - `lib/meditation/meditation_intent_handler.dart`
 - `lib/meditation/meditation_session_snapshot.dart`
 - `lib/meditation/meditation_session_persistence.dart`
+- `lib/meditation/meditation_session_committer.dart`
+- `lib/meditation/meditation_session_runtime.dart`
 
 **验证结果**：
 - 默认关闭且不会在隐藏阶段初始化 TTS；识别原文不进入日志、普通状态字符串、存档或网络。
@@ -149,15 +151,15 @@
 - 内存权威冥想 session/controller 维护棋盘、执色/先手、完整历史、未吃计数、时钟、选择、结果和修订号；所有落子复用 `GameEngine`。
 - 开场播报完成后才启动 60 秒时钟；intent handler 提供 AI 先手/失败重试、查询、暂停/恢复和退出确认的类型化闭环。
 - 假端口已完成查询、重复、选子取消、暂停恢复、退出取消、AI 失败重试到 15 ply 自然终局的完整无屏对局。
-- 冥想存档使用独立版本化格式与 Hive 适配器，严格拒绝损坏数据并通过历史重放恢复权威状态；生产自动存档编排尚未接入。
+- 冥想存档使用独立版本化格式与 Hive 适配器，严格拒绝损坏数据并通过历史重放恢复权威状态。无页面运行时已实现修订自动保存、绝对时限驱动、AI 前耐久化屏障、恢复单飞、销毁竞态隔离和终局安全收口；正式页面、Hive box 初始化与 `StorageService.recordCompletedGame` 的生产注入尚未接入。
 - 旧 `MeditationModeBloc`、事件/状态和不可达页面已经删除，不能再作为“功能完整”的证据。
 
 ---
 
 ### F. 当前测试证据（2026-08-01 修订）
 
-- `test/` 与 `integration_test/` 当前共有 67 个 `_test.dart` 文件。
-- 本次全量 `flutter test`：658 项通过、1 项显式跳过。
+- `test/` 与 `integration_test/` 当前共有 69 个 `_test.dart` 文件。
+- 本次全量 `flutter test`：677 项通过、1 项显式跳过。
 - 当前覆盖引擎、模型、Game/LAN/Online BLoC、在线协议/会话/传输、语音状态机、权威冥想核心、页面契约和发布契约。
 - `test/integration/` 已包含真实在线传输和假端口冥想语音核心流程；它们仍不能替代 staging、真实数据库、双真机和平台音频验收。
 - 本次没有重新运行覆盖率统计，因此不保留历史 95.7% 或其他主观百分比。
@@ -181,7 +183,7 @@
 
 1. **Phase 2 外部门禁**：macOS/Xcode、iOS 真机、TestFlight 和商店资料尚未完成。
 2. **Phase 3 发布闭环**：生产导航、两台完整客户端/真机联调、真实 PostgreSQL、staging、持久化恢复、TLS、限流、负载与运维演练尚未完成。
-3. **Phase 4 产品化**：生产 ASR/TTS Adapter、用途说明、平台权限、页面注入、持久化、完整无屏整局和真机音频/隐私验收尚未完成。
+3. **Phase 4 产品化**：生产 ASR/TTS Adapter、用途说明、平台权限、正式页面与存储注入、真机音频/隐私验收尚未完成；纯核心无屏整局和持久化编排已有自动化证据。
 4. **正式发布资料**：包名、签名、Google Play 身份和素材按项目决定继续暂缓，不阻塞当前代码开发。
 
 ---
@@ -193,7 +195,7 @@
 | Phase 1 Android 本地/AI/LAN | 代码与自动化基础已形成；正式签名、商店身份、素材和真机发布矩阵仍待补齐 |
 | Phase 2 iOS 与三语 | 代码与 Windows 可执行契约已形成；Xcode、真机和 TestFlight 外部门禁未完成 |
 | Phase 3 在线 | 权威服务端、客户端和本地真实传输证据已形成；staging 与生产运维门禁未完成 |
-| Phase 4 语音与冥想 | 隐藏纯核心与一轮无屏证据已形成；生产 Adapter、正式 UI、完整整局和真机门禁未完成 |
+| Phase 4 语音与冥想 | 隐藏纯核心已形成无屏整局、独立存档和自动收口证据；生产 Adapter、正式 UI 和真机门禁未完成 |
 
 不再使用未经测量的“总体完成度”或覆盖率百分比。
 
@@ -203,7 +205,7 @@
 
 - Phase 1/2：完成 Android/iOS 正式身份、签名、商店素材、Xcode、TestFlight 和真机发布矩阵。
 - Phase 3：完成生产导航、双完整客户端/真机联调、staging、真实 PostgreSQL、持久化恢复、TLS、限流、负载和运维演练。
-- Phase 4：继续完成生产 ASR/TTS Adapter、页面注入、用途说明、平台权限、持久化、完整无屏整局和真机音频/隐私验收。
+- Phase 4：继续完成生产 ASR/TTS Adapter、正式页面与存储注入、用途说明、平台权限和真机音频/隐私验收。
 - 在线与冥想现有集成测试继续下钻到双完整客户端、进程重启、真实数据库和平台设备层级。
 
 离线语音、ELO/排行榜/好友房、社交分享/观战、付费点和 Wear OS 仅为历史想法，不属于当前正式路线承诺。

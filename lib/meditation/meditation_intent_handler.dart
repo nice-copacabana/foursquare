@@ -45,14 +45,25 @@ final class MeditationTurnResponse {
 final class MeditationIntentHandler {
   final MeditationSessionController _controller;
   final AIPlayer _aiPlayer;
+  final Future<void> Function(MeditationSession session)? _onSessionChanged;
   MeditationPrompt? _lastPrompt;
   bool _pendingExitConfirmation = false;
+  Future<MeditationActionResult>? _aiFlight;
+  int? _aiFlightRevision;
+  Future<void>? _notificationFlight;
+  int? _notificationRevision;
+  int? _committedRevision;
+  Future<void> _notificationTail = Future<void>.value();
 
   MeditationIntentHandler({
     required MeditationSessionController controller,
     required AIPlayer aiPlayer,
+    Future<void> Function(MeditationSession session)? onSessionChanged,
+    int? initialCommittedRevision,
   })  : _controller = controller,
-        _aiPlayer = aiPlayer;
+        _aiPlayer = aiPlayer,
+        _onSessionChanged = onSessionChanged,
+        _committedRevision = initialCommittedRevision;
 
   MeditationPrompt openingPrompt() {
     final session = _controller.session;
@@ -67,6 +78,7 @@ final class MeditationIntentHandler {
   Future<MeditationTurnResponse> start() async {
     final initialPhase = _controller.session.phase;
     if (initialPhase == MeditationSessionPhase.completed) {
+      await _notifySession(_controller.session);
       return _remember(
         MeditationTurnResponse(
           prompt: MeditationPrompt(
@@ -76,6 +88,7 @@ final class MeditationIntentHandler {
       );
     }
     if (initialPhase == MeditationSessionPhase.paused) {
+      await _notifySession(_controller.session);
       return _remember(
         const MeditationTurnResponse(
           prompt: MeditationPrompt('冥想对局处于暂停状态，请说继续。'),
@@ -90,6 +103,7 @@ final class MeditationIntentHandler {
       lifecycle = _controller.tick();
     }
     if (lifecycle.outcome == MeditationActionOutcome.completed) {
+      await _notifyAction(lifecycle);
       return _remember(
         MeditationTurnResponse(
           prompt: MeditationPrompt(
@@ -104,6 +118,7 @@ final class MeditationIntentHandler {
     if (session.phase == MeditationSessionPhase.aiTurn) {
       return _advanceAiTurn(prefix: '对手先行。', action: lifecycle);
     }
+    await _notifySession(session);
     return _remember(
       MeditationTurnResponse(
         prompt: const MeditationPrompt('轮到您行棋。'),
@@ -194,6 +209,13 @@ final class MeditationIntentHandler {
     }
   }
 
+  /// Re-evaluates the absolute turn deadline without requiring voice input.
+  Future<MeditationActionResult> settle() async {
+    final action = _controller.tick();
+    await _notifyAction(action);
+    return action;
+  }
+
   Future<MeditationTurnResponse> _handlePendingExit(
     VoiceGameIntent intent,
   ) async {
@@ -237,6 +259,7 @@ final class MeditationIntentHandler {
   Future<MeditationTurnResponse> _handleAuthorityAction(
     MeditationActionResult action,
   ) async {
+    await _notifyAction(action);
     if (action.outcome != MeditationActionOutcome.moved) {
       final prompt = action.outcome == MeditationActionOutcome.completed &&
               action.committedMove != null
@@ -253,7 +276,11 @@ final class MeditationIntentHandler {
 
     final humanMove = _describeCommittedMove(action.committedMove!, true);
     if (_controller.session.phase == MeditationSessionPhase.aiTurn) {
-      return _advanceAiTurn(prefix: humanMove, action: action);
+      return _advanceAiTurn(
+        prefix: humanMove,
+        action: action,
+        actionPersisted: true,
+      );
     }
     return _remember(
       MeditationTurnResponse(
@@ -266,9 +293,17 @@ final class MeditationIntentHandler {
   Future<MeditationTurnResponse> _advanceAiTurn({
     String? prefix,
     MeditationActionResult? action,
+    bool actionPersisted = false,
   }) async {
+    if (!actionPersisted) {
+      final actionChanged = await _notifyAction(action);
+      if (!actionChanged) {
+        await _notifySession(_controller.session);
+      }
+    }
     final parts = <String>[if (prefix != null) prefix];
-    final aiAction = await _controller.playAiTurn(_aiPlayer);
+    final aiAction = await _playAiTurnOnce();
+    await _notifyAction(aiAction);
     if (aiAction.committedMove != null) {
       parts.add(_describeCommittedMove(aiAction.committedMove!, false));
     }
@@ -425,9 +460,12 @@ final class MeditationIntentHandler {
     return '$descriptions。';
   }
 
-  MeditationTurnResponse _handleQuery(MeditationPrompt Function() describe) {
+  Future<MeditationTurnResponse> _handleQuery(
+    MeditationPrompt Function() describe,
+  ) async {
     final tick = _controller.tick();
     if (tick.outcome == MeditationActionOutcome.completed) {
+      await _notifyAction(tick);
       return _remember(
         MeditationTurnResponse(
           prompt: MeditationPrompt(_describeTerminal(tick.session.gameResult!)),
@@ -436,6 +474,89 @@ final class MeditationIntentHandler {
       );
     }
     return _remember(MeditationTurnResponse(prompt: describe()));
+  }
+
+  Future<bool> _notifyAction(MeditationActionResult? action) async {
+    if (action == null) {
+      return false;
+    }
+    final changed = switch (action.outcome) {
+      MeditationActionOutcome.started ||
+      MeditationActionOutcome.selected ||
+      MeditationActionOutcome.deselected ||
+      MeditationActionOutcome.moved ||
+      MeditationActionOutcome.paused ||
+      MeditationActionOutcome.resumed ||
+      MeditationActionOutcome.completed =>
+        true,
+      MeditationActionOutcome.unchanged ||
+      MeditationActionOutcome.rejected =>
+        false,
+    };
+    if (changed) {
+      await _notifySession(action.session);
+    }
+    return changed;
+  }
+
+  Future<void> _notifySession(MeditationSession session) async {
+    final notify = _onSessionChanged;
+    final committed = _committedRevision;
+    if (notify == null ||
+        (committed != null && committed >= session.revision)) {
+      return;
+    }
+    final pending = _notificationFlight;
+    if (pending != null && _notificationRevision == session.revision) {
+      await pending;
+      return;
+    }
+
+    final future = _notificationTail.then((_) async {
+      final latestCommitted = _committedRevision;
+      if (latestCommitted != null && latestCommitted >= session.revision) {
+        return;
+      }
+      await notify(session);
+      final committedAfterSave = _committedRevision;
+      if (committedAfterSave == null || session.revision > committedAfterSave) {
+        _committedRevision = session.revision;
+      }
+    });
+    _notificationTail = future.then<void>(
+      (_) {},
+      onError: (_, __) {},
+    );
+    _notificationRevision = session.revision;
+    _notificationFlight = future;
+    try {
+      await future;
+    } finally {
+      if (identical(_notificationFlight, future)) {
+        _notificationFlight = null;
+        _notificationRevision = null;
+      }
+    }
+  }
+
+  Future<MeditationActionResult> _playAiTurnOnce() async {
+    final revision = _controller.session.revision;
+    final pending = _aiFlight;
+    if (pending != null && _aiFlightRevision == revision) {
+      return pending;
+    }
+
+    final future = _controller.playAiTurn(_aiPlayer);
+    _aiFlight = future;
+    _aiFlightRevision = revision;
+    try {
+      return await future;
+    } finally {
+      if (identical(_aiFlight, future)) {
+        _aiFlight = null;
+        _aiFlightRevision = null;
+      }
+    }
   }
 
   MeditationTurnResponse _remember(MeditationTurnResponse response) {

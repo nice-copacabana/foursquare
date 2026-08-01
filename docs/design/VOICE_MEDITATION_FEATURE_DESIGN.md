@@ -7,7 +7,7 @@ Phase 4 分两步交付：
 1. 普通对局的可选中文语音控制与播报。
 2. 基于同一权威规则链的中文无屏冥想对局。
 
-当前已完成隐藏的普通语音纯核心和权威冥想 session，并用假端口跑通一轮人类/AI 无屏行棋；尚未达到完整整局、用户可用或商店可发布状态。首期不承诺英文、日文、手表或手环适配，也不在外部引擎确定前开放麦克风入口。
+当前已完成隐藏的普通语音纯核心和权威冥想 session，并用假端口跑通 15 ply 自然终局的无屏整局；无页面运行时已串联自动保存、恢复和终局归档。这些是纯核心自动化证据，尚未达到用户可用或商店可发布状态。首期不承诺英文、日文、手表或手环适配，也不在外部引擎确定前开放麦克风入口。
 
 ## 2. 不变量
 
@@ -75,6 +75,8 @@ VoiceInteractionController
   -> MeditationSessionController
   -> GameEngine / MoveValidator / TurnClock
   -> committed MeditationSession
+  -> MeditationSessionCommitter
+  -> versioned save / idempotent archive / conditional delete
   -> MeditationPrompt
 ```
 
@@ -87,7 +89,7 @@ VoiceInteractionController
 - 双吃、50 ply 和棋、无路可走、棋子数终局、60 秒超时与普通引擎完全一致。
 - 退出前确认并按产品定义保存或明确放弃，不丢失对局身份和历史。
 
-当前核心已经实现上述 session、统一引擎提交、开场完成后启动时钟、AI 先手与失败重试、查询/暂停/恢复/退出确认，并由假端口驱动 15 ply 自然终局的无屏整局。独立版本化存档已实现严格解码、剩余时间冻结、权威恢复校验和 Hive 适配；仍需完成自动保存时点编排、生产语音 Adapter、正式 UI 和真机验收。
+当前核心已经实现上述 session、统一引擎提交、开场完成后启动时钟、AI 先手与失败重试、查询/暂停/恢复/退出确认，并由假端口驱动 15 ply 自然终局的无屏整局。独立版本化存档已实现严格解码、剩余时间冻结、权威恢复校验和 Hive 适配；`MeditationSessionRuntime` 已实现每次权威修订的自动保存、绝对时限驱动、AI 前耐久化屏障、恢复单飞、销毁后迟到结果隔离，以及终局先保存、再幂等归档、最后按 `matchId` 删除的收口顺序。仍需完成正式页面与 Hive/`StorageService` 注入、生产语音 Adapter、平台权限 UI 和真机验收。
 
 ## 6. 无屏验收脚本
 

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:foursquare/ai/ai_player.dart';
 import 'package:foursquare/ai/voice_game_intent.dart';
@@ -311,6 +313,249 @@ void main() {
     expect(controller.session.boardState, board);
     expect(controller.session.moveHistory, isEmpty);
   });
+
+  test('human AI turn is persisted before AI and again after AI commits',
+      () async {
+    final committedPhases = <MeditationSessionPhase>[];
+    handler = MeditationIntentHandler(
+      controller: controller,
+      aiPlayer: _QueueAI([
+        const AIMoveResult(
+          from: Position(0, 3),
+          to: Position(0, 2),
+          score: 1,
+        ),
+      ]),
+      onSessionChanged: (session) async {
+        committedPhases.add(session.phase);
+      },
+    );
+
+    await handler.handle(
+      const VoiceMoveIntent(
+        from: Position(0, 0),
+        to: Position(0, 1),
+      ),
+    );
+
+    expect(
+      committedPhases,
+      [MeditationSessionPhase.aiTurn, MeditationSessionPhase.humanTurn],
+    );
+  });
+
+  test('restored AI turn is persisted and advanced exactly once', () async {
+    controller.submitHumanMove(
+      const Position(0, 0),
+      const Position(0, 1),
+    );
+    final ai = _CountingAI(
+      const AIMoveResult(
+        from: Position(0, 3),
+        to: Position(0, 2),
+        score: 1,
+      ),
+    );
+    final committedPhases = <MeditationSessionPhase>[];
+    handler = MeditationIntentHandler(
+      controller: controller,
+      aiPlayer: ai,
+      onSessionChanged: (session) async {
+        committedPhases.add(session.phase);
+      },
+    );
+
+    await handler.start();
+    await handler.start();
+
+    expect(ai.calls, 1);
+    expect(controller.session.moveHistory, hasLength(2));
+    expect(
+      committedPhases,
+      [MeditationSessionPhase.aiTurn, MeditationSessionPhase.humanTurn],
+    );
+  });
+
+  test('AI does not start before the human move durability barrier', () async {
+    final saveGate = Completer<void>();
+    final ai = _CountingAI(
+      const AIMoveResult(
+        from: Position(0, 3),
+        to: Position(0, 2),
+        score: 1,
+      ),
+    );
+    handler = MeditationIntentHandler(
+      controller: controller,
+      aiPlayer: ai,
+      onSessionChanged: (session) {
+        return session.phase == MeditationSessionPhase.aiTurn
+            ? saveGate.future
+            : Future<void>.value();
+      },
+    );
+
+    final response = handler.handle(
+      const VoiceMoveIntent(
+        from: Position(0, 0),
+        to: Position(0, 1),
+      ),
+    );
+    await Future<void>.delayed(Duration.zero);
+    expect(ai.calls, 0);
+    expect(controller.session.phase, MeditationSessionPhase.aiTurn);
+
+    saveGate.complete();
+    await response;
+    expect(ai.calls, 1);
+    expect(controller.session.phase, MeditationSessionPhase.humanTurn);
+  });
+
+  test('concurrent restored starts share one AI flight', () async {
+    controller.submitHumanMove(
+      const Position(0, 0),
+      const Position(0, 1),
+    );
+    final ai = _DelayedCountingAI();
+    handler = MeditationIntentHandler(
+      controller: controller,
+      aiPlayer: ai,
+      onSessionChanged: (_) async {},
+    );
+
+    final first = handler.start();
+    final second = handler.start();
+    await Future<void>.delayed(Duration.zero);
+    expect(ai.calls, 1);
+
+    ai.complete(
+      const AIMoveResult(
+        from: Position(0, 3),
+        to: Position(0, 2),
+        score: 1,
+      ),
+    );
+    await Future.wait([first, second]);
+
+    expect(ai.calls, 1);
+    expect(controller.session.moveHistory, hasLength(2));
+  });
+
+  test('start retries a failed post-AI durability commit', () async {
+    var failHumanTurnSave = true;
+    final committedRevisions = <int>[];
+    handler = MeditationIntentHandler(
+      controller: controller,
+      aiPlayer: _QueueAI([
+        const AIMoveResult(
+          from: Position(0, 3),
+          to: Position(0, 2),
+          score: 1,
+        ),
+      ]),
+      onSessionChanged: (session) async {
+        if (session.phase == MeditationSessionPhase.humanTurn &&
+            session.moveHistory.length == 2 &&
+            failHumanTurnSave) {
+          failHumanTurnSave = false;
+          throw StateError('temporary save failure');
+        }
+        committedRevisions.add(session.revision);
+      },
+    );
+
+    await expectLater(
+      handler.handle(
+        const VoiceMoveIntent(
+          from: Position(0, 0),
+          to: Position(0, 1),
+        ),
+      ),
+      throwsStateError,
+    );
+    final failedRevision = controller.session.revision;
+
+    await handler.start();
+
+    expect(committedRevisions, contains(failedRevision));
+    expect(controller.session.moveHistory, hasLength(2));
+  });
+
+  test('pause and resume during AI thinking starts a new revision flight',
+      () async {
+    controller.submitHumanMove(
+      const Position(0, 0),
+      const Position(0, 1),
+    );
+    final ai = _DelayedCountingAI();
+    handler = MeditationIntentHandler(
+      controller: controller,
+      aiPlayer: ai,
+      onSessionChanged: (_) async {},
+    );
+
+    final initialAiTurn = handler.start();
+    await Future<void>.delayed(Duration.zero);
+    expect(ai.calls, 1);
+
+    await handler.handle(
+      const VoiceActionIntent(VoiceGameAction.pause),
+    );
+    final resumedAiTurn = handler.handle(
+      const VoiceActionIntent(VoiceGameAction.resume),
+    );
+    await Future<void>.delayed(Duration.zero);
+    expect(ai.calls, 2);
+
+    ai.complete(
+      const AIMoveResult(
+        from: Position(0, 3),
+        to: Position(0, 2),
+        score: 1,
+      ),
+    );
+    await Future.wait([initialAiTurn, resumedAiTurn]);
+
+    expect(controller.session.phase, MeditationSessionPhase.humanTurn);
+    expect(controller.session.moveHistory, hasLength(2));
+  });
+
+  test('different authority revisions persist in commit order', () async {
+    final firstSaveGate = Completer<void>();
+    final startedRevisions = <int>[];
+    final completedRevisions = <int>[];
+    handler = MeditationIntentHandler(
+      controller: controller,
+      aiPlayer: _QueueAI(const []),
+      onSessionChanged: (session) async {
+        startedRevisions.add(session.revision);
+        if (startedRevisions.length == 1) {
+          await firstSaveGate.future;
+        }
+        completedRevisions.add(session.revision);
+      },
+    );
+
+    final move = handler.handle(
+      const VoiceMoveIntent(
+        from: Position(0, 0),
+        to: Position(0, 1),
+      ),
+    );
+    await Future<void>.delayed(Duration.zero);
+    final pause = handler.handle(
+      const VoiceActionIntent(VoiceGameAction.pause),
+    );
+    await Future<void>.delayed(Duration.zero);
+
+    expect(startedRevisions, [2]);
+    firstSaveGate.complete();
+    await Future.wait([move, pause]);
+
+    expect(startedRevisions, [2, 3]);
+    expect(completedRevisions, [2, 3]);
+    expect(controller.session.phase, MeditationSessionPhase.paused);
+  });
 }
 
 class _QueueAI extends AIPlayer {
@@ -328,4 +573,44 @@ class _QueueAI extends AIPlayer {
 
   @override
   String get description => 'Scripted test AI';
+}
+
+final class _CountingAI extends AIPlayer {
+  final AIMoveResult result;
+  int calls = 0;
+
+  _CountingAI(this.result) : super(AIDifficulty.easy);
+
+  @override
+  Future<AIMoveResult?> selectMove(BoardState board) async {
+    calls += 1;
+    return result;
+  }
+
+  @override
+  String get name => 'Counting AI';
+
+  @override
+  String get description => 'Counts restored AI scheduling';
+}
+
+final class _DelayedCountingAI extends AIPlayer {
+  final Completer<AIMoveResult?> _result = Completer<AIMoveResult?>();
+  int calls = 0;
+
+  _DelayedCountingAI() : super(AIDifficulty.easy);
+
+  void complete(AIMoveResult? result) => _result.complete(result);
+
+  @override
+  Future<AIMoveResult?> selectMove(BoardState board) {
+    calls += 1;
+    return _result.future;
+  }
+
+  @override
+  String get name => 'Delayed counting AI';
+
+  @override
+  String get description => 'Controls one shared AI flight';
 }
