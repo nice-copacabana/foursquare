@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:foursquare/ai/ai_player.dart';
 import 'package:foursquare/ai/voice_game_intent.dart';
+import 'package:foursquare/meditation/meditation_session.dart';
 import 'package:foursquare/meditation/meditation_session_persistence.dart';
 import 'package:foursquare/meditation/meditation_session_runtime.dart';
 import 'package:foursquare/meditation/meditation_session_snapshot.dart';
@@ -302,14 +303,19 @@ void main() {
       onBackgroundError: (error, _) => backgroundErrors.add(error),
     );
     addTearDown(runtime.dispose);
+    final sessions = <MeditationSession>[];
+    final subscription = runtime.sessions.listen(sessions.add);
+    addTearDown(subscription.cancel);
     await runtime.start();
     currentTime = currentTime.add(const Duration(seconds: 60));
 
     await timers.latest.fire();
+    await Future<void>.delayed(Duration.zero);
 
     expect(runtime.backgroundError, isA<StateError>());
     expect(backgroundErrors, hasLength(1));
     expect(repository.value?.session.gameResult?.status.name, 'timeout');
+    expect(sessions.last.phase, MeditationSessionPhase.completed);
 
     await runtime.handle(
       const VoiceActionIntent(VoiceGameAction.repeat),
@@ -353,6 +359,42 @@ void main() {
 
     expect(runtime.backgroundError, isNull);
     expect(backgroundErrors, isEmpty);
+  });
+
+  test('successful authority commits notify screen adapters', () async {
+    final runtime = await MeditationSessionRuntime.createNew(
+      humanPlayer: PieceType.black,
+      firstPlayer: PieceType.black,
+      aiPlayer: _SingleMoveAI(),
+      persistence: MeditationSessionPersistence(
+        repository: _MemoryRepository(),
+        now: () => now,
+      ),
+      archiveCompletedGame: (_) async => true,
+      now: () => now,
+    );
+    final sessions = <MeditationSession>[];
+    final subscription = runtime.sessions.listen(sessions.add);
+    addTearDown(subscription.cancel);
+    addTearDown(runtime.dispose);
+
+    await runtime.start();
+    await runtime.handle(
+      const VoiceMoveIntent(
+        from: Position(0, 0),
+        to: Position(0, 1),
+      ),
+    );
+    await Future<void>.delayed(Duration.zero);
+
+    expect(
+      sessions.map((session) => session.phase),
+      [
+        MeditationSessionPhase.humanTurn,
+        MeditationSessionPhase.aiTurn,
+        MeditationSessionPhase.humanTurn,
+      ],
+    );
   });
 }
 

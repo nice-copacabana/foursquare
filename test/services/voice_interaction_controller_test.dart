@@ -151,6 +151,18 @@ void main() {
     expect(controller.state.toString(), isNot(contains('秘密原文')));
   });
 
+  test('low-confidence final text never reaches the intent boundary', () async {
+    await controller.enableAfterDisclosure();
+    await controller.listenOnce();
+
+    recognition.emitFinal('A1', confidence: 0.2);
+    await Future<void>.delayed(Duration.zero);
+
+    expect(intents, isEmpty);
+    expect(controller.state.phase, VoiceInteractionPhase.ready);
+    expect(controller.state.failure, VoicePortFailure.unrecognized);
+  });
+
   test('TTS completion is required before another listen can start', () async {
     await controller.enableAfterDisclosure();
     await controller.listenOnce();
@@ -541,15 +553,19 @@ class _FakeRecognitionPort implements VoiceRecognitionPort {
     _stopCompleter?.complete();
   }
 
-  void emitFinal(String text) {
-    emit(text, isFinal: true);
+  void emitFinal(String text, {double confidence = 0.9}) {
+    emit(text, isFinal: true, confidence: confidence);
   }
 
-  void emit(String text, {required bool isFinal}) {
+  void emit(
+    String text, {
+    required bool isFinal,
+    double confidence = 0.9,
+  }) {
     _onSample?.call(
       VoiceRecognitionSample(
         text: text,
-        confidence: 0.9,
+        confidence: confidence,
         isFinal: isFinal,
       ),
     );

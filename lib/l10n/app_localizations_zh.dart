@@ -913,6 +913,107 @@ class AppLocalizationsZh extends AppLocalizations {
   String get clear => '清空';
 
   @override
+  String get meditationTitle => '冥想对局';
+
+  @override
+  String get meditationEyebrow => '静 · 听 · 行';
+
+  @override
+  String get meditationDisclosureTitle => '先听见，再入局';
+
+  @override
+  String get meditationDisclosureBody =>
+      '冥想模式使用中文单次语音指令完成行棋。每次只在你主动点击后聆听，不会连续开启麦克风。';
+
+  @override
+  String get meditationPrivacyNote => '当前核心不保存识别原文或录音。最终语音引擎的数据流向将在正式开放前核验。';
+
+  @override
+  String get meditationChineseOnly => '一期语音仅支持中文';
+
+  @override
+  String get meditationEnable => '了解并开启';
+
+  @override
+  String get meditationBegin => '播报开局';
+
+  @override
+  String get meditationListen => '听我行棋';
+
+  @override
+  String get meditationRepeat => '重复播报';
+
+  @override
+  String get meditationPause => '暂停';
+
+  @override
+  String get meditationResume => '继续';
+
+  @override
+  String get meditationExit => '结束对局';
+
+  @override
+  String get meditationConfirmExit => '确认弃局';
+
+  @override
+  String get meditationCancelExit => '继续对局';
+
+  @override
+  String get meditationLeave => '返回并保留存档';
+
+  @override
+  String get meditationPromptLabel => '当前播报';
+
+  @override
+  String meditationMoves(int count) {
+    return '$count 手';
+  }
+
+  @override
+  String meditationRemaining(int seconds) {
+    return '$seconds 秒';
+  }
+
+  @override
+  String get meditationVoiceDisabled => '语音尚未开启';
+
+  @override
+  String get meditationVoicePreparing => '正在准备语音';
+
+  @override
+  String get meditationVoiceReady => '可以聆听';
+
+  @override
+  String get meditationVoiceListening => '正在聆听';
+
+  @override
+  String get meditationVoiceProcessing => '正在理解';
+
+  @override
+  String get meditationVoiceSpeaking => '正在播报';
+
+  @override
+  String get meditationVoiceReplay => '播报中断，可重试';
+
+  @override
+  String get meditationVoicePermissionDenied => '未获得麦克风权限';
+
+  @override
+  String get meditationVoiceUnavailable => '语音服务暂不可用';
+
+  @override
+  String get meditationVoiceInterrupted => '语音已中断';
+
+  @override
+  String get meditationVoiceFailed => '语音操作失败';
+
+  @override
+  String get meditationVoiceUnrecognized => '未听懂，请再说一次';
+
+  @override
+  String get meditationFinished => '本局已结束，正在确认对局记录';
+
+  @override
   String get onlineBattleTitle => '在线对战';
 
   @override

@@ -16,6 +16,8 @@ import 'dart:convert';
 import '../models/game_save.dart';
 import '../models/game_record.dart';
 import '../models/game_result.dart';
+import '../constants/storage_constants.dart';
+import '../meditation/meditation_session_persistence.dart';
 import 'logger_service.dart';
 
 /// 游戏设置数据模型
@@ -235,13 +237,18 @@ class StorageService {
   /// every application box.
   StorageService.forTesting({
     Box<dynamic>? statisticsBox,
+    Box<dynamic>? gameSaveBox,
+    Box<dynamic>? meditationSessionBox,
     SharedPreferences? preferences,
   })  : _statisticsBox = statisticsBox,
+        _gameSaveBox = gameSaveBox,
+        _meditationSessionBox = meditationSessionBox,
         _prefs = preferences;
 
   SharedPreferences? _prefs;
   Box? _statisticsBox;
   Box? _gameSaveBox;
+  Box<dynamic>? _meditationSessionBox;
   Future<void> _completedGameWriteTail = Future<void>.value();
 
   // 存储键
@@ -261,6 +268,9 @@ class StorageService {
     await Hive.initFlutter();
     _statisticsBox = await Hive.openBox(_boxNameStatistics);
     _gameSaveBox = await Hive.openBox(_boxNameGameSave);
+    _meditationSessionBox = await Hive.openBox<dynamic>(
+      StorageConstants.boxMeditationSession,
+    );
   }
 
   /// 保存游戏设置
@@ -377,6 +387,7 @@ class StorageService {
       await _prefs!.clear();
       await _statisticsBox!.clear();
       await _gameSaveBox!.clear();
+      await _meditationSessionBox!.clear();
       return true;
     } catch (e) {
       logger.error('重置所有数据失败', 'StorageService', e);
@@ -388,6 +399,16 @@ class StorageService {
   Future<void> dispose() async {
     await _statisticsBox?.close();
     await _gameSaveBox?.close();
+    await _meditationSessionBox?.close();
+  }
+
+  /// Returns the application-owned meditation save adapter.
+  MeditationSessionRepository createMeditationSessionRepository() {
+    final box = _meditationSessionBox;
+    if (box == null || !box.isOpen) {
+      throw StateError('Meditation storage has not been initialized');
+    }
+    return HiveMeditationSessionRepository(box);
   }
 
   /// 保存游戏状态

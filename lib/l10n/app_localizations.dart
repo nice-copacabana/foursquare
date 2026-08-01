@@ -1828,6 +1828,198 @@ abstract class AppLocalizations {
   /// **'清空'**
   String get clear;
 
+  /// No description provided for @meditationTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'冥想对局'**
+  String get meditationTitle;
+
+  /// No description provided for @meditationEyebrow.
+  ///
+  /// In zh, this message translates to:
+  /// **'静 · 听 · 行'**
+  String get meditationEyebrow;
+
+  /// No description provided for @meditationDisclosureTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'先听见，再入局'**
+  String get meditationDisclosureTitle;
+
+  /// No description provided for @meditationDisclosureBody.
+  ///
+  /// In zh, this message translates to:
+  /// **'冥想模式使用中文单次语音指令完成行棋。每次只在你主动点击后聆听，不会连续开启麦克风。'**
+  String get meditationDisclosureBody;
+
+  /// No description provided for @meditationPrivacyNote.
+  ///
+  /// In zh, this message translates to:
+  /// **'当前核心不保存识别原文或录音。最终语音引擎的数据流向将在正式开放前核验。'**
+  String get meditationPrivacyNote;
+
+  /// No description provided for @meditationChineseOnly.
+  ///
+  /// In zh, this message translates to:
+  /// **'一期语音仅支持中文'**
+  String get meditationChineseOnly;
+
+  /// No description provided for @meditationEnable.
+  ///
+  /// In zh, this message translates to:
+  /// **'了解并开启'**
+  String get meditationEnable;
+
+  /// No description provided for @meditationBegin.
+  ///
+  /// In zh, this message translates to:
+  /// **'播报开局'**
+  String get meditationBegin;
+
+  /// No description provided for @meditationListen.
+  ///
+  /// In zh, this message translates to:
+  /// **'听我行棋'**
+  String get meditationListen;
+
+  /// No description provided for @meditationRepeat.
+  ///
+  /// In zh, this message translates to:
+  /// **'重复播报'**
+  String get meditationRepeat;
+
+  /// No description provided for @meditationPause.
+  ///
+  /// In zh, this message translates to:
+  /// **'暂停'**
+  String get meditationPause;
+
+  /// No description provided for @meditationResume.
+  ///
+  /// In zh, this message translates to:
+  /// **'继续'**
+  String get meditationResume;
+
+  /// No description provided for @meditationExit.
+  ///
+  /// In zh, this message translates to:
+  /// **'结束对局'**
+  String get meditationExit;
+
+  /// No description provided for @meditationConfirmExit.
+  ///
+  /// In zh, this message translates to:
+  /// **'确认弃局'**
+  String get meditationConfirmExit;
+
+  /// No description provided for @meditationCancelExit.
+  ///
+  /// In zh, this message translates to:
+  /// **'继续对局'**
+  String get meditationCancelExit;
+
+  /// No description provided for @meditationLeave.
+  ///
+  /// In zh, this message translates to:
+  /// **'返回并保留存档'**
+  String get meditationLeave;
+
+  /// No description provided for @meditationPromptLabel.
+  ///
+  /// In zh, this message translates to:
+  /// **'当前播报'**
+  String get meditationPromptLabel;
+
+  /// No description provided for @meditationMoves.
+  ///
+  /// In zh, this message translates to:
+  /// **'{count} 手'**
+  String meditationMoves(int count);
+
+  /// No description provided for @meditationRemaining.
+  ///
+  /// In zh, this message translates to:
+  /// **'{seconds} 秒'**
+  String meditationRemaining(int seconds);
+
+  /// No description provided for @meditationVoiceDisabled.
+  ///
+  /// In zh, this message translates to:
+  /// **'语音尚未开启'**
+  String get meditationVoiceDisabled;
+
+  /// No description provided for @meditationVoicePreparing.
+  ///
+  /// In zh, this message translates to:
+  /// **'正在准备语音'**
+  String get meditationVoicePreparing;
+
+  /// No description provided for @meditationVoiceReady.
+  ///
+  /// In zh, this message translates to:
+  /// **'可以聆听'**
+  String get meditationVoiceReady;
+
+  /// No description provided for @meditationVoiceListening.
+  ///
+  /// In zh, this message translates to:
+  /// **'正在聆听'**
+  String get meditationVoiceListening;
+
+  /// No description provided for @meditationVoiceProcessing.
+  ///
+  /// In zh, this message translates to:
+  /// **'正在理解'**
+  String get meditationVoiceProcessing;
+
+  /// No description provided for @meditationVoiceSpeaking.
+  ///
+  /// In zh, this message translates to:
+  /// **'正在播报'**
+  String get meditationVoiceSpeaking;
+
+  /// No description provided for @meditationVoiceReplay.
+  ///
+  /// In zh, this message translates to:
+  /// **'播报中断，可重试'**
+  String get meditationVoiceReplay;
+
+  /// No description provided for @meditationVoicePermissionDenied.
+  ///
+  /// In zh, this message translates to:
+  /// **'未获得麦克风权限'**
+  String get meditationVoicePermissionDenied;
+
+  /// No description provided for @meditationVoiceUnavailable.
+  ///
+  /// In zh, this message translates to:
+  /// **'语音服务暂不可用'**
+  String get meditationVoiceUnavailable;
+
+  /// No description provided for @meditationVoiceInterrupted.
+  ///
+  /// In zh, this message translates to:
+  /// **'语音已中断'**
+  String get meditationVoiceInterrupted;
+
+  /// No description provided for @meditationVoiceFailed.
+  ///
+  /// In zh, this message translates to:
+  /// **'语音操作失败'**
+  String get meditationVoiceFailed;
+
+  /// No description provided for @meditationVoiceUnrecognized.
+  ///
+  /// In zh, this message translates to:
+  /// **'未听懂，请再说一次'**
+  String get meditationVoiceUnrecognized;
+
+  /// No description provided for @meditationFinished.
+  ///
+  /// In zh, this message translates to:
+  /// **'本局已结束，正在确认对局记录'**
+  String get meditationFinished;
+
   /// No description provided for @onlineBattleTitle.
   ///
   /// In zh, this message translates to:

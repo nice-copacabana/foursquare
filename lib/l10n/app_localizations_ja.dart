@@ -916,6 +916,108 @@ class AppLocalizationsJa extends AppLocalizations {
   String get clear => '消去';
 
   @override
+  String get meditationTitle => '瞑想対局';
+
+  @override
+  String get meditationEyebrow => '静 · 聴 · 行';
+
+  @override
+  String get meditationDisclosureTitle => '音を聴いてから対局へ';
+
+  @override
+  String get meditationDisclosureBody =>
+      '瞑想モードは中国語の音声指示を1回ずつ使用します。聴き取りボタンを押した時だけマイクを使用し、常時は起動しません。';
+
+  @override
+  String get meditationPrivacyNote =>
+      '現在のコアは認識文や録音を保存しません。最終音声エンジンのデータフローは公開前に確認します。';
+
+  @override
+  String get meditationChineseOnly => 'Phase 4 の音声は中国語のみ';
+
+  @override
+  String get meditationEnable => '理解して有効にする';
+
+  @override
+  String get meditationBegin => '開局を読み上げる';
+
+  @override
+  String get meditationListen => '私の手を聴く';
+
+  @override
+  String get meditationRepeat => 'もう一度読み上げる';
+
+  @override
+  String get meditationPause => '一時停止';
+
+  @override
+  String get meditationResume => '再開';
+
+  @override
+  String get meditationExit => '対局を終える';
+
+  @override
+  String get meditationConfirmExit => '投了を確認';
+
+  @override
+  String get meditationCancelExit => '対局を続ける';
+
+  @override
+  String get meditationLeave => '保存して戻る';
+
+  @override
+  String get meditationPromptLabel => '現在の読み上げ';
+
+  @override
+  String meditationMoves(int count) {
+    return '$count 手';
+  }
+
+  @override
+  String meditationRemaining(int seconds) {
+    return '$seconds 秒';
+  }
+
+  @override
+  String get meditationVoiceDisabled => '音声は無効です';
+
+  @override
+  String get meditationVoicePreparing => '音声を準備中';
+
+  @override
+  String get meditationVoiceReady => '聴き取り可能';
+
+  @override
+  String get meditationVoiceListening => '聴き取り中';
+
+  @override
+  String get meditationVoiceProcessing => '解釈中';
+
+  @override
+  String get meditationVoiceSpeaking => '読み上げ中';
+
+  @override
+  String get meditationVoiceReplay => '読み上げが中断されました';
+
+  @override
+  String get meditationVoicePermissionDenied => 'マイク権限がありません';
+
+  @override
+  String get meditationVoiceUnavailable => '音声サービスを利用できません';
+
+  @override
+  String get meditationVoiceInterrupted => '音声が中断されました';
+
+  @override
+  String get meditationVoiceFailed => '音声操作に失敗しました';
+
+  @override
+  String get meditationVoiceUnrecognized => '聞き取れませんでした。もう一度お話しください';
+
+  @override
+  String get meditationFinished => '対局終了。対局記録を確認しています';
+
+  @override
   String get onlineBattleTitle => 'オンライン対局';
 
   @override

@@ -15,6 +15,8 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:foursquare/meditation/meditation_session_persistence.dart';
 import 'package:foursquare/models/game_record.dart';
 import 'package:foursquare/models/game_result.dart';
 import 'package:foursquare/models/piece_type.dart';
@@ -223,6 +225,70 @@ void main() {
         'lan-game-1',
         'lan-game-2',
       });
+    });
+  });
+
+  group('冥想存档所有权', () {
+    late Directory temporaryDirectory;
+    late Box<dynamic> statisticsBox;
+    late Box<dynamic> gameSaveBox;
+    late Box<dynamic> meditationBox;
+    late StorageService storageService;
+
+    setUp(() async {
+      temporaryDirectory = await Directory.systemTemp.createTemp(
+        'foursquare-meditation-storage-test-',
+      );
+      Hive.init(temporaryDirectory.path);
+      statisticsBox = await Hive.openBox<dynamic>('statistics-reset-test');
+      gameSaveBox = await Hive.openBox<dynamic>('game-save-reset-test');
+      meditationBox =
+          await Hive.openBox<dynamic>('meditation-session-reset-test');
+      SharedPreferences.setMockInitialValues({'test': true});
+      storageService = StorageService.forTesting(
+        statisticsBox: statisticsBox,
+        gameSaveBox: gameSaveBox,
+        meditationSessionBox: meditationBox,
+        preferences: await SharedPreferences.getInstance(),
+      );
+    });
+
+    tearDown(() async {
+      if (statisticsBox.isOpen) await statisticsBox.close();
+      if (gameSaveBox.isOpen) await gameSaveBox.close();
+      if (meditationBox.isOpen) await meditationBox.close();
+      await temporaryDirectory.delete(recursive: true);
+    });
+
+    test('全部重置同时清理冥想存档', () async {
+      await statisticsBox.put('value', 1);
+      await gameSaveBox.put('value', 1);
+      await meditationBox.put('value', 1);
+
+      expect(await storageService.resetAll(), true);
+
+      expect(statisticsBox.isEmpty, true);
+      expect(gameSaveBox.isEmpty, true);
+      expect(meditationBox.isEmpty, true);
+    });
+
+    test('只能从已初始化的应用存储创建冥想仓库', () async {
+      expect(
+        storageService.createMeditationSessionRepository(),
+        isA<HiveMeditationSessionRepository>(),
+      );
+      expect(
+        StorageService.forTesting().createMeditationSessionRepository,
+        throwsStateError,
+      );
+    });
+
+    test('销毁应用存储会关闭冥想 Box', () async {
+      await storageService.dispose();
+
+      expect(statisticsBox.isOpen, false);
+      expect(gameSaveBox.isOpen, false);
+      expect(meditationBox.isOpen, false);
     });
   });
 }

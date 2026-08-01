@@ -36,11 +36,14 @@ final class VoiceInteractionState {
 
 /// Owns voice permission and audio sequencing, but no game rules.
 final class VoiceInteractionController {
+  static const double defaultMinimumConfidence = 0.6;
+
   final MicrophonePermissionPort _permission;
   final VoiceRecognitionPort _recognition;
   final VoiceSynthesisPort _synthesis;
   final VoiceGameIntent? Function(String) _interpret;
   final FutureOr<VoiceInteractionReply?> Function(VoiceGameIntent) _onIntent;
+  final double _minimumConfidence;
   final StreamController<VoiceInteractionState> _states =
       StreamController<VoiceInteractionState>.broadcast();
 
@@ -61,11 +64,17 @@ final class VoiceInteractionController {
     required VoiceGameIntent? Function(String) interpret,
     required FutureOr<VoiceInteractionReply?> Function(VoiceGameIntent)
         onIntent,
+    double minimumConfidence = defaultMinimumConfidence,
   })  : _permission = permission,
         _recognition = recognition,
         _synthesis = synthesis,
         _interpret = interpret,
-        _onIntent = onIntent;
+        _onIntent = onIntent,
+        _minimumConfidence = minimumConfidence,
+        assert(
+          minimumConfidence >= 0 && minimumConfidence <= 1,
+          'minimumConfidence must be between 0 and 1',
+        );
 
   VoiceInteractionState get state => _state;
 
@@ -340,6 +349,17 @@ final class VoiceInteractionController {
       return;
     }
     if (!_isCurrent(generation)) {
+      return;
+    }
+    if (sample.confidence < _minimumConfidence) {
+      if (!_finishDeferredInterrupt()) {
+        _emit(
+          const VoiceInteractionState(
+            VoiceInteractionPhase.ready,
+            failure: VoicePortFailure.unrecognized,
+          ),
+        );
+      }
       return;
     }
 

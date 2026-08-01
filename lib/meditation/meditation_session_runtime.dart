@@ -31,6 +31,8 @@ final class MeditationSessionRuntime {
   final MeditationDeadlineTimerFactory _timerFactory;
   final DateTime Function() _now;
   final MeditationBackgroundErrorHandler? _onBackgroundError;
+  final StreamController<MeditationSession> _sessions =
+      StreamController<MeditationSession>.broadcast();
   MeditationDeadlineTimerHandle? _deadlineTimer;
   Future<MeditationActionResult>? _settleFlight;
   Object? _backgroundError;
@@ -141,6 +143,8 @@ final class MeditationSessionRuntime {
 
   MeditationSession get session => _controller.session;
 
+  Stream<MeditationSession> get sessions => _sessions.stream;
+
   Object? get backgroundError => _backgroundError;
 
   MeditationPrompt openingPrompt() {
@@ -175,18 +179,31 @@ final class MeditationSessionRuntime {
   }
 
   void dispose() {
+    if (_disposed) {
+      return;
+    }
     _disposed = true;
     _deadlineTimer?.cancel();
     _deadlineTimer = null;
+    unawaited(_sessions.close());
   }
 
   Future<void> _commit(MeditationSession session) async {
     if (_disposed) {
       return;
     }
-    await _committer.commit(session);
+    try {
+      await _committer.commit(session);
+    } catch (_) {
+      if (!_disposed && session.phase == MeditationSessionPhase.completed) {
+        _sessions.add(session);
+      }
+      _scheduleDeadline();
+      rethrow;
+    }
     if (!_disposed) {
       _backgroundError = null;
+      _sessions.add(session);
     }
     _scheduleDeadline();
   }

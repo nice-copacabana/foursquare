@@ -39,6 +39,9 @@ class StorageConstants {
   /// 设置Box
   static const String boxSettings = 'settings';
 
+  /// 冥想对局独立存档Box
+  static const String boxMeditationSession = 'meditation_session';
+
   // ========== 存储限制 ==========
 
   /// 最大保存游戏数量

@@ -973,6 +973,111 @@ class AppLocalizationsEn extends AppLocalizations {
   String get clear => 'Clear';
 
   @override
+  String get meditationTitle => 'Meditation Game';
+
+  @override
+  String get meditationEyebrow => 'STILL · LISTEN · MOVE';
+
+  @override
+  String get meditationDisclosureTitle => 'Listen before entering the game';
+
+  @override
+  String get meditationDisclosureBody =>
+      'Meditation mode uses one Chinese voice command at a time. The microphone listens only after you press the listen control and never stays continuously open.';
+
+  @override
+  String get meditationPrivacyNote =>
+      'The current core stores neither recognition text nor recordings. The final voice engine data flow will be reviewed before release.';
+
+  @override
+  String get meditationChineseOnly => 'Phase 4 voice is Chinese only';
+
+  @override
+  String get meditationEnable => 'Understand and enable';
+
+  @override
+  String get meditationBegin => 'Announce opening';
+
+  @override
+  String get meditationListen => 'Listen for my move';
+
+  @override
+  String get meditationRepeat => 'Repeat announcement';
+
+  @override
+  String get meditationPause => 'Pause';
+
+  @override
+  String get meditationResume => 'Resume';
+
+  @override
+  String get meditationExit => 'End game';
+
+  @override
+  String get meditationConfirmExit => 'Confirm abandonment';
+
+  @override
+  String get meditationCancelExit => 'Continue game';
+
+  @override
+  String get meditationLeave => 'Back and keep save';
+
+  @override
+  String get meditationPromptLabel => 'Current announcement';
+
+  @override
+  String meditationMoves(int count) {
+    return '$count moves';
+  }
+
+  @override
+  String meditationRemaining(int seconds) {
+    return '$seconds sec';
+  }
+
+  @override
+  String get meditationVoiceDisabled => 'Voice is not enabled';
+
+  @override
+  String get meditationVoicePreparing => 'Preparing voice';
+
+  @override
+  String get meditationVoiceReady => 'Ready to listen';
+
+  @override
+  String get meditationVoiceListening => 'Listening';
+
+  @override
+  String get meditationVoiceProcessing => 'Understanding';
+
+  @override
+  String get meditationVoiceSpeaking => 'Speaking';
+
+  @override
+  String get meditationVoiceReplay =>
+      'Announcement interrupted; retry available';
+
+  @override
+  String get meditationVoicePermissionDenied =>
+      'Microphone permission was not granted';
+
+  @override
+  String get meditationVoiceUnavailable => 'Voice service is unavailable';
+
+  @override
+  String get meditationVoiceInterrupted => 'Voice was interrupted';
+
+  @override
+  String get meditationVoiceFailed => 'Voice operation failed';
+
+  @override
+  String get meditationVoiceUnrecognized =>
+      'I did not understand. Please try again';
+
+  @override
+  String get meditationFinished => 'Game finished. Confirming the game record';
+
+  @override
   String get onlineBattleTitle => 'Online game';
 
   @override
