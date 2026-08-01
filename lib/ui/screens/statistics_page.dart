@@ -2,6 +2,7 @@ library;
 
 import 'package:flutter/material.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../../models/game_record.dart';
 import '../../models/game_result.dart';
 import '../../models/piece_type.dart';
@@ -81,21 +82,20 @@ class _StatisticsPageState extends State<StatisticsPage> {
   }
 
   Future<void> _resetData() async {
+    final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('重置统计'),
-        content: const Text(
-          '将清空累计统计和最近 20 局回放。此操作无法撤销，确定继续吗？',
-        ),
+        title: Text(l10n.statisticsResetTitle),
+        content: Text(l10n.statisticsResetConfirm),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('取消'),
+            child: Text(l10n.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('确认重置'),
+            child: Text(l10n.statisticsResetAction),
           ),
         ],
       ),
@@ -111,29 +111,34 @@ class _StatisticsPageState extends State<StatisticsPage> {
     }
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(succeeded ? '统计与最近对局已重置' : '重置失败，请稍后重试')),
+      SnackBar(
+        content: Text(
+          succeeded ? l10n.statisticsResetDone : l10n.statisticsResetFailed,
+        ),
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('对局统计'),
+        title: Text(l10n.statisticsTitle),
         actions: [
           IconButton(
             onPressed: _openHistory,
-            tooltip: '最近对局与回放',
+            tooltip: l10n.statisticsHistoryTooltip,
             icon: const Icon(Icons.history_rounded),
           ),
           IconButton(
             onPressed: _loadData,
-            tooltip: '刷新',
+            tooltip: l10n.refresh,
             icon: const Icon(Icons.refresh_rounded),
           ),
           IconButton(
             onPressed: _resetData,
-            tooltip: '重置统计',
+            tooltip: l10n.statisticsResetTitle,
             icon: const Icon(Icons.delete_outline_rounded),
           ),
         ],
@@ -150,7 +155,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
             onRefresh: _loadData,
           ),
         _ => _LoadError(
-            error: StateError('统计数据不可用'),
+            error: StateError('statisticsUnavailable'),
             onRetry: _loadData,
           ),
       },
@@ -171,6 +176,7 @@ class _StatisticsContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final pvp = _ModeSummary.forPvp(records);
     final pve = _ModeSummary.forLocalPlayer(records, 'pve');
     final lan = _ModeSummary.forLocalPlayer(records, 'lan');
@@ -201,11 +207,11 @@ class _StatisticsContent extends StatelessWidget {
                     _OverviewPanel(statistics: statistics),
                     const SizedBox(height: 20),
                     _SectionHeading(
-                      eyebrow: 'RECENT FORM',
-                      title: '最近对局',
+                      eyebrow: l10n.statisticsRecentEyebrow,
+                      title: l10n.statisticsRecentTitle,
                       description: records.isEmpty
-                          ? '完成一局后，将在这里按模式呈现结果。'
-                          : '仅基于设备内保留的最近 ${records.length} 局，不与累计数据混算。',
+                          ? l10n.statisticsRecentEmpty
+                          : l10n.statisticsRecentDescription(records.length),
                     ),
                     const SizedBox(height: 12),
                     _ModeCards(pvp: pvp, pve: pve, lan: lan),
@@ -229,6 +235,7 @@ class _OverviewPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    final l10n = AppLocalizations.of(context)!;
     final averageMoves = statistics.totalGames == 0
         ? '—'
         : (statistics.totalMoves / statistics.totalGames).toStringAsFixed(1);
@@ -246,10 +253,13 @@ class _OverviewPanel extends StatelessWidget {
           children: [
             Icon(Icons.auto_stories_rounded, color: scheme.primary, size: 28),
             const SizedBox(height: 16),
-            Text('棋谱总览', style: theme.textTheme.headlineSmall),
+            Text(
+              l10n.statisticsOverviewTitle,
+              style: theme.textTheme.headlineSmall,
+            ),
             const SizedBox(height: 6),
             Text(
-              '记录走过的每一步，不把不同对局模式混成一项输赢。',
+              l10n.statisticsOverviewDescription,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: scheme.onSurfaceVariant,
               ),
@@ -260,22 +270,22 @@ class _OverviewPanel extends StatelessWidget {
               runSpacing: 10,
               children: [
                 _MetricTile(
-                  label: '累计对局',
+                  label: l10n.statisticsTotalGames,
                   value: '${statistics.totalGames}',
                   icon: Icons.grid_view_rounded,
                 ),
                 _MetricTile(
-                  label: '累计手数',
+                  label: l10n.statisticsTotalMoves,
                   value: '${statistics.totalMoves}',
                   icon: Icons.gesture_rounded,
                 ),
                 _MetricTile(
-                  label: '平均手数',
+                  label: l10n.statisticsAverageMoves,
                   value: averageMoves,
                   icon: Icons.balance_rounded,
                 ),
                 _MetricTile(
-                  label: '累计吃子',
+                  label: l10n.statisticsTotalCaptures,
                   value: '${statistics.totalCaptures}',
                   icon: Icons.adjust_rounded,
                 ),
@@ -293,7 +303,9 @@ class _OverviewPanel extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  '最近落子：${_formatDateTime(statistics.lastPlayedAt)}',
+                  l10n.statisticsLastMove(
+                    _formatDateTime(statistics.lastPlayedAt, l10n),
+                  ),
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: scheme.onSurfaceVariant,
                   ),
@@ -406,6 +418,7 @@ class _ModeCards extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return LayoutBuilder(
       builder: (context, constraints) {
         final columns = constraints.maxWidth >= 760 ? 2 : 1;
@@ -419,31 +432,31 @@ class _ModeCards extends StatelessWidget {
             SizedBox(
               width: cardWidth,
               child: _ModeCard(
-                title: '本地双人 · 近 20 局',
+                title: l10n.statisticsPvpTitle,
                 icon: Icons.people_alt_rounded,
                 summary: pvp,
-                labels: const ('墨方胜', '玉方胜'),
-                note: '本地双人按双方棋色记录，不计算个人胜率。',
+                labels: (l10n.statisticsPvpWin, l10n.statisticsPvpLoss),
+                note: l10n.statisticsPvpNote,
               ),
             ),
             SizedBox(
               width: cardWidth,
               child: _ModeCard(
-                title: '人机对弈 · 近 20 局',
+                title: l10n.statisticsPveTitle,
                 icon: Icons.smart_toy_rounded,
                 summary: pve,
-                labels: const ('玩家胜', 'AI 胜'),
-                note: '按本机玩家执棋颜色计算。',
+                labels: (l10n.statisticsPveWin, l10n.statisticsPveLoss),
+                note: l10n.statisticsPveNote,
               ),
             ),
             SizedBox(
               width: cardWidth,
               child: _ModeCard(
-                title: '局域网 · 近 20 局',
+                title: l10n.statisticsLanTitle,
                 icon: Icons.lan_rounded,
                 summary: lan,
-                labels: const ('本机胜', '本机负'),
-                note: '按本机在联机对局中的执棋颜色计算。',
+                labels: (l10n.statisticsLanWin, l10n.statisticsLanLoss),
+                note: l10n.statisticsLanNote,
               ),
             ),
           ],
@@ -472,6 +485,7 @@ class _ModeCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    final l10n = AppLocalizations.of(context)!;
     return DecoratedBox(
       decoration: BoxDecoration(
         color: scheme.surface,
@@ -510,14 +524,16 @@ class _ModeCard extends StatelessWidget {
               children: [
                 _OutcomeBadge(label: '${labels.$1} ${summary.wins}'),
                 _OutcomeBadge(label: '${labels.$2} ${summary.losses}'),
-                _OutcomeBadge(label: '和棋 ${summary.draws}'),
+                _OutcomeBadge(label: l10n.statisticsDrawCount(summary.draws)),
                 if (summary.unresolved > 0)
-                  _OutcomeBadge(label: '未识别 ${summary.unresolved}'),
+                  _OutcomeBadge(
+                    label: l10n.statisticsUnknownCount(summary.unresolved),
+                  ),
               ],
             ),
             const SizedBox(height: 14),
             Text(
-              summary.total == 0 ? '暂无该模式记录。$note' : note,
+              summary.total == 0 ? l10n.statisticsNoModeRecord(note) : note,
               style: theme.textTheme.bodySmall?.copyWith(
                 color: scheme.onSurfaceVariant,
                 height: 1.45,
@@ -559,6 +575,7 @@ class _LoadError extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context)!;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -567,18 +584,12 @@ class _LoadError extends StatelessWidget {
           children: [
             Icon(Icons.cloud_off_rounded, size: 44, color: scheme.primary),
             const SizedBox(height: 14),
-            const Text('统计数据暂时无法读取'),
-            const SizedBox(height: 6),
-            Text(
-              '$error',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: scheme.onSurfaceVariant),
-            ),
+            Text(l10n.statisticsUnavailable),
             const SizedBox(height: 16),
             OutlinedButton.icon(
               onPressed: onRetry,
               icon: const Icon(Icons.refresh_rounded),
-              label: const Text('重新加载'),
+              label: Text(l10n.reload),
             ),
           ],
         ),
@@ -658,8 +669,8 @@ class _ModeSummary {
   final int unresolved;
 }
 
-String _formatDateTime(DateTime? value) {
-  if (value == null) return '尚无记录';
+String _formatDateTime(DateTime? value, AppLocalizations l10n) {
+  if (value == null) return l10n.statisticsNoRecord;
   final local = value.toLocal();
   final month = local.month.toString().padLeft(2, '0');
   final day = local.day.toString().padLeft(2, '0');

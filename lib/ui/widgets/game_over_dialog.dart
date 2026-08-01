@@ -7,6 +7,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import '../../l10n/app_localizations.dart';
 import '../../models/piece_type.dart';
 import '../../models/game_result.dart';
 
@@ -29,6 +30,7 @@ class GameOverDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Dialog(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
@@ -57,7 +59,7 @@ class GameOverDialog extends StatelessWidget {
 
             // 结果标题
             Text(
-              _getResultTitle(),
+              _getResultTitle(l10n),
               style: const TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.bold,
@@ -68,7 +70,7 @@ class GameOverDialog extends StatelessWidget {
 
             // 结果详情
             Text(
-              gameResult.reason,
+              _getResultReason(l10n),
               textAlign: TextAlign.center,
               style: const TextStyle(
                 fontSize: 16,
@@ -87,7 +89,7 @@ class GameOverDialog extends StatelessWidget {
                     // 退出按钮
                     _DialogButton(
                       icon: Icons.close,
-                      label: '退出',
+                      label: l10n.exit,
                       onPressed: onExit,
                       backgroundColor: Colors.white.withValues(alpha: 0.2),
                     ),
@@ -95,7 +97,7 @@ class GameOverDialog extends StatelessWidget {
                     // 重新开始按钮
                     _DialogButton(
                       icon: Icons.refresh,
-                      label: '再来一局',
+                      label: l10n.playAgain,
                       onPressed: onRestart,
                       backgroundColor: Colors.white.withValues(alpha: 0.3),
                     ),
@@ -109,7 +111,7 @@ class GameOverDialog extends StatelessWidget {
                     width: double.infinity,
                     child: _DialogButton(
                       icon: Icons.play_circle_outline,
-                      label: '查看回放',
+                      label: l10n.viewReplay,
                       onPressed: onReplay!,
                       backgroundColor: Colors.white.withValues(alpha: 0.25),
                     ),
@@ -151,19 +153,51 @@ class GameOverDialog extends StatelessWidget {
   }
 
   /// 获取结果标题
-  String _getResultTitle() {
-    if (winner != null) {
-      return winner == PieceType.black ? '墨方获胜！' : '玉方获胜！';
+  String _getResultTitle(AppLocalizations l10n) {
+    final resolvedWinner = winner ?? gameResult.winner;
+    if (resolvedWinner != null) {
+      return resolvedWinner == PieceType.black
+          ? l10n.blackWins
+          : l10n.whiteWins;
     }
     switch (gameResult.status) {
       case GameStatus.blackWin:
-        return '墨方获胜！';
+        return l10n.blackWins;
       case GameStatus.whiteWin:
-        return '玉方获胜！';
+        return l10n.whiteWins;
       case GameStatus.draw:
-        return '平局';
+        return l10n.draw;
       default:
-        return '游戏结束';
+        return l10n.gameOver;
+    }
+  }
+
+  String _getResultReason(AppLocalizations l10n) {
+    final resolvedWinner = winner ?? gameResult.winner;
+    final blackWon = resolvedWinner == PieceType.black;
+    switch (gameResult.endReason) {
+      case GameEndReason.pieceCount:
+        return blackWon
+            ? l10n.endReasonPieceCountBlack
+            : l10n.endReasonPieceCountWhite;
+      case GameEndReason.noLegalMoves:
+        return blackWon
+            ? l10n.endReasonNoLegalMovesBlack
+            : l10n.endReasonNoLegalMovesWhite;
+      case GameEndReason.noCaptureLimit:
+        return l10n.endReasonNoCaptureLimit;
+      case GameEndReason.timeout:
+        return blackWon
+            ? l10n.endReasonTimeoutBlack
+            : l10n.endReasonTimeoutWhite;
+      case GameEndReason.disconnect:
+        return blackWon
+            ? l10n.endReasonDisconnectBlack
+            : l10n.endReasonDisconnectWhite;
+      case GameEndReason.abandoned:
+        return blackWon
+            ? l10n.endReasonAbandonedBlack
+            : l10n.endReasonAbandonedWhite;
     }
   }
 }

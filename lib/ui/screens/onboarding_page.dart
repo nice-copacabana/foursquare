@@ -3,6 +3,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../l10n/app_localizations.dart';
 import '../widgets/game_icon.dart';
 import '../../constants/ui_constants.dart';
 import '../../constants/storage_constants.dart';
@@ -27,6 +28,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       body: SafeArea(
         child: Column(
@@ -39,7 +41,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                   padding: const EdgeInsets.all(16.0),
                   child: TextButton(
                     onPressed: _completeOnboarding,
-                    child: const Text('跳过'),
+                    child: Text(l10n.skip),
                   ),
                 ),
               )
@@ -87,7 +89,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                         );
                       },
                       icon: const Icon(Icons.arrow_back),
-                      label: const Text('上一页'),
+                      label: Text(l10n.previous),
                     )
                   else
                     const Spacer(),
@@ -110,7 +112,9 @@ class _OnboardingPageState extends State<OnboardingPage> {
                         vertical: 16,
                       ),
                     ),
-                    child: Text(_currentPage < 4 ? '下一页' : '开始游戏'),
+                    child: Text(
+                      _currentPage < 4 ? l10n.next : l10n.startGame,
+                    ),
                   ),
                 ],
               ),
@@ -188,6 +192,7 @@ class _WelcomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     return Padding(
@@ -214,14 +219,14 @@ class _WelcomePage extends StatelessWidget {
           ),
           const SizedBox(height: 32),
           Text(
-            '四子游戏',
+            l10n.onboardingWelcomeTitle,
             style: theme.textTheme.headlineLarge?.copyWith(
               fontWeight: FontWeight.bold,
             ),
           ),
           const SizedBox(height: 16),
           Text(
-            '策略对弈，智胜四方',
+            l10n.onboardingWelcomeSubtitle,
             style: theme.textTheme.titleMedium?.copyWith(
               color: scheme.onSurfaceVariant,
             ),
@@ -229,7 +234,7 @@ class _WelcomePage extends StatelessWidget {
           ),
           const SizedBox(height: 48),
           Text(
-            '欢迎来到四子游戏！\n让我们快速了解游戏规则',
+            l10n.onboardingWelcomeBody,
             style: theme.textTheme.bodyLarge,
             textAlign: TextAlign.center,
           ),
@@ -245,6 +250,7 @@ class _RulesBoardPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final scheme = Theme.of(context).colorScheme;
     return Padding(
       padding: UIConstants.paddingLarge,
@@ -252,7 +258,7 @@ class _RulesBoardPage extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(
-            '棋盘与棋子',
+            l10n.onboardingBoardTitle,
             style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
@@ -289,14 +295,14 @@ class _RulesBoardPage extends StatelessWidget {
                 showPieces: false,
               ),
             ),
-            title: '4×4 棋盘',
-            description: '游戏在一个4×4的棋盘上进行',
+            title: l10n.onboardingBoardFourByFour,
+            description: l10n.onboardingBoardFourByFourDescription,
           ),
           const SizedBox(height: 16),
-          const _InfoCard(
+          _InfoCard(
             icon: Icons.circle,
-            title: '黑白各4子',
-            description: '黑方和白方各有4枚棋子',
+            title: l10n.onboardingFourPieces,
+            description: l10n.onboardingFourPiecesDescription,
           ),
         ],
       ),
@@ -310,6 +316,7 @@ class _RulesMovementPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final scheme = Theme.of(context).colorScheme;
     return Padding(
       padding: UIConstants.paddingLarge,
@@ -317,7 +324,7 @@ class _RulesMovementPage extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(
-            '移动规则',
+            l10n.onboardingMovementTitle,
             style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
@@ -370,16 +377,16 @@ class _RulesMovementPage extends StatelessWidget {
           ),
 
           const SizedBox(height: 32),
-          const _InfoCard(
+          _InfoCard(
             icon: Icons.arrow_upward,
-            title: '上下左右移动',
-            description: '棋子只能移动到相邻的空位',
+            title: l10n.onboardingOrthogonalMove,
+            description: l10n.onboardingOrthogonalMoveDescription,
           ),
           const SizedBox(height: 16),
-          const _InfoCard(
+          _InfoCard(
             icon: Icons.block,
-            title: '不能斜向移动',
-            description: '斜向移动是不允许的',
+            title: l10n.onboardingNoDiagonal,
+            description: l10n.onboardingNoDiagonalDescription,
           ),
         ],
       ),
@@ -393,6 +400,7 @@ class _RulesCapturePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final scheme = Theme.of(context).colorScheme;
     return Padding(
       padding: UIConstants.paddingLarge,
@@ -400,7 +408,7 @@ class _RulesCapturePage extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(
-            '吃子规则',
+            l10n.onboardingCaptureTitle,
             style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
@@ -430,23 +438,23 @@ class _RulesCapturePage extends StatelessWidget {
                     border: Border.all(color: scheme.outline),
                     borderRadius: BorderRadius.circular(6),
                   ),
-                  child: const Text('空'),
+                  child: Text(l10n.emptyCell),
                 ),
               ],
             ),
           ),
 
           const SizedBox(height: 32),
-          const _InfoCard(
+          _InfoCard(
             icon: Icons.grid_4x4,
-            title: '精确四格排列',
-            description: '形成“己-己-敌-空”或它的规定反向排列时吃掉敌子',
+            title: l10n.onboardingExactPattern,
+            description: l10n.onboardingExactPatternDescription,
           ),
           const SizedBox(height: 16),
-          const _InfoCard(
+          _InfoCard(
             icon: Icons.close,
-            title: '落子必须参与',
-            description: '刚移动的棋子必须属于相邻双子；横纵可同时吃子',
+            title: l10n.onboardingMovedPieceParticipates,
+            description: l10n.onboardingMovedPieceParticipatesDescription,
           ),
         ],
       ),
@@ -479,40 +487,41 @@ class _FeaturesPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Padding(
       padding: UIConstants.paddingLarge,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(
-            '功能特色',
+            l10n.onboardingFeaturesTitle,
             style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
           ),
           const SizedBox(height: 32),
-          const _FeatureCard(
+          _FeatureCard(
             icon: Icons.smart_toy,
-            title: 'AI对战',
-            description: '3种难度的AI陪你练习',
+            title: l10n.onboardingAiFeature,
+            description: l10n.onboardingAiFeatureDescription,
           ),
           const SizedBox(height: 16),
-          const _FeatureCard(
+          _FeatureCard(
             icon: Icons.replay,
-            title: '游戏回放',
-            description: '回顾每一步精彩对局',
+            title: l10n.onboardingReplayFeature,
+            description: l10n.onboardingReplayFeatureDescription,
           ),
           const SizedBox(height: 16),
-          const _FeatureCard(
+          _FeatureCard(
             icon: Icons.palette,
-            title: '现代东方棋艺',
-            description: '一期统一视觉，后续将扩展更多主题',
+            title: l10n.onboardingThemeFeature,
+            description: l10n.onboardingThemeFeatureDescription,
           ),
           const SizedBox(height: 16),
-          const _FeatureCard(
+          _FeatureCard(
             icon: Icons.bar_chart,
-            title: '战绩统计',
-            description: '查看你的游戏数据',
+            title: l10n.onboardingStatisticsFeature,
+            description: l10n.onboardingStatisticsFeatureDescription,
           ),
         ],
       ),

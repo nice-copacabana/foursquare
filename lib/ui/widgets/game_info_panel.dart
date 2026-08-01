@@ -8,6 +8,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import '../../l10n/app_localizations.dart';
 import '../../models/piece_type.dart';
 import '../../models/move.dart';
 
@@ -122,6 +123,7 @@ class _CurrentPlayerIndicator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final seconds = turnRemaining.inSeconds.clamp(0, 60);
     return Row(
       children: [
@@ -155,16 +157,18 @@ class _CurrentPlayerIndicator extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                currentPlayer == PieceType.black ? '墨方回合' : '玉方回合',
+                currentPlayer == PieceType.black
+                    ? l10n.blackTurn
+                    : l10n.whiteTurn,
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),
               ),
               if (isAIThinking)
-                const Text(
-                  'AI思考中...',
-                  style: TextStyle(
+                Text(
+                  l10n.aiThinking,
+                  style: const TextStyle(
                     fontSize: 14,
                     color: Colors.grey,
                     fontStyle: FontStyle.italic,
@@ -174,7 +178,7 @@ class _CurrentPlayerIndicator extends StatelessWidget {
           ),
         ),
         Semantics(
-          label: '本回合剩余 $seconds 秒',
+          label: l10n.turnSecondsRemaining(seconds),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
             decoration: BoxDecoration(
@@ -184,7 +188,7 @@ class _CurrentPlayerIndicator extends StatelessWidget {
               borderRadius: BorderRadius.circular(999),
             ),
             child: Text(
-              '$seconds 秒',
+              l10n.secondsCount(seconds),
               style: Theme.of(context).textTheme.labelLarge?.copyWith(
                 fontFeatures: const [FontFeature.tabularFigures()],
                 fontWeight: FontWeight.w700,
@@ -209,11 +213,12 @@ class _PieceCountSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceAround,
       children: [
         _PieceCounter(
-          label: '墨方',
+          label: l10n.blackSide,
           count: blackCount,
           color: Colors.grey.shade800,
         ),
@@ -223,7 +228,7 @@ class _PieceCountSection extends StatelessWidget {
           color: Colors.grey.shade300,
         ),
         _PieceCounter(
-          label: '玉方',
+          label: l10n.whiteSide,
           count: whiteCount,
           color: Colors.white,
           borderColor: Colors.grey.shade400,
@@ -292,6 +297,7 @@ class _MoveHistorySection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -300,7 +306,7 @@ class _MoveHistorySection extends StatelessWidget {
             const Icon(Icons.history, size: 16, color: Colors.grey),
             const SizedBox(width: 4),
             Text(
-              '移动历史 (${moveHistory.length}步)',
+              l10n.moveHistoryCount(moveHistory.length),
               style: TextStyle(
                 fontSize: 14,
                 color: Colors.grey.shade700,
@@ -318,10 +324,10 @@ class _MoveHistorySection extends StatelessWidget {
             border: Border.all(color: Colors.grey.shade200),
           ),
           child: moveHistory.isEmpty
-              ? const Center(
+              ? Center(
                   child: Text(
-                    '暂无移动记录',
-                    style: TextStyle(
+                    l10n.noMoveHistory,
+                    style: const TextStyle(
                       color: Colors.grey,
                       fontSize: 12,
                     ),
@@ -402,6 +408,7 @@ class _AIThinkingIndicator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -429,7 +436,7 @@ class _AIThinkingIndicator extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Text(
-                'AI思考中',
+                l10n.aiThinking,
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
@@ -459,17 +466,6 @@ class _AIThinkingIndicator extends StatelessWidget {
               minHeight: 6,
             ),
           ),
-          if (status.isNotEmpty) ...[
-            const SizedBox(height: 6),
-            Text(
-              status,
-              style: TextStyle(
-                fontSize: 11,
-                color: Colors.grey.shade600,
-                fontStyle: FontStyle.italic,
-              ),
-            ),
-          ],
         ],
       ),
     );
@@ -494,6 +490,7 @@ class _ActionButtons extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       children: [
         // 撤销和重做按钮（暂时禁用，避免动画问题）
@@ -503,7 +500,7 @@ class _ActionButtons extends StatelessWidget {
               child: OutlinedButton.icon(
                 onPressed: canUndo ? onUndo : null,
                 icon: const Icon(Icons.undo, size: 18),
-                label: const Text('撤销'),
+                label: Text(l10n.undo),
               ),
             ),
             const SizedBox(width: 8),
@@ -511,7 +508,7 @@ class _ActionButtons extends StatelessWidget {
               child: OutlinedButton.icon(
                 onPressed: canRedo ? onRedo : null,
                 icon: const Icon(Icons.redo, size: 18),
-                label: const Text('重做'),
+                label: Text(l10n.redo),
               ),
             ),
           ],
@@ -523,7 +520,7 @@ class _ActionButtons extends StatelessWidget {
           child: TextButton.icon(
             onPressed: onRestart,
             icon: const Icon(Icons.refresh, size: 18),
-            label: const Text('重新开始'),
+            label: Text(l10n.restart),
           ),
         ),
       ],

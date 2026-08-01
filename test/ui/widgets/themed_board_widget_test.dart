@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:foursquare/l10n/app_localizations.dart';
 import 'package:foursquare/models/board_state.dart';
 import 'package:foursquare/theme/packs/modern_eastern_theme_pack.dart';
 import 'package:foursquare/ui/widgets/animated_board_widget.dart';
@@ -10,6 +11,8 @@ void main() {
   testWidgets('主题包注入且系统减少动态会关闭动画和粒子', (WidgetTester tester) async {
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: MediaQuery(
           data: const MediaQueryData(disableAnimations: true),
           child: ThemedBoardWidget(

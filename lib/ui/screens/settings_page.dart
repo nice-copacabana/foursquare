@@ -17,9 +17,11 @@ import '../../services/audio_coordinator.dart';
 import '../../services/performance_monitor.dart';
 import '../../services/resource_warmup_service.dart';
 import '../../services/diagnostics_service.dart';
+import '../../services/app_locale_controller.dart';
 import '../../models/audio_settings.dart';
 import '../../models/display_settings.dart';
 import '../../constants/storage_constants.dart';
+import '../../l10n/app_localizations.dart';
 import 'onboarding_page.dart';
 
 /// 设置页面
@@ -57,6 +59,9 @@ class _SettingsPageState extends State<SettingsPage> {
       particleEnabled: settings.particleEnabled,
       vibrationEnabled: settings.vibrationEnabled,
     );
+    if (!mounted) {
+      return;
+    }
     setState(() {
       _settings = settings;
       _isLoading = false;
@@ -74,11 +79,17 @@ class _SettingsPageState extends State<SettingsPage> {
     _saveSettings();
   }
 
+  void _updateLocale(String localeCode) {
+    _updateSetting(_settings.copyWith(localeCode: localeCode));
+    AppLocaleScope.of(context).select(localeCode);
+  }
+
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('设置'),
+        title: Text(l10n.settingsTitle),
         elevation: 0,
       ),
       body: _isLoading
@@ -94,6 +105,8 @@ class _SettingsPageState extends State<SettingsPage> {
                       _buildSoundSettingsGroup(),
                       const SizedBox(height: 16),
                       _buildVibrationSettingsGroup(),
+                      const SizedBox(height: 16),
+                      _buildLanguageGroup(),
                       const SizedBox(height: 16),
                       _buildAIDifficultyGroup(),
                       const SizedBox(height: 16),
@@ -114,12 +127,13 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Widget _buildSoundSettingsGroup() {
+    final l10n = AppLocalizations.of(context)!;
     return _SettingsGroup(
-      title: '音频设置',
+      title: l10n.settingsAudioSection,
       children: [
         _SettingsSwitch(
-          label: '音效开关',
-          subtitle: '移动、吃子等游戏音效',
+          label: l10n.settingsSoundToggle,
+          subtitle: l10n.settingsSoundDescription,
           value: _audioSettings.soundEnabled,
           onChanged: (value) async {
             final newSettings = _audioSettings.copyWith(soundEnabled: value);
@@ -130,7 +144,7 @@ class _SettingsPageState extends State<SettingsPage> {
         if (_audioSettings.soundEnabled) ...[
           const Divider(),
           _SettingsSlider(
-            label: '音效音量',
+            label: l10n.settingsSoundVolume,
             value: _audioSettings.soundVolume,
             onChanged: (value) => setState(
               () =>
@@ -143,8 +157,8 @@ class _SettingsPageState extends State<SettingsPage> {
         ],
         const Divider(),
         _SettingsSwitch(
-          label: '背景音乐',
-          subtitle: '游戏背景音乐',
+          label: l10n.settingsMusicToggle,
+          subtitle: l10n.settingsMusicDescription,
           value: _audioSettings.musicEnabled,
           onChanged: (value) async {
             final newSettings = _audioSettings.copyWith(musicEnabled: value);
@@ -155,7 +169,7 @@ class _SettingsPageState extends State<SettingsPage> {
         if (_audioSettings.musicEnabled) ...[
           const Divider(),
           _SettingsSlider(
-            label: '音乐音量',
+            label: l10n.settingsMusicVolume,
             value: _audioSettings.musicVolume,
             onChanged: (value) => setState(
               () =>
@@ -171,12 +185,13 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Widget _buildVibrationSettingsGroup() {
+    final l10n = AppLocalizations.of(context)!;
     return _SettingsGroup(
-      title: '震动设置',
+      title: l10n.settingsHapticsSection,
       children: [
         _SettingsSwitch(
-          label: '震动反馈',
-          subtitle: '触摸和游戏操作时的震动反馈',
+          label: l10n.settingsHapticsToggle,
+          subtitle: l10n.settingsHapticsDescription,
           value: _settings.vibrationEnabled,
           onChanged: (value) {
             if (value) {
@@ -189,18 +204,40 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  Widget _buildAIDifficultyGroup() {
+  Widget _buildLanguageGroup() {
+    final l10n = AppLocalizations.of(context)!;
     return _SettingsGroup(
-      title: 'AI设置',
+      title: l10n.settingsLanguageSection,
       children: [
         _SettingsSelector(
-          label: '默认AI难度',
-          subtitle: '新游戏的默认AI难度',
+          label: l10n.settingsLanguage,
+          subtitle: l10n.settingsLanguageDescription,
+          options: const ['zh', 'en', 'ja'],
+          optionLabels: {
+            'zh': l10n.languageChinese,
+            'en': l10n.languageEnglish,
+            'ja': l10n.languageJapanese,
+          },
+          value: _settings.localeCode,
+          onChanged: _updateLocale,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAIDifficultyGroup() {
+    final l10n = AppLocalizations.of(context)!;
+    return _SettingsGroup(
+      title: l10n.settingsAiSection,
+      children: [
+        _SettingsSelector(
+          label: l10n.settingsDefaultAiDifficulty,
+          subtitle: l10n.settingsDefaultAiDifficultyDescription,
           options: const ['easy', 'medium', 'hard'],
-          optionLabels: const {
-            'easy': '简单',
-            'medium': '中等',
-            'hard': '困难',
+          optionLabels: {
+            'easy': l10n.difficultyEasy,
+            'medium': l10n.difficultyMedium,
+            'hard': l10n.difficultyHard,
           },
           value: _settings.difficulty,
           onChanged: (value) {
@@ -212,18 +249,19 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Widget _buildThemeGroup() {
+    final l10n = AppLocalizations.of(context)!;
     return _SettingsGroup(
-      title: '棋盘主题',
+      title: l10n.settingsBoardThemeSection,
       children: [
-        const ListTile(
-          leading: Icon(Icons.brush_outlined),
-          title: Text('现代东方棋艺'),
-          subtitle: Text('一期默认主题；更多主题将在后续版本开放'),
+        ListTile(
+          leading: const Icon(Icons.brush_outlined),
+          title: Text(l10n.settingsModernEasternTheme),
+          subtitle: Text(l10n.settingsModernEasternThemeDescription),
         ),
         const Divider(),
         _SettingsSwitch(
-          label: '动画效果',
-          subtitle: '棋子移动和吃子动画',
+          label: l10n.settingsAnimationToggle,
+          subtitle: l10n.settingsAnimationDescription,
           value: _displaySettings.animationEnabled,
           onChanged: (value) {
             setState(() {
@@ -236,8 +274,8 @@ class _SettingsPageState extends State<SettingsPage> {
         ),
         const Divider(),
         _SettingsSwitch(
-          label: '粒子效果',
-          subtitle: '吃子与胜负反馈中的装饰效果',
+          label: l10n.settingsParticleToggle,
+          subtitle: l10n.settingsParticleDescription,
           value: _displaySettings.particleEnabled,
           onChanged: (value) {
             setState(() {
@@ -253,12 +291,13 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Widget _buildPerformanceGroup() {
+    final l10n = AppLocalizations.of(context)!;
     return _SettingsGroup(
-      title: '隐私与性能',
+      title: l10n.settingsPrivacyPerformanceSection,
       children: [
         _SettingsSwitch(
-          label: '匿名诊断',
-          subtitle: '发送脱敏崩溃与性能信息；不含棋局内容和广告标识',
+          label: l10n.settingsAnonymousDiagnostics,
+          subtitle: l10n.settingsAnonymousDiagnosticsDescription,
           value: _settings.performanceMonitoringEnabled,
           onChanged: (value) async {
             _performanceMonitor.setEnabled(value);
@@ -270,8 +309,8 @@ class _SettingsPageState extends State<SettingsPage> {
         ),
         const Divider(),
         _SettingsSwitch(
-          label: '资源预加载',
-          subtitle: '提前加载棋盘与音频资源，减少首次操作等待',
+          label: l10n.settingsResourceWarmup,
+          subtitle: l10n.settingsResourceWarmupDescription,
           value: _settings.resourceWarmupEnabled,
           onChanged: (value) async {
             _updateSetting(_settings.copyWith(resourceWarmupEnabled: value));
@@ -285,31 +324,32 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Widget _buildAboutGroup() {
+    final l10n = AppLocalizations.of(context)!;
     return _SettingsGroup(
-      title: '关于',
+      title: l10n.settingsAboutSection,
       children: [
-        const _SettingsItem(
-          label: '版本号',
+        _SettingsItem(
+          label: l10n.settingsVersion,
           value: '0.1.0',
           icon: Icons.info_outline,
         ),
         const Divider(),
         ListTile(
           leading: const Icon(Icons.school),
-          title: const Text('重新查看游戏说明'),
-          subtitle: const Text('查看新手引导和游戏规则'),
+          title: Text(l10n.settingsReviewGuide),
+          subtitle: Text(l10n.settingsReviewGuideDescription),
           trailing: const Icon(Icons.arrow_forward_ios, size: 16),
           onTap: _showOnboarding,
         ),
         const Divider(),
         ListTile(
           leading: const Icon(Icons.article),
-          title: const Text('开源许可'),
+          title: Text(l10n.settingsOpenSourceLicenses),
           trailing: const Icon(Icons.arrow_forward_ios, size: 16),
           onTap: () {
             showLicensePage(
               context: context,
-              applicationName: '四子游戏',
+              applicationName: l10n.appTitle,
               applicationVersion: '0.1.0',
             );
           },
@@ -319,15 +359,16 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Widget _buildDangerZoneGroup() {
+    final l10n = AppLocalizations.of(context)!;
     final error = Theme.of(context).colorScheme.error;
     return _SettingsGroup(
-      title: '危险操作',
+      title: l10n.settingsDangerSection,
       titleColor: error,
       children: [
         ListTile(
           leading: Icon(Icons.delete_outline, color: error),
           title: Text(
-            '清空统计数据',
+            l10n.settingsClearStatistics,
             style: TextStyle(color: error),
           ),
           trailing: const Icon(Icons.arrow_forward_ios, size: 16),
@@ -337,7 +378,7 @@ class _SettingsPageState extends State<SettingsPage> {
         ListTile(
           leading: Icon(Icons.restart_alt, color: error),
           title: Text(
-            '重置所有设置',
+            l10n.settingsResetAll,
             style: TextStyle(color: error),
           ),
           trailing: const Icon(Icons.arrow_forward_ios, size: 16),
@@ -348,22 +389,23 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Future<void> _confirmResetStatistics() async {
+    final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('清空统计数据'),
-        content: const Text('将清空累计统计和最近 20 局回放。此操作无法撤销。'),
+        title: Text(l10n.settingsClearStatistics),
+        content: Text(l10n.settingsClearStatisticsConfirm),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('取消'),
+            child: Text(l10n.cancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             style: TextButton.styleFrom(
               foregroundColor: Theme.of(context).colorScheme.error,
             ),
-            child: const Text('清空'),
+            child: Text(l10n.clear),
           ),
         ],
       ),
@@ -373,29 +415,30 @@ class _SettingsPageState extends State<SettingsPage> {
       await _storageService.resetStatistics();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('统计与最近对局已清空')),
+          SnackBar(content: Text(l10n.settingsStatisticsCleared)),
         );
       }
     }
   }
 
   Future<void> _confirmResetAll() async {
+    final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('重置所有设置'),
-        content: const Text('确定要重置所有设置和数据吗？此操作无法撤销。'),
+        title: Text(l10n.settingsResetAll),
+        content: Text(l10n.settingsResetAllConfirm),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('取消'),
+            child: Text(l10n.cancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             style: TextButton.styleFrom(
               foregroundColor: Theme.of(context).colorScheme.error,
             ),
-            child: const Text('重置'),
+            child: Text(l10n.settingsResetAll),
           ),
         ],
       ),
@@ -403,10 +446,14 @@ class _SettingsPageState extends State<SettingsPage> {
 
     if (confirmed == true) {
       await _storageService.resetAll();
-      _loadSettings();
+      if (!mounted) {
+        return;
+      }
+      AppLocaleScope.of(context).select('zh');
+      await _loadSettings();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('已重置所有设置')),
+          SnackBar(content: Text(l10n.settingsResetAllDone)),
         );
       }
     }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../../theme/theme_pack.dart';
 import '../../theme/theme_pack_registry.dart';
 import 'interactive_tutorial_page.dart';
@@ -10,8 +11,9 @@ class RulesPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final pack = ThemePackRegistry.phaseOne().defaultPack;
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: AppBar(title: const Text('对弈规则')),
+      appBar: AppBar(title: Text(l10n.rulesTitle)),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
         children: [
@@ -24,57 +26,85 @@ class RulesPage extends StatelessWidget {
               ),
             ),
             icon: const Icon(Icons.touch_app_outlined),
-            label: const Text('开始互动教程'),
+            label: Text(l10n.startInteractiveTutorial),
           ),
           const SizedBox(height: 16),
-          const _RuleSection(
-            number: '一',
-            title: '棋盘与行棋',
+          _RuleSection(
+            number: l10n.rulesSectionOne,
+            title: l10n.rulesBoardSection,
             children: [
-              _RuleLine(text: '棋盘为 4×4，墨方与玉方各四枚棋子。'),
-              _RuleLine(text: '首局随机决定先手；复局双方交替先手。'),
-              _RuleLine(text: '每手将一枚己方棋子移到上下左右相邻的空位，不能斜走或越子。'),
-              _RuleLine(text: '每回合 60 秒；离线对局进入后台会暂停，局域网对局继续计时。'),
+              _RuleLine(text: l10n.rulesBoardLine1),
+              _RuleLine(text: l10n.rulesBoardLine2),
+              _RuleLine(text: l10n.rulesBoardLine3),
+              _RuleLine(text: l10n.rulesBoardLine4),
             ],
           ),
           const SizedBox(height: 12),
-          const _RuleSection(
-            number: '二',
-            title: '精确吃子',
+          _RuleSection(
+            number: l10n.rulesSectionTwo,
+            title: l10n.rulesCaptureSection,
             children: [
-              Text('只检查本次落子所在的完整四格横线与竖线。以下排列可以吃掉“敌”：'),
-              SizedBox(height: 12),
-              _PatternRow(pattern: ['己', '己', '敌', '空']),
-              _PatternRow(pattern: ['空', '己', '己', '敌']),
-              _PatternRow(pattern: ['空', '敌', '己', '己']),
-              _PatternRow(pattern: ['敌', '己', '己', '空']),
-              SizedBox(height: 12),
-              _RuleLine(text: '刚移动的棋子必须属于相邻的两枚己方棋子。'),
-              _RuleLine(text: '仅因对手落子而被动形成的排列不触发吃子。'),
-              _RuleLine(text: '横向与竖向可同时成立，一手最多吃两枚。'),
-              _RuleLine(text: '1100、1110、0110 等非精确排列均不吃子。'),
+              Text(l10n.rulesCaptureIntro),
+              const SizedBox(height: 12),
+              const _PatternRow(
+                pattern: [
+                  _PatternCell.own,
+                  _PatternCell.own,
+                  _PatternCell.enemy,
+                  _PatternCell.empty,
+                ],
+              ),
+              const _PatternRow(
+                pattern: [
+                  _PatternCell.empty,
+                  _PatternCell.own,
+                  _PatternCell.own,
+                  _PatternCell.enemy,
+                ],
+              ),
+              const _PatternRow(
+                pattern: [
+                  _PatternCell.empty,
+                  _PatternCell.enemy,
+                  _PatternCell.own,
+                  _PatternCell.own,
+                ],
+              ),
+              const _PatternRow(
+                pattern: [
+                  _PatternCell.enemy,
+                  _PatternCell.own,
+                  _PatternCell.own,
+                  _PatternCell.empty,
+                ],
+              ),
+              const SizedBox(height: 12),
+              _RuleLine(text: l10n.rulesCaptureLine1),
+              _RuleLine(text: l10n.rulesCaptureLine2),
+              _RuleLine(text: l10n.rulesCaptureLine3),
+              _RuleLine(text: l10n.rulesCaptureLine4),
             ],
           ),
           const SizedBox(height: 12),
-          const _RuleSection(
-            number: '三',
-            title: '胜负与和棋',
+          _RuleSection(
+            number: l10n.rulesSectionThree,
+            title: l10n.rulesEndingSection,
             children: [
-              _RuleLine(text: '一方棋子只剩一枚或更少时，该方立即判负。'),
-              _RuleLine(text: '一方回合开始时没有任何合法移动，该方判负。'),
-              _RuleLine(text: '回合倒计时归零，当前行棋方判负。'),
-              _RuleLine(text: '连续 50 个单方落子都未吃子时和棋；任意吃子会把计数清零。'),
-              _RuleLine(text: '局域网断线有 30 秒重连宽限，超时未恢复则断线方判负。'),
+              _RuleLine(text: l10n.rulesEndingLine1),
+              _RuleLine(text: l10n.rulesEndingLine2),
+              _RuleLine(text: l10n.rulesEndingLine3),
+              _RuleLine(text: l10n.rulesEndingLine4),
+              _RuleLine(text: l10n.rulesEndingLine5),
             ],
           ),
           const SizedBox(height: 12),
-          const _RuleSection(
-            number: '四',
-            title: '撤销与记录',
+          _RuleSection(
+            number: l10n.rulesSectionFour,
+            title: l10n.rulesUndoSection,
             children: [
-              _RuleLine(text: '本地双人每次撤销一手；人机对战按“玩家 + AI”两手成对撤销。'),
-              _RuleLine(text: '撤销后可以重做；落下新棋后原重做分支失效。'),
-              _RuleLine(text: '局域网对战不提供撤销。完成对局会进入最近 20 局记录，可逐手回放。'),
+              _RuleLine(text: l10n.rulesUndoLine1),
+              _RuleLine(text: l10n.rulesUndoLine2),
+              _RuleLine(text: l10n.rulesUndoLine3),
             ],
           ),
         ],
@@ -90,6 +120,7 @@ class _RuleHero extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
@@ -100,7 +131,7 @@ class _RuleHero extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '移子成势，精确取子',
+            l10n.rulesHeroTitle,
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                   color: colors.paperRaised,
                   fontWeight: FontWeight.w700,
@@ -108,7 +139,7 @@ class _RuleHero extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            '所有模式共享同一套规则；界面、AI、回放与局域网均以此为准。',
+            l10n.rulesHeroDescription,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: colors.paperRaised.withValues(alpha: 0.82),
                 ),
@@ -193,12 +224,18 @@ class _RuleLine extends StatelessWidget {
 class _PatternRow extends StatelessWidget {
   const _PatternRow({required this.pattern});
 
-  final List<String> pattern;
+  final List<_PatternCell> pattern;
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    String label(_PatternCell cell) => switch (cell) {
+          _PatternCell.own => l10n.ownPiece,
+          _PatternCell.enemy => l10n.enemyPiece,
+          _PatternCell.empty => l10n.emptyCell,
+        };
     return Semantics(
-      label: pattern.join('、'),
+      label: pattern.map(label).join(', '),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 4),
         child: Row(
@@ -211,14 +248,17 @@ class _PatternRow extends StatelessWidget {
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
                     color: switch (cell) {
-                      '己' => Theme.of(context).colorScheme.primaryContainer,
-                      '敌' => Theme.of(context).colorScheme.errorContainer,
-                      _ => Theme.of(context).colorScheme.surfaceContainerLow,
+                      _PatternCell.own =>
+                        Theme.of(context).colorScheme.primaryContainer,
+                      _PatternCell.enemy =>
+                        Theme.of(context).colorScheme.errorContainer,
+                      _PatternCell.empty =>
+                        Theme.of(context).colorScheme.surfaceContainerLow,
                     },
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(color: Theme.of(context).dividerColor),
                   ),
-                  child: Text(cell),
+                  child: Text(label(cell)),
                 ),
               )
               .toList(growable: false),
@@ -227,3 +267,5 @@ class _PatternRow extends StatelessWidget {
     );
   }
 }
+
+enum _PatternCell { own, enemy, empty }

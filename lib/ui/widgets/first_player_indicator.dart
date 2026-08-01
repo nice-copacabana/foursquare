@@ -2,6 +2,7 @@
 // Task: 创建先手方提示动画组件
 
 import 'package:flutter/material.dart';
+import '../../l10n/app_localizations.dart';
 import '../../models/piece_type.dart';
 
 /// 先手方指示器组件
@@ -99,8 +100,16 @@ class _FirstPlayerIndicatorState extends State<FirstPlayerIndicator>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final isBlack = widget.firstPlayer == PieceType.black;
-    final playerName = isBlack ? '黑方' : '白方';
+    final playerName = isBlack ? l10n.blackSide : l10n.whiteSide;
+    final firstPlayerMessage = l10n.firstPlayerAnnouncement(playerName);
+    final gameStartingMessage = l10n.gameStarting;
+    final semanticsLabel =
+        switch (Localizations.localeOf(context).languageCode) {
+      'en' => '$firstPlayerMessage. $gameStartingMessage',
+      _ => '$firstPlayerMessage。$gameStartingMessage',
+    };
     final playerColor = isBlack ? Colors.black : Colors.white;
     final backgroundColor = isBlack ? Colors.white : Colors.black87;
 
@@ -109,6 +118,7 @@ class _FirstPlayerIndicatorState extends State<FirstPlayerIndicator>
       builder: (context, child) {
         return Opacity(
           opacity: _opacityAnimation.value,
+          alwaysIncludeSemantics: true,
           child: Transform.scale(
             scale: _scaleAnimation.value,
             child: Container(
@@ -121,61 +131,68 @@ class _FirstPlayerIndicatorState extends State<FirstPlayerIndicator>
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: playerColor.withOpacity(0.3),
+                    color: playerColor.withValues(alpha: 0.3),
                     blurRadius: 20,
                     spreadRadius: 5,
                   ),
                 ],
                 border: Border.all(
-                  color: playerColor.withOpacity(0.5),
+                  color: playerColor.withValues(alpha: 0.5),
                   width: 2,
                 ),
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // 棋子图标
-                  Container(
-                    width: 60,
-                    height: 60,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: playerColor,
-                      border: Border.all(
-                        color: backgroundColor,
-                        width: 3,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: playerColor.withOpacity(0.5),
-                          blurRadius: 10,
-                          spreadRadius: 2,
+              child: Semantics(
+                container: true,
+                liveRegion: true,
+                label: semanticsLabel,
+                child: ExcludeSemantics(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // 棋子图标
+                      Container(
+                        width: 60,
+                        height: 60,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: playerColor,
+                          border: Border.all(
+                            color: backgroundColor,
+                            width: 3,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: playerColor.withValues(alpha: 0.5),
+                              blurRadius: 10,
+                              spreadRadius: 2,
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
+                      ),
+                      const SizedBox(height: 16),
+                      // 先手文本
+                      Text(
+                        firstPlayerMessage,
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: playerColor,
+                          letterSpacing: 2,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      // 提示文本
+                      Text(
+                        gameStartingMessage,
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: playerColor.withValues(alpha: 0.7),
+                          letterSpacing: 1,
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 16),
-                  // 先手文本
-                  Text(
-                    '$playerName先手',
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: playerColor,
-                      letterSpacing: 2,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  // 提示文本
-                  Text(
-                    '游戏即将开始',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: playerColor.withOpacity(0.7),
-                      letterSpacing: 1,
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
           ),

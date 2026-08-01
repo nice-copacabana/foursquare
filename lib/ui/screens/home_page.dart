@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/app_localizations.dart';
+
 import '../../bloc/game_event.dart';
 import '../../services/resource_warmup_service.dart';
 import '../../services/storage_service.dart';
@@ -63,6 +65,7 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final colors = _themePack.colors;
     return Scaffold(
       body: DecoratedBox(
@@ -98,7 +101,7 @@ class _HomePageState extends State<HomePage> {
                           _buildUtilities(),
                           SizedBox(height: _themePack.spacing.large),
                           Text(
-                            '现代东方棋艺 · 开发版本 0.1.0',
+                            l10n.developmentEdition,
                             style:
                                 Theme.of(context).textTheme.bodySmall?.copyWith(
                                       color: colors.inkMuted,
@@ -118,6 +121,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildHeader() {
+    final l10n = AppLocalizations.of(context)!;
     final colors = _themePack.colors;
     return Semantics(
       header: true,
@@ -146,10 +150,10 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
           const SizedBox(height: 20),
-          Text('四子棋', style: Theme.of(context).textTheme.displaySmall),
+          Text(l10n.appTitle, style: Theme.of(context).textTheme.displaySmall),
           const SizedBox(height: 6),
           Text(
-            '移 · 围 · 取 · 胜',
+            l10n.homeTagline,
             style: Theme.of(context).textTheme.titleSmall?.copyWith(
                   color: colors.cinnabar,
                   letterSpacing: 6,
@@ -163,36 +167,37 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildPrimaryActions(double width) {
+    final l10n = AppLocalizations.of(context)!;
     final actions = <Widget>[
       if (_saveStateLoaded && _hasSavedGame)
         _ModeCard(
           key: const Key('continue_game_button'),
           themePack: _themePack,
           icon: Icons.play_arrow_rounded,
-          title: '继续游戏',
-          subtitle: '从上次落子继续',
+          title: l10n.continueGame,
+          subtitle: l10n.continueGameDescription,
           emphasized: true,
           onTap: () => _openGame(const GamePage(resumeSavedGame: true)),
         ),
       _ModeCard(
         themePack: _themePack,
         icon: Icons.people_outline_rounded,
-        title: '双人对战',
-        subtitle: '同屏轮流落子',
+        title: l10n.playerVsPlayer,
+        subtitle: l10n.playerVsPlayerDescription,
         onTap: () => _openGame(const GamePage(mode: GameMode.pvp)),
       ),
       _ModeCard(
         themePack: _themePack,
         icon: Icons.smart_toy_outlined,
-        title: '人机对战',
-        subtitle: '简单 · 中等 · 困难',
+        title: l10n.playerVsAI,
+        subtitle: l10n.playerVsAIDescription,
         onTap: _showDifficultyDialog,
       ),
       _ModeCard(
         themePack: _themePack,
         icon: Icons.wifi_tethering_rounded,
-        title: '局域网对战',
-        subtitle: '同一网络面对面对弈',
+        title: l10n.lanGame,
+        subtitle: l10n.lanGameDescription,
         onTap: () => _openPage(const LanLobbyPage()),
       ),
     ];
@@ -218,22 +223,23 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildUtilities() {
+    final l10n = AppLocalizations.of(context)!;
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         _UtilityButton(
           icon: Icons.insights_outlined,
-          label: '战绩',
+          label: l10n.statistics,
           onPressed: () => _openPage(const StatisticsPage()),
         ),
         _UtilityButton(
           icon: Icons.menu_book_outlined,
-          label: '规则',
+          label: l10n.rules,
           onPressed: () => _openPage(const RulesPage()),
         ),
         _UtilityButton(
           icon: Icons.tune_rounded,
-          label: '设置',
+          label: l10n.settings,
           onPressed: () => _openPage(const SettingsPage()),
         ),
       ],
@@ -252,16 +258,29 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _showDifficultyDialog() async {
+    final l10n = AppLocalizations.of(context)!;
     final difficulty = await showDialog<String>(
       context: context,
-      builder: (context) => const AlertDialog(
-        title: const Text('选择棋力'),
+      builder: (context) => AlertDialog(
+        title: Text(l10n.chooseDifficulty),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _DifficultyTile(value: 'easy', title: '简单', subtitle: '熟悉规则与走法'),
-            _DifficultyTile(value: 'medium', title: '中等', subtitle: '平衡思考与速度'),
-            _DifficultyTile(value: 'hard', title: '困难', subtitle: '更深入地计算局面'),
+            _DifficultyTile(
+              value: 'easy',
+              title: l10n.difficultyEasy,
+              subtitle: l10n.difficultyEasyDescription,
+            ),
+            _DifficultyTile(
+              value: 'medium',
+              title: l10n.difficultyMedium,
+              subtitle: l10n.difficultyMediumDescription,
+            ),
+            _DifficultyTile(
+              value: 'hard',
+              title: l10n.difficultyHard,
+              subtitle: l10n.difficultyHardDescription,
+            ),
           ],
         ),
       ),

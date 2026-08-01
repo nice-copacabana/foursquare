@@ -33,6 +33,7 @@ class GameSettings {
   final bool resourceWarmupEnabled;
   final String selectedTheme;
   final String difficulty; // 'easy', 'medium', 'hard'
+  final String localeCode;
 
   const GameSettings({
     this.soundEnabled = true,
@@ -47,6 +48,7 @@ class GameSettings {
     this.resourceWarmupEnabled = true,
     this.selectedTheme = 'default',
     this.difficulty = 'medium',
+    this.localeCode = 'zh',
   });
 
   Map<String, dynamic> toJson() => {
@@ -62,6 +64,7 @@ class GameSettings {
         'resourceWarmupEnabled': resourceWarmupEnabled,
         'selectedTheme': selectedTheme,
         'difficulty': difficulty,
+        'localeCode': localeCode,
       };
 
   factory GameSettings.fromJson(Map<String, dynamic> json) {
@@ -79,6 +82,9 @@ class GameSettings {
       resourceWarmupEnabled: json['resourceWarmupEnabled'] ?? true,
       selectedTheme: json['selectedTheme'] ?? 'default',
       difficulty: json['difficulty'] ?? 'medium',
+      localeCode: _supportedLocaleCodes.contains(json['localeCode'])
+          ? json['localeCode'] as String
+          : 'zh',
     );
   }
 
@@ -95,6 +101,7 @@ class GameSettings {
     bool? resourceWarmupEnabled,
     String? selectedTheme,
     String? difficulty,
+    String? localeCode,
   }) {
     return GameSettings(
       soundEnabled: soundEnabled ?? this.soundEnabled,
@@ -111,8 +118,11 @@ class GameSettings {
           resourceWarmupEnabled ?? this.resourceWarmupEnabled,
       selectedTheme: selectedTheme ?? this.selectedTheme,
       difficulty: difficulty ?? this.difficulty,
+      localeCode: localeCode ?? this.localeCode,
     );
   }
+
+  static const Set<String> _supportedLocaleCodes = <String>{'zh', 'en', 'ja'};
 }
 
 /// 游戏统计数据模型
@@ -218,13 +228,16 @@ class StorageService {
   factory StorageService() => _instance;
   StorageService._internal();
 
-  /// Creates an isolated instance around a caller-owned Hive box.
+  /// Creates an isolated instance around caller-owned persistence adapters.
   ///
   /// Production code uses the singleton factory and [initialize]. Tests use
-  /// this constructor to exercise the real persistence semantics without
-  /// opening the application's boxes.
-  StorageService.forTesting({required Box<dynamic> statisticsBox})
-      : _statisticsBox = statisticsBox;
+  /// this constructor to exercise real persistence semantics without opening
+  /// every application box.
+  StorageService.forTesting({
+    Box<dynamic>? statisticsBox,
+    SharedPreferences? preferences,
+  })  : _statisticsBox = statisticsBox,
+        _prefs = preferences;
 
   SharedPreferences? _prefs;
   Box? _statisticsBox;

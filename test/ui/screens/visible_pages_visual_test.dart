@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:foursquare/bloc/lan_lobby_bloc.dart';
 import 'package:foursquare/bloc/lan_lobby_event.dart';
 import 'package:foursquare/bloc/lan_lobby_state.dart';
+import 'package:foursquare/l10n/app_localizations.dart';
 import 'package:foursquare/theme/packs/modern_eastern_theme_pack.dart';
 import 'package:foursquare/ui/screens/lan/lan_lobby_page.dart';
 import 'package:foursquare/ui/screens/onboarding_page.dart';
@@ -21,6 +22,9 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        locale: const Locale('zh'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         theme: modernEasternThemePack.themeData,
         home: const OnboardingPage(),
       ),
@@ -59,6 +63,9 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        locale: const Locale('zh'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         theme: modernEasternThemePack.themeData,
         home: BlocProvider<LanLobbyBloc>.value(
           value: bloc,
@@ -73,5 +80,38 @@ void main() {
     expect(createButton, findsOneWidget);
     expect(tester.getSize(createButton).height, greaterThanOrEqualTo(48));
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('LAN failure category is presented as localized safe copy', (
+    WidgetTester tester,
+  ) async {
+    final bloc = _MockLanLobbyBloc();
+    whenListen(
+      bloc,
+      Stream.value(
+        const LanLobbyState(
+          status: LanLobbyStatus.failure,
+          failure: LanLobbyFailure.discovery,
+        ),
+      ),
+      initialState: const LanLobbyState(),
+    );
+    addTearDown(bloc.close);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        locale: const Locale('ja'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        theme: modernEasternThemePack.themeData,
+        home: BlocProvider<LanLobbyBloc>.value(
+          value: bloc,
+          child: const LanLobbyView(),
+        ),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.textContaining('近くの部屋を検索できません'), findsOneWidget);
   });
 }

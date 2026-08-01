@@ -5,6 +5,9 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   late String buildScript;
   late String manifest;
+  late String defaultStrings;
+  late String englishStrings;
+  late String japaneseStrings;
 
   setUpAll(() {
     final projectRoot = _findProjectRoot();
@@ -15,6 +18,34 @@ void main() {
     manifest = _readProjectFile(
       projectRoot,
       const ['android', 'app', 'src', 'main', 'AndroidManifest.xml'],
+    );
+    defaultStrings = _readProjectFile(
+      projectRoot,
+      const ['android', 'app', 'src', 'main', 'res', 'values', 'strings.xml'],
+    );
+    englishStrings = _readProjectFile(
+      projectRoot,
+      const [
+        'android',
+        'app',
+        'src',
+        'main',
+        'res',
+        'values-en',
+        'strings.xml',
+      ],
+    );
+    japaneseStrings = _readProjectFile(
+      projectRoot,
+      const [
+        'android',
+        'app',
+        'src',
+        'main',
+        'res',
+        'values-ja',
+        'strings.xml',
+      ],
     );
   });
 
@@ -100,6 +131,22 @@ void main() {
       expect(
         manifest,
         isNot(contains('android.permission.ACCESS_WIFI_STATE')),
+      );
+    });
+
+    test('localizes the launcher name for all Phase 2 languages', () {
+      expect(manifest, contains('android:label="@string/app_name"'));
+      expect(
+        defaultStrings,
+        contains('<string name="app_name">四子游戏</string>'),
+      );
+      expect(
+        englishStrings,
+        contains('<string name="app_name">Four Square Game</string>'),
+      );
+      expect(
+        japaneseStrings,
+        contains('<string name="app_name">四子ゲーム</string>'),
       );
     });
   });

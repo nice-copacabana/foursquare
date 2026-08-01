@@ -8,6 +8,7 @@ import '../../models/position.dart';
 import '../../constants/ui_constants.dart';
 import '../../constants/game_constants.dart';
 import '../../theme/theme_pack.dart';
+import '../../l10n/app_localizations.dart';
 import 'board_painter.dart';
 
 /// 棋盘Widget
@@ -141,12 +142,12 @@ class BoardSemanticsOverlay extends StatelessWidget {
       children: [
         for (var displayY = 0; displayY < GameConstants.boardSize; displayY++)
           for (var displayX = 0; displayX < GameConstants.boardSize; displayX++)
-            _buildCell(displayX, displayY),
+            _buildCell(context, displayX, displayY),
       ],
     );
   }
 
-  Widget _buildCell(int displayX, int displayY) {
+  Widget _buildCell(BuildContext context, int displayX, int displayY) {
     final logicalPosition = flipBoard
         ? Position(
             GameConstants.boardSize - displayX - 1,
@@ -158,9 +159,12 @@ class BoardSemanticsOverlay extends StatelessWidget {
     final isValidMove = validMoves.contains(logicalPosition);
     final isSelectable = piece == boardState.currentPlayer;
     final isActionable = isSelectable || isValidMove;
+    final l10n = AppLocalizations.of(context)!;
 
     return Semantics(
       label: _semanticLabel(
+        l10n: l10n,
+        locale: Localizations.localeOf(context),
         displayX: displayX,
         displayY: displayY,
         logicalPosition: logicalPosition,
@@ -183,6 +187,8 @@ class BoardSemanticsOverlay extends StatelessWidget {
   }
 
   String _semanticLabel({
+    required AppLocalizations l10n,
+    required Locale locale,
     required int displayX,
     required int displayY,
     required Position logicalPosition,
@@ -192,18 +198,30 @@ class BoardSemanticsOverlay extends StatelessWidget {
     required bool isSelectable,
   }) {
     final parts = <String>[
-      '第 ${displayY + 1} 行第 ${displayX + 1} 列',
+      l10n.boardCellPosition(displayY + 1, displayX + 1),
       switch (piece) {
-        PieceType.black => '墨方棋子',
-        PieceType.white => '玉方棋子',
-        PieceType.empty => '空位',
+        PieceType.black => l10n.blackSide,
+        PieceType.white => l10n.whiteSide,
+        PieceType.empty => l10n.boardEmptyPosition,
       },
     ];
-    if (isSelected) parts.add('已选中');
-    if (isValidMove) parts.add('可落子');
-    if (isSelectable) parts.add('可选择');
-    if (logicalPosition == lastMoveFrom) parts.add('上一步起点');
-    if (logicalPosition == lastMoveTo) parts.add('上一步终点');
-    return parts.join('，');
+    if (isSelected) parts.add(l10n.boardSelected);
+    if (isValidMove) parts.add(l10n.boardLegalDestination);
+    if (isSelectable) parts.add(l10n.boardSelectablePiece);
+    if (logicalPosition == lastMoveFrom) {
+      parts.add(l10n.boardPreviousMoveStart);
+    }
+    if (logicalPosition == lastMoveTo) {
+      parts.add(l10n.boardPreviousMoveEnd);
+    }
+    return parts.join(_semanticSeparator(locale));
+  }
+
+  String _semanticSeparator(Locale locale) {
+    return switch (locale.languageCode) {
+      'zh' => '，',
+      'ja' => '、',
+      _ => ', ',
+    };
   }
 }

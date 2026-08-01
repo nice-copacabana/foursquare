@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../services/local_network_service.dart';
+import '../services/logger_service.dart';
 import 'lan_lobby_event.dart';
 import 'lan_lobby_state.dart';
 
@@ -45,7 +46,12 @@ class LanLobbyBloc extends Bloc<LanLobbyEvent, LanLobbyState> {
     // Only update to scanning if success, but we should let the service drive the state potentially.
     // However, for UI responsiveness, setting scanning here is fine.
     // The service updates connection state to scanning too.
-    emit(state.copyWith(status: LanLobbyStatus.scanning, errorMessage: null));
+    emit(
+      state.copyWith(
+        status: LanLobbyStatus.scanning,
+        clearFailure: true,
+      ),
+    );
     try {
       await _servicesSubscription?.cancel();
       _servicesSubscription = _networkService.foundServices.listen(
@@ -53,11 +59,17 @@ class LanLobbyBloc extends Bloc<LanLobbyEvent, LanLobbyState> {
       );
 
       await _networkService.startDiscovery();
-    } catch (e) {
+    } catch (error, stackTrace) {
+      logger.error(
+        'LAN discovery failed',
+        'LanLobbyBloc',
+        error,
+        stackTrace,
+      );
       emit(
         state.copyWith(
           status: LanLobbyStatus.failure,
-          errorMessage: 'Start Discovery failed: $e',
+          failure: LanLobbyFailure.discovery,
         ),
       );
     }
@@ -80,16 +92,22 @@ class LanLobbyBloc extends Bloc<LanLobbyEvent, LanLobbyState> {
       state.copyWith(
         status: LanLobbyStatus.hosting,
         isHost: true,
-        errorMessage: null,
+        clearFailure: true,
       ),
     );
     try {
       await _networkService.startHost(roomName: event.roomName);
-    } catch (e) {
+    } catch (error, stackTrace) {
+      logger.error(
+        'LAN hosting failed',
+        'LanLobbyBloc',
+        error,
+        stackTrace,
+      );
       emit(
         state.copyWith(
           status: LanLobbyStatus.failure,
-          errorMessage: 'Hosting failed: $e',
+          failure: LanLobbyFailure.hosting,
           isHost: false,
         ),
       );
@@ -107,14 +125,25 @@ class LanLobbyBloc extends Bloc<LanLobbyEvent, LanLobbyState> {
     ConnectToHost event,
     Emitter<LanLobbyState> emit,
   ) async {
-    emit(state.copyWith(status: LanLobbyStatus.connecting, errorMessage: null));
+    emit(
+      state.copyWith(
+        status: LanLobbyStatus.connecting,
+        clearFailure: true,
+      ),
+    );
     try {
       await _networkService.connectToHost(event.service);
-    } catch (e) {
+    } catch (error, stackTrace) {
+      logger.error(
+        'LAN connection failed',
+        'LanLobbyBloc',
+        error,
+        stackTrace,
+      );
       emit(
         state.copyWith(
           status: LanLobbyStatus.failure,
-          errorMessage: 'Connection failed: $e',
+          failure: LanLobbyFailure.connection,
         ),
       );
     }

@@ -11,6 +11,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../l10n/app_localizations.dart';
 import '../../bloc/game_bloc.dart';
 import '../../bloc/game_event.dart';
 import '../../bloc/game_state.dart';
@@ -130,9 +131,10 @@ class _GamePageContentState extends State<_GamePageContent>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('四子游戏'),
+        title: Text(l10n.gameTitle),
         centerTitle: true,
       ),
       body: Stack(
@@ -177,16 +179,8 @@ class _GamePageContentState extends State<_GamePageContent>
                                   ),
                                   const SizedBox(height: 16),
                                   Text(
-                                    '棋局暂时无法继续',
+                                    l10n.gameUnavailable,
                                     style: theme.textTheme.titleLarge,
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    state.errorMessage,
-                                    textAlign: TextAlign.center,
-                                    style: theme.textTheme.bodyMedium?.copyWith(
-                                      color: scheme.onSurfaceVariant,
-                                    ),
                                   ),
                                   const SizedBox(height: 20),
                                   FilledButton.icon(
@@ -196,7 +190,7 @@ class _GamePageContentState extends State<_GamePageContent>
                                           .add(const RestartGameEvent());
                                     },
                                     icon: const Icon(Icons.refresh_rounded),
-                                    label: const Text('重新开始'),
+                                    label: Text(l10n.restart),
                                   ),
                                 ],
                               ),
@@ -384,6 +378,7 @@ class _GamePageContentState extends State<_GamePageContent>
   }
 
   void _showGameOverDialog(BuildContext context, GameOver state) {
+    final l10n = AppLocalizations.of(context)!;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       showGameOverDialog(
         context,
@@ -405,8 +400,9 @@ class _GamePageContentState extends State<_GamePageContent>
                     builder: (context) => GameReplayPage(
                       moveHistory: state.moveHistory,
                       startingPlayer: state.firstPlayer ?? PieceType.black,
-                      gameTitle:
-                          state.mode == GameMode.pvp ? 'PVP 游戏回放' : 'PVE 游戏回放',
+                      gameTitle: state.mode == GameMode.pvp
+                          ? l10n.pvpReplayTitle
+                          : l10n.pveReplayTitle,
                     ),
                   ),
                 );
@@ -417,22 +413,23 @@ class _GamePageContentState extends State<_GamePageContent>
   }
 
   void _showRestartConfirmation(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('重新开始'),
-        content: const Text('确定要重新开始游戏吗？当前进度将丢失。'),
+        title: Text(l10n.restartConfirmTitle),
+        content: Text(l10n.restartConfirmBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('取消'),
+            child: Text(l10n.cancel),
           ),
           TextButton(
             onPressed: () {
               Navigator.of(dialogContext).pop();
               context.read<GameBloc>().add(const RestartGameEvent());
             },
-            child: const Text('确定'),
+            child: Text(l10n.confirm),
           ),
         ],
       ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../../models/board_state.dart';
 import '../../models/piece_type.dart';
 import '../../models/position.dart';
@@ -19,13 +20,15 @@ class _InteractiveTutorialPageState extends State<InteractiveTutorialPage> {
   List<Position> _validMoves = const [];
   int _step = 0;
 
-  static const _messages = [
-    '先选择左上角的墨方棋子。',
-    '很好。现在把它移动到下方相邻空位。',
-    '落子完成。实战中每回合有 60 秒，双方轮流移动。',
-    '吃子必须匹配完整四格：己-己-敌-空，或规定的反向排列。落子必须属于相邻双子。',
-    '横向与竖向可同时吃子；对方只剩一子、无合法移动或超时都会判负。',
-  ];
+  static const _messageCount = 5;
+
+  List<String> _messages(AppLocalizations l10n) => [
+        l10n.tutorialStep1,
+        l10n.tutorialStep2,
+        l10n.tutorialStep3,
+        l10n.tutorialStep4,
+        l10n.tutorialStep5,
+      ];
 
   void _onPositionTapped(Position position) {
     if (_step == 0 && position == const Position(0, 0)) {
@@ -51,7 +54,7 @@ class _InteractiveTutorialPageState extends State<InteractiveTutorialPage> {
   }
 
   void _advance() {
-    if (_step < _messages.length - 1) {
+    if (_step < _messageCount - 1) {
       setState(() => _step++);
     } else {
       Navigator.of(context).pop();
@@ -60,12 +63,14 @@ class _InteractiveTutorialPageState extends State<InteractiveTutorialPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final messages = _messages(l10n);
     return Scaffold(
-      appBar: AppBar(title: const Text('互动教程')),
+      appBar: AppBar(title: Text(l10n.tutorialTitle)),
       body: SafeArea(
         child: Column(
           children: [
-            LinearProgressIndicator(value: (_step + 1) / _messages.length),
+            LinearProgressIndicator(value: (_step + 1) / _messageCount),
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(20),
@@ -83,7 +88,7 @@ class _InteractiveTutorialPageState extends State<InteractiveTutorialPage> {
                               const SizedBox(width: 14),
                               Expanded(
                                 child: Text(
-                                  _messages[_step],
+                                  messages[_step],
                                   style:
                                       Theme.of(context).textTheme.titleMedium,
                                 ),
@@ -121,7 +126,9 @@ class _InteractiveTutorialPageState extends State<InteractiveTutorialPage> {
                 child: FilledButton(
                   onPressed: _step < 2 ? null : _advance,
                   child: Text(
-                    _step == _messages.length - 1 ? '完成教程' : '下一步',
+                    _step == _messageCount - 1
+                        ? l10n.finishTutorial
+                        : l10n.next,
                   ),
                 ),
               ),
@@ -138,27 +145,34 @@ class _CapturePattern extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final cells = [
+      (label: l10n.ownPiece, kind: 1),
+      (label: l10n.ownPiece, kind: 1),
+      (label: l10n.enemyPiece, kind: 0),
+      (label: l10n.emptyCell, kind: -1),
+    ];
     return Semantics(
-      label: '允许的吃子排列，己、己、敌、空',
+      label: l10n.tutorialCapturePatternSemantics,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
-        children: ['己', '己', '敌', '空']
+        children: cells
             .map(
-              (value) => Container(
+              (cell) => Container(
                 width: 48,
                 height: 44,
                 margin: const EdgeInsets.symmetric(horizontal: 4),
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: value == '己'
+                  color: cell.kind == 1
                       ? Theme.of(context).colorScheme.primaryContainer
-                      : value == '敌'
+                      : cell.kind == 0
                           ? Theme.of(context).colorScheme.errorContainer
                           : Theme.of(context).colorScheme.surfaceContainerLow,
                   borderRadius: BorderRadius.circular(9),
                   border: Border.all(color: Theme.of(context).dividerColor),
                 ),
-                child: Text(value),
+                child: Text(cell.label),
               ),
             )
             .toList(growable: false),

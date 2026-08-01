@@ -19,7 +19,7 @@
     -->
     
     <application
-        android:label="四子游戏"
+        android:label="@string/app_name"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         

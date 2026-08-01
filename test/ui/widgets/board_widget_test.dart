@@ -9,6 +9,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:foursquare/l10n/app_localizations.dart';
 import 'package:foursquare/ui/widgets/board_widget.dart';
 import 'package:foursquare/models/board_state.dart';
 import 'package:foursquare/models/position.dart';
@@ -16,13 +17,25 @@ import 'package:foursquare/models/piece_type.dart';
 import 'package:foursquare/theme/packs/modern_eastern_theme_pack.dart';
 import 'package:foursquare/ui/widgets/board_painter.dart';
 
+Widget _testApp({
+  required Widget home,
+  Locale locale = const Locale('zh'),
+}) {
+  return MaterialApp(
+    locale: locale,
+    localizationsDelegates: AppLocalizations.localizationsDelegates,
+    supportedLocales: AppLocalizations.supportedLocales,
+    home: home,
+  );
+}
+
 void main() {
   group('BoardWidget', () {
     testWidgets('应该正确渲染初始棋盘', (WidgetTester tester) async {
       final boardState = BoardState.initial();
 
       await tester.pumpWidget(
-        MaterialApp(
+        _testApp(
           home: Scaffold(
             body: BoardWidget(
               boardState: boardState,
@@ -43,7 +56,7 @@ void main() {
       final boardState = BoardState.initial();
 
       await tester.pumpWidget(
-        MaterialApp(
+        _testApp(
           home: Scaffold(
             body: Center(
               child: SizedBox(
@@ -71,7 +84,7 @@ void main() {
       const selectedPiece = Position(0, 0);
 
       await tester.pumpWidget(
-        MaterialApp(
+        _testApp(
           home: Scaffold(
             body: BoardWidget(
               boardState: boardState,
@@ -90,7 +103,7 @@ void main() {
       const validMoves = [Position(0, 1), Position(1, 0)];
 
       await tester.pumpWidget(
-        MaterialApp(
+        _testApp(
           home: Scaffold(
             body: BoardWidget(
               boardState: boardState,
@@ -110,7 +123,7 @@ void main() {
       const lastMoveTo = Position(0, 1);
 
       await tester.pumpWidget(
-        MaterialApp(
+        _testApp(
           home: Scaffold(
             body: BoardWidget(
               boardState: boardState,
@@ -140,7 +153,7 @@ void main() {
       }
 
       await tester.pumpWidget(
-        MaterialApp(
+        _testApp(
           home: Scaffold(
             body: BoardWidget(
               boardState: boardState,
@@ -158,7 +171,7 @@ void main() {
       Position? tappedPosition;
 
       await tester.pumpWidget(
-        MaterialApp(
+        _testApp(
           home: Scaffold(
             body: BoardWidget(
               boardState: BoardState.initial(),
@@ -171,22 +184,86 @@ void main() {
       );
 
       expect(
-        find.bySemanticsLabel('第 1 行第 1 列，墨方棋子，已选中，可选择'),
+        find.bySemanticsLabel('第 1 行，第 1 列，墨方，已选中，可选棋子'),
         findsOneWidget,
       );
       expect(
-        find.bySemanticsLabel('第 2 行第 1 列，空位，可落子'),
+        find.bySemanticsLabel('第 2 行，第 1 列，空位，可移动到此处'),
         findsOneWidget,
       );
 
-      await tester.tap(find.bySemanticsLabel('第 2 行第 1 列，空位，可落子'));
+      await tester.tap(
+        find.bySemanticsLabel('第 2 行，第 1 列，空位，可移动到此处'),
+      );
       expect(tappedPosition, const Position(0, 1));
+      semantics.dispose();
+    });
+
+    testWidgets(
+        'English semantics describe board state without Chinese fallback', (
+      WidgetTester tester,
+    ) async {
+      final semantics = tester.ensureSemantics();
+
+      await tester.pumpWidget(
+        _testApp(
+          locale: const Locale('en'),
+          home: Scaffold(
+            body: BoardWidget(
+              boardState: BoardState.initial(),
+              selectedPiece: const Position(0, 0),
+              lastMoveFrom: const Position(0, 0),
+              onPositionTapped: (_) {},
+            ),
+          ),
+        ),
+      );
+
+      expect(
+        find.bySemanticsLabel(
+          'Row 1, column 1, Ink, Selected, Selectable piece, '
+          'Previous move start',
+        ),
+        findsOneWidget,
+      );
+      expect(find.bySemanticsLabel(RegExp('[\u4e00-\u9fff]')), findsNothing);
+      semantics.dispose();
+    });
+
+    testWidgets('Japanese semantics preserve flipped logical coordinates', (
+      WidgetTester tester,
+    ) async {
+      final semantics = tester.ensureSemantics();
+      Position? tappedPosition;
+
+      await tester.pumpWidget(
+        _testApp(
+          locale: const Locale('ja'),
+          home: Scaffold(
+            body: BoardWidget(
+              boardState: BoardState.initial(),
+              selectedPiece: const Position(0, 0),
+              flipBoard: true,
+              onPositionTapped: (position) => tappedPosition = position,
+            ),
+          ),
+        ),
+      );
+
+      final flippedBlackCell = find.bySemanticsLabel(
+        '4 行 4 列、墨方、選択中、選択できる駒',
+      );
+      expect(flippedBlackCell, findsOneWidget);
+      expect(find.bySemanticsLabel(RegExp('第 4 行')), findsNothing);
+
+      await tester.tap(flippedBlackCell);
+      expect(tappedPosition, const Position(0, 0));
       semantics.dispose();
     });
 
     testWidgets('注入的主题包应到达棋盘绘制层', (WidgetTester tester) async {
       await tester.pumpWidget(
-        MaterialApp(
+        _testApp(
           home: Scaffold(
             body: BoardWidget(
               boardState: BoardState.initial(),

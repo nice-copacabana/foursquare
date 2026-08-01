@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:foursquare/l10n/app_localizations.dart';
 import 'package:foursquare/models/game_record.dart';
 import 'package:foursquare/models/game_result.dart';
 import 'package:foursquare/models/piece_type.dart';
@@ -24,6 +25,9 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        locale: const Locale('zh'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: GameHistoryPage(loadHistory: () async => [record]),
       ),
     );
@@ -36,11 +40,30 @@ void main() {
 
   testWidgets('无记录时说明最近20局规则', (tester) async {
     await tester.pumpWidget(
-      MaterialApp(home: GameHistoryPage(loadHistory: () async => const [])),
+      MaterialApp(
+        locale: const Locale('zh'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: GameHistoryPage(loadHistory: () async => const []),
+      ),
     );
     await tester.pumpAndSettle();
 
     expect(find.text('尚无已完成对局'), findsOneWidget);
     expect(find.textContaining('最近 20 局'), findsOneWidget);
+  });
+
+  testWidgets('empty history guidance is localized in English', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        locale: const Locale('en'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: GameHistoryPage(loadHistory: () async => const []),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('No completed games yet'), findsOneWidget);
   });
 }

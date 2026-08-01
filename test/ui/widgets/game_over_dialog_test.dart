@@ -11,12 +11,45 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:foursquare/ui/widgets/game_over_dialog.dart';
 import 'package:foursquare/models/piece_type.dart';
 import 'package:foursquare/models/game_result.dart';
+import 'package:foursquare/l10n/app_localizations.dart';
 
 void main() {
   group('GameOverDialog', () {
+    testWidgets('uses locale and stable end reason instead of stored reason', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          locale: const Locale('ja'),
+          home: Scaffold(
+            body: GameOverDialog(
+              winner: PieceType.black,
+              gameResult: GameResult.blackWin(
+                reason: '白方无子可移动',
+                endReason: GameEndReason.noLegalMoves,
+                moveCount: 10,
+                duration: const Duration(minutes: 5),
+              ),
+              onRestart: () {},
+              onExit: () {},
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('墨方の勝利！'), findsOneWidget);
+      expect(find.text('玉方は合法手がないため敗北'), findsOneWidget);
+      expect(find.text('白方无子可移动'), findsNothing);
+    });
+
     testWidgets('黑方获胜应该显示正确信息', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          locale: const Locale('zh'),
           home: Scaffold(
             body: GameOverDialog(
               winner: PieceType.black,
@@ -34,7 +67,7 @@ void main() {
 
       // 验证标题
       expect(find.text('墨方获胜！'), findsOneWidget);
-      expect(find.text('白方无子可移动'), findsOneWidget);
+      expect(find.text('玉方只剩一枚或更少棋子'), findsOneWidget);
 
       // 验证按钮
       expect(find.text('退出'), findsOneWidget);
@@ -44,6 +77,9 @@ void main() {
     testWidgets('白方获胜应该显示正确信息', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          locale: const Locale('zh'),
           home: Scaffold(
             body: GameOverDialog(
               winner: PieceType.white,
@@ -60,7 +96,7 @@ void main() {
       );
 
       expect(find.text('玉方获胜！'), findsOneWidget);
-      expect(find.text('黑方无子可移动'), findsOneWidget);
+      expect(find.text('墨方只剩一枚或更少棋子'), findsOneWidget);
     });
 
     testWidgets('平局应该显示正确信息', (WidgetTester tester) async {
@@ -72,6 +108,9 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          locale: const Locale('zh'),
           home: Scaffold(
             body: GameOverDialog(
               winner: null,
@@ -83,9 +122,9 @@ void main() {
         ),
       );
 
-      expect(find.text('平局'), findsOneWidget);
+      expect(find.text('和棋'), findsOneWidget);
       // 平局时不显示"平局："，只显示"平局"
-      expect(find.text(gameResult.reason), findsOneWidget);
+      expect(find.text('连续 50 手未发生吃子，和棋'), findsOneWidget);
     });
 
     testWidgets('点击重新开始按钮应该触发回调', (WidgetTester tester) async {
@@ -93,6 +132,9 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          locale: const Locale('zh'),
           home: Scaffold(
             body: GameOverDialog(
               winner: PieceType.black,
@@ -119,6 +161,9 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          locale: const Locale('zh'),
           home: Scaffold(
             body: GameOverDialog(
               winner: PieceType.black,
@@ -145,6 +190,9 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          locale: const Locale('zh'),
           home: Scaffold(
             body: GameOverDialog(
               winner: PieceType.black,
@@ -172,6 +220,9 @@ void main() {
     testWidgets('无回放功能时不应该显示查看回放按钮', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          locale: const Locale('zh'),
           home: Scaffold(
             body: GameOverDialog(
               winner: PieceType.black,

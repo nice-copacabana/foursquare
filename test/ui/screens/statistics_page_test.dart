@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:foursquare/l10n/app_localizations.dart';
 import 'package:foursquare/models/game_record.dart';
 import 'package:foursquare/models/game_result.dart';
 import 'package:foursquare/models/piece_type.dart';
@@ -16,6 +17,9 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        locale: const Locale('zh'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: StatisticsPage(
           loadStatistics: () async => const GameStatistics(
             totalGames: 3,
@@ -70,6 +74,9 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        locale: const Locale('zh'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: StatisticsPage(
           loadStatistics: () async => const GameStatistics(totalGames: 6),
           loadHistory: () async => records,
@@ -96,6 +103,9 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        locale: const Locale('zh'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: StatisticsPage(
           loadStatistics: () async => const GameStatistics(totalGames: 1),
           loadHistory: loadHistory,
@@ -116,6 +126,9 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        locale: const Locale('zh'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: StatisticsPage(
           loadStatistics: () async => const GameStatistics(totalGames: 1),
           loadHistory: () async => const [],
@@ -147,6 +160,9 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        locale: const Locale('zh'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: StatisticsPage(
           loadStatistics: () async => const GameStatistics(
             totalGames: 12,
@@ -161,6 +177,24 @@ void main() {
 
     expect(find.text('棋谱总览'), findsOneWidget);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('statistics headings are localized in English', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        locale: const Locale('en'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: StatisticsPage(
+          loadStatistics: () async => const GameStatistics(totalGames: 0),
+          loadHistory: () async => const [],
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Record overview'), findsOneWidget);
+    expect(find.text('Two players · Last 20'), findsOneWidget);
   });
 }
 

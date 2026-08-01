@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../bloc/lan_lobby_bloc.dart';
 import '../../../bloc/lan_lobby_event.dart';
 import '../../../bloc/lan_lobby_state.dart';
+import '../../../l10n/app_localizations.dart';
 import 'lan_game_page.dart';
 
 class LanLobbyPage extends StatelessWidget {
@@ -28,13 +29,23 @@ class LanLobbyView extends StatefulWidget {
 class _LanLobbyViewState extends State<LanLobbyView>
     with SingleTickerProviderStateMixin {
   late final TabController _tabController;
-  final TextEditingController _roomNameController =
-      TextEditingController(text: 'My Room');
+  final TextEditingController _roomNameController = TextEditingController();
+  bool _defaultRoomNameSet = false;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_defaultRoomNameSet) {
+      _roomNameController.text =
+          AppLocalizations.of(context)!.lanDefaultRoomName;
+      _defaultRoomNameSet = true;
+    }
   }
 
   @override
@@ -48,23 +59,23 @@ class _LanLobbyViewState extends State<LanLobbyView>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('局域网对战'),
+        title: Text(l10n.lanTitle),
         bottom: TabBar(
           controller: _tabController,
-          tabs: const [
-            Tab(text: '创建房间'),
-            Tab(text: '加入房间'),
+          tabs: [
+            Tab(text: l10n.lanCreateRoomTab),
+            Tab(text: l10n.lanJoinRoomTab),
           ],
         ),
       ),
       body: BlocConsumer<LanLobbyBloc, LanLobbyState>(
         listener: (context, state) {
-          if (state.status == LanLobbyStatus.failure &&
-              state.errorMessage != null) {
+          if (state.status == LanLobbyStatus.failure && state.failure != null) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.errorMessage!)),
+              SnackBar(content: Text(_failureMessage(state.failure!, l10n))),
             );
           }
           if (state.status == LanLobbyStatus.connected) {
@@ -85,13 +96,13 @@ class _LanLobbyViewState extends State<LanLobbyView>
             return _LobbyStatusPane(
               icon: Icons.check_circle_outline_rounded,
               iconColor: scheme.primary,
-              title: '已连接到对局',
-              description: '正在进入棋局，请稍候。',
+              title: l10n.lanConnectedTitle,
+              description: l10n.lanConnectedDescription,
               action: OutlinedButton(
                 onPressed: () {
                   context.read<LanLobbyBloc>().add(DisconnectLan());
                 },
-                child: const Text('断开连接'),
+                child: Text(l10n.lanDisconnect),
               ),
             );
           }
@@ -101,14 +112,14 @@ class _LanLobbyViewState extends State<LanLobbyView>
               icon: Icons.wifi_tethering_rounded,
               iconColor: scheme.primary,
               progress: true,
-              title: '正在等待玩家加入',
-              description: '房间名：${_roomNameController.text}',
+              title: l10n.lanWaitingTitle,
+              description: l10n.lanRoomNameValue(_roomNameController.text),
               action: OutlinedButton(
                 onPressed: () {
                   context.read<LanLobbyBloc>().add(StopHosting());
                 },
                 style: OutlinedButton.styleFrom(foregroundColor: scheme.error),
-                child: const Text('取消创建'),
+                child: Text(l10n.lanCancelCreate),
               ),
             );
           }
@@ -149,12 +160,12 @@ class _LanLobbyViewState extends State<LanLobbyView>
                                 ),
                                 const SizedBox(height: 20),
                                 Text(
-                                  '开一间棋室',
+                                  l10n.lanCreateHeading,
                                   style: theme.textTheme.titleLarge,
                                 ),
                                 const SizedBox(height: 6),
                                 Text(
-                                  '同一局域网内的玩家可以发现并加入。',
+                                  l10n.lanCreateDescription,
                                   textAlign: TextAlign.center,
                                   style: theme.textTheme.bodyMedium?.copyWith(
                                     color: scheme.onSurfaceVariant,
@@ -163,10 +174,11 @@ class _LanLobbyViewState extends State<LanLobbyView>
                                 const SizedBox(height: 24),
                                 TextField(
                                   controller: _roomNameController,
-                                  decoration: const InputDecoration(
-                                    labelText: '房间名称',
-                                    prefixIcon:
-                                        Icon(Icons.meeting_room_outlined),
+                                  decoration: InputDecoration(
+                                    labelText: l10n.lanRoomNameLabel,
+                                    prefixIcon: const Icon(
+                                      Icons.meeting_room_outlined,
+                                    ),
                                   ),
                                 ),
                                 const SizedBox(height: 20),
@@ -183,7 +195,7 @@ class _LanLobbyViewState extends State<LanLobbyView>
                                           );
                                     },
                                     icon: const Icon(Icons.add_rounded),
-                                    label: const Text('创建房间'),
+                                    label: Text(l10n.lanCreateRoom),
                                   ),
                                 ),
                               ],
@@ -203,13 +215,13 @@ class _LanLobbyViewState extends State<LanLobbyView>
                       children: [
                         Expanded(
                           child: Text(
-                            '附近的房间',
+                            l10n.lanNearbyRooms,
                             style: theme.textTheme.titleMedium,
                           ),
                         ),
                         if (state.status == LanLobbyStatus.scanning)
                           IconButton(
-                            tooltip: '停止搜索',
+                            tooltip: l10n.lanStopSearch,
                             icon: const SizedBox(
                               width: 20,
                               height: 20,
@@ -221,7 +233,7 @@ class _LanLobbyViewState extends State<LanLobbyView>
                           )
                         else
                           IconButton(
-                            tooltip: '搜索附近房间',
+                            tooltip: l10n.lanSearch,
                             icon: const Icon(Icons.refresh_rounded),
                             onPressed: () => context
                                 .read<LanLobbyBloc>()
@@ -249,9 +261,11 @@ class _LanLobbyViewState extends State<LanLobbyView>
                                 child: Card(
                                   child: ListTile(
                                     leading: const Icon(Icons.computer_rounded),
-                                    title: Text(service.name ?? '未命名房间'),
+                                    title: Text(
+                                      service.name ?? l10n.lanUnnamedRoom,
+                                    ),
                                     subtitle: Text(
-                                      '${service.host ?? "未知地址"}:${service.port}',
+                                      '${service.host ?? l10n.lanUnknownAddress}:${service.port}',
                                     ),
                                     trailing: FilledButton(
                                       onPressed: () {
@@ -259,7 +273,7 @@ class _LanLobbyViewState extends State<LanLobbyView>
                                             .read<LanLobbyBloc>()
                                             .add(ConnectToHost(service));
                                       },
-                                      child: const Text('加入'),
+                                      child: Text(l10n.lanJoin),
                                     ),
                                   ),
                                 ),
@@ -275,6 +289,16 @@ class _LanLobbyViewState extends State<LanLobbyView>
       ),
     );
   }
+
+  String _failureMessage(
+    LanLobbyFailure failure,
+    AppLocalizations l10n,
+  ) =>
+      switch (failure) {
+        LanLobbyFailure.discovery => l10n.lanDiscoveryFailed,
+        LanLobbyFailure.hosting => l10n.lanHostingFailed,
+        LanLobbyFailure.connection => l10n.lanConnectionFailed,
+      };
 }
 
 class _LobbyStatusPane extends StatelessWidget {
@@ -357,6 +381,7 @@ class _EmptyRooms extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    final l10n = AppLocalizations.of(context)!;
     return Padding(
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -369,12 +394,12 @@ class _EmptyRooms extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            scanning ? '正在搜索附近棋室…' : '暂未发现房间',
+            scanning ? l10n.lanSearching : l10n.lanNoRooms,
             style: theme.textTheme.titleMedium,
           ),
           const SizedBox(height: 6),
           Text(
-            scanning ? '请保持双方设备连接同一网络。' : '点击右上角搜索按钮开始查找。',
+            scanning ? l10n.lanSearchingHint : l10n.lanSearchHint,
             textAlign: TextAlign.center,
             style: theme.textTheme.bodyMedium?.copyWith(
               color: scheme.onSurfaceVariant,

@@ -8,6 +8,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import '../../l10n/app_localizations.dart';
 import '../../models/move.dart';
 import '../../models/piece_type.dart';
 import '../../services/game_replay_service.dart';
@@ -18,13 +19,13 @@ class GameReplayPage extends StatefulWidget {
   final List<Move> moveHistory;
 
   /// 游戏模式标题
-  final String gameTitle;
+  final String? gameTitle;
   final PieceType startingPlayer;
 
   const GameReplayPage({
     super.key,
     required this.moveHistory,
-    this.gameTitle = '游戏回放',
+    this.gameTitle,
     this.startingPlayer = PieceType.black,
   });
 
@@ -60,14 +61,15 @@ class _GameReplayPageState extends State<GameReplayPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.gameTitle),
+        title: Text(widget.gameTitle ?? l10n.replayTitle),
         actions: [
           IconButton(
             icon: const Icon(Icons.info_outline),
             onPressed: _showReplayInfo,
-            tooltip: '回放说明',
+            tooltip: l10n.replayHelp,
           ),
         ],
       ),
@@ -112,6 +114,7 @@ class _GameReplayPageState extends State<GameReplayPage> {
   }
 
   Widget _buildStepInfo() {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.all(16),
       color: Theme.of(context).colorScheme.primaryContainer,
@@ -121,7 +124,12 @@ class _GameReplayPageState extends State<GameReplayPage> {
           const Icon(Icons.history, size: 20),
           const SizedBox(width: 8),
           Text(
-            _replayState.stepDescription,
+            _replayState.isAtStart
+                ? l10n.replayInitial
+                : l10n.replayProgress(
+                    _replayState.currentStep + 1,
+                    _replayState.totalSteps,
+                  ),
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
@@ -133,6 +141,7 @@ class _GameReplayPageState extends State<GameReplayPage> {
 
   Widget _buildCurrentMoveInfo() {
     final move = _replayState.currentMove!;
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       padding: const EdgeInsets.all(12),
@@ -149,7 +158,7 @@ class _GameReplayPageState extends State<GameReplayPage> {
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              move.getDescription(),
+              _moveDescription(move, l10n),
               style: Theme.of(context).textTheme.bodyMedium,
             ),
           ),
@@ -159,6 +168,7 @@ class _GameReplayPageState extends State<GameReplayPage> {
   }
 
   Widget _buildControls() {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -186,8 +196,8 @@ class _GameReplayPageState extends State<GameReplayPage> {
               divisions:
                   _replayState.totalSteps > 0 ? _replayState.totalSteps : 1,
               label: _replayState.isAtStart
-                  ? '初始'
-                  : '第 ${_replayState.currentStep + 1} 步',
+                  ? l10n.replayInitial
+                  : l10n.replayStepLabel(_replayState.currentStep + 1),
               onChanged: (value) {
                 _updateState(_replayService.goToStep(value.toInt() - 1));
               },
@@ -204,28 +214,28 @@ class _GameReplayPageState extends State<GameReplayPage> {
                 onPressed: _replayState.canGoBackward
                     ? () => _updateState(_replayService.goToStart())
                     : null,
-                tooltip: '第一步',
+                tooltip: l10n.replayFirst,
               ),
               IconButton(
                 icon: const Icon(Icons.navigate_before),
                 onPressed: _replayState.canGoBackward
                     ? () => _updateState(_replayService.goBackward())
                     : null,
-                tooltip: '上一步',
+                tooltip: l10n.replayPrevious,
               ),
               IconButton(
                 icon: const Icon(Icons.navigate_next),
                 onPressed: _replayState.canGoForward
                     ? () => _updateState(_replayService.goForward())
                     : null,
-                tooltip: '下一步',
+                tooltip: l10n.replayNext,
               ),
               IconButton(
                 icon: const Icon(Icons.last_page),
                 onPressed: _replayState.canGoForward
                     ? () => _updateState(_replayService.goToEnd())
                     : null,
-                tooltip: '最后一步',
+                tooltip: l10n.replayLast,
               ),
             ],
           ),
@@ -268,7 +278,7 @@ class _GameReplayPageState extends State<GameReplayPage> {
                 child: Text('${index + 1}'),
               ),
               title: Text(
-                move.getDescription(),
+                _moveDescription(move, AppLocalizations.of(context)!),
                 style: TextStyle(
                   fontWeight: isCurrentStep ? FontWeight.bold : null,
                 ),
@@ -286,36 +296,48 @@ class _GameReplayPageState extends State<GameReplayPage> {
   }
 
   void _showReplayInfo() {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('回放说明'),
-        content: const SingleChildScrollView(
+        title: Text(l10n.replayHelp),
+        content: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('📱 控制说明：'),
-              SizedBox(height: 8),
-              Text('• 使用滑块可快速跳转到任意步骤'),
-              Text('• 点击按钮可逐步回放'),
-              Text('• 点击历史记录可直接跳转'),
-              SizedBox(height: 16),
-              Text('🎮 功能说明：'),
-              SizedBox(height: 8),
-              Text('• 棋盘为只读模式，不可操作'),
-              Text('• 高亮显示当前步骤的移动'),
-              Text('• 带❌标记表示该步骤有吃子'),
+              Text(l10n.replayControlsHeading),
+              const SizedBox(height: 8),
+              Text('• ${l10n.replayHelpSlider}'),
+              Text('• ${l10n.replayHelpButtons}'),
+              Text('• ${l10n.replayHelpHistory}'),
+              const SizedBox(height: 16),
+              Text(l10n.replayFeaturesHeading),
+              const SizedBox(height: 8),
+              Text('• ${l10n.replayHelpReadonly}'),
+              Text('• ${l10n.replayHelpHighlight}'),
+              Text('• ${l10n.replayHelpCapture}'),
             ],
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('知道了'),
+            child: Text(l10n.gotIt),
           ),
         ],
       ),
     );
+  }
+
+  String _moveDescription(Move move, AppLocalizations l10n) {
+    if (move.captureCount > 0) {
+      return l10n.moveDescriptionCapture(
+        move.from.toString(),
+        move.to.toString(),
+        move.captureCount,
+      );
+    }
+    return l10n.moveDescription(move.from.toString(), move.to.toString());
   }
 }

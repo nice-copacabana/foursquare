@@ -1,10 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:foursquare/l10n/app_localizations.dart';
 import 'package:foursquare/ui/screens/rules_page.dart';
 
 void main() {
   testWidgets('规则页与正式吃子、计时和终局规则一致', (tester) async {
-    await tester.pumpWidget(const MaterialApp(home: RulesPage()));
+    await tester.pumpWidget(
+      const MaterialApp(
+        locale: Locale('zh'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: RulesPage(),
+      ),
+    );
 
     expect(find.text('精确吃子'), findsOneWidget);
     expect(find.textContaining('一手最多吃两枚'), findsOneWidget);
@@ -20,5 +28,25 @@ void main() {
       300,
     );
     expect(find.textContaining('局域网对战不提供撤销'), findsOneWidget);
+  });
+
+  testWidgets('English rules preserve the authoritative limits',
+      (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        locale: Locale('en'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: RulesPage(),
+      ),
+    );
+
+    expect(find.text('Exact captures'), findsOneWidget);
+    expect(find.textContaining('up to two pieces'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.textContaining('50 consecutive plies'),
+      300,
+    );
+    expect(find.textContaining('30 seconds to reconnect'), findsOneWidget);
   });
 }

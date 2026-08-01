@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'ui/screens/home_page.dart';
 import 'ui/screens/onboarding_page.dart';
 import 'services/storage_service.dart';
+import 'services/app_locale_controller.dart';
 import 'services/audio_coordinator.dart';
 import 'services/performance_monitor.dart';
 import 'services/diagnostics_service.dart';
@@ -59,6 +60,7 @@ class FourSquareGameApp extends StatefulWidget {
 class _FourSquareGameAppState extends State<FourSquareGameApp> {
   final StorageService _storageService = StorageService();
   final ThemePackRegistry _themeRegistry = ThemePackRegistry.phaseOne();
+  final AppLocaleController _localeController = AppLocaleController();
   late ThemeData _currentTheme = _themeRegistry.defaultPack.themeData;
   bool _isLoading = true;
   bool _isFirstLaunch = true;
@@ -70,26 +72,27 @@ class _FourSquareGameAppState extends State<FourSquareGameApp> {
   }
 
   Future<void> _initialize() async {
-    await _loadTheme();
-    await _checkFirstLaunch();
-  }
-
-  Future<void> _loadTheme() async {
     final settings = await _storageService.loadSettings();
     final selectedTheme = _themeRegistry.resolve(settings.selectedTheme);
+    final prefs = await SharedPreferences.getInstance();
+    final isFirstLaunch =
+        prefs.getBool(StorageConstants.keyFirstLaunch) ?? true;
+    if (!mounted) {
+      return;
+    }
+
+    _localeController.select(settings.localeCode);
     setState(() {
       _currentTheme = selectedTheme.themeData;
+      _isFirstLaunch = isFirstLaunch;
       _isLoading = false;
     });
   }
 
-  Future<void> _checkFirstLaunch() async {
-    final prefs = await SharedPreferences.getInstance();
-    final isFirstLaunch =
-        prefs.getBool(StorageConstants.keyFirstLaunch) ?? true;
-    setState(() {
-      _isFirstLaunch = isFirstLaunch;
-    });
+  @override
+  void dispose() {
+    _localeController.dispose();
+    super.dispose();
   }
 
   @override
@@ -105,25 +108,32 @@ class _FourSquareGameAppState extends State<FourSquareGameApp> {
       );
     }
 
-    return MaterialApp(
-      title: '四子游戏',
-      theme: _currentTheme,
-      home: _isFirstLaunch ? const OnboardingPage() : const HomePage(),
-      routes: {
-        '/home': (context) => const HomePage(),
-        '/onboarding': (context) => const OnboardingPage(),
-      },
-      debugShowCheckedModeBanner: false,
-      // 国际化配置
-      localizationsDelegates: const [
-        AppLocalizations.delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      supportedLocales: const [
-        Locale('zh', ''), // 中文
-      ],
+    return AppLocaleScope(
+      controller: _localeController,
+      child: ValueListenableBuilder<Locale>(
+        valueListenable: _localeController,
+        builder: (context, locale, child) {
+          return MaterialApp(
+            onGenerateTitle: (context) =>
+                AppLocalizations.of(context)?.appTitle ?? '四子游戏',
+            locale: locale,
+            theme: _currentTheme,
+            home: _isFirstLaunch ? const OnboardingPage() : const HomePage(),
+            routes: {
+              '/home': (context) => const HomePage(),
+              '/onboarding': (context) => const OnboardingPage(),
+            },
+            debugShowCheckedModeBanner: false,
+            localizationsDelegates: const [
+              AppLocalizations.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            supportedLocales: AppLocaleController.supportedLocales,
+          );
+        },
+      ),
     );
   }
 }

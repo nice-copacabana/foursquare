@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../engine/move_validator.dart';
 import '../../../models/board_state.dart';
 import '../../../models/game_result.dart';
@@ -71,9 +72,10 @@ class _LanGameViewBodyState extends State<_LanGameViewBody> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('局域网对战'),
+        title: Text(l10n.lanTitle),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
@@ -87,12 +89,12 @@ class _LanGameViewBodyState extends State<_LanGameViewBody> {
             _showGameOverDialog(context, state);
           } else if (state is LanOpponentLeft) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('对方已离开游戏')),
+              SnackBar(content: Text(l10n.lanOpponentLeft)),
             );
             Navigator.pop(context);
           } else if (state is LanGameError) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.message)),
+              SnackBar(content: Text(l10n.lanGameError)),
             );
           }
         },
@@ -105,13 +107,14 @@ class _LanGameViewBodyState extends State<_LanGameViewBody> {
             return _buildGameUI(context, state);
           }
 
-          return const Center(child: Text('Unknown State'));
+          return Center(child: Text(l10n.lanUnknownState));
         },
       ),
     );
   }
 
   Widget _buildGameUI(BuildContext context, LanGameState state) {
+    final l10n = AppLocalizations.of(context)!;
     BoardState board;
     PieceType localColor;
     List<Move> history;
@@ -142,7 +145,7 @@ class _LanGameViewBodyState extends State<_LanGameViewBody> {
             (!state.isSynchronized || state.isReconnecting))
           MaterialBanner(
             content: Text(
-              state.isReconnecting ? '连接中断，正在等待重连…' : '正在同步主机棋局…',
+              state.isReconnecting ? l10n.lanReconnecting : l10n.lanSyncing,
             ),
             leading: const SizedBox.square(
               dimension: 22,
@@ -249,15 +252,16 @@ class _LanGameViewBodyState extends State<_LanGameViewBody> {
   }
 
   void _showExitDialog(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('退出游戏?'),
-        content: const Text('这将断开连接。'),
+        title: Text(l10n.lanExitTitle),
+        content: Text(l10n.lanExitDescription),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('取消'),
+            child: Text(l10n.cancel),
           ),
           TextButton(
             onPressed: () {
@@ -265,7 +269,7 @@ class _LanGameViewBodyState extends State<_LanGameViewBody> {
               Navigator.pop(context); // Close dialog
               Navigator.pop(context); // Close Game Page
             },
-            child: const Text('退出'),
+            child: Text(l10n.exit),
           ),
         ],
       ),
@@ -273,6 +277,7 @@ class _LanGameViewBodyState extends State<_LanGameViewBody> {
   }
 
   void _showGameOverDialog(BuildContext context, LanGameFinished state) {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -297,7 +302,7 @@ class _LanGameViewBodyState extends State<_LanGameViewBody> {
                     builder: (_) => GameReplayPage(
                       moveHistory: state.moveHistory,
                       startingPlayer: state.startingPlayer,
-                      gameTitle: '局域网对局回放',
+                      gameTitle: l10n.lanReplayTitle,
                     ),
                   ),
                 );
