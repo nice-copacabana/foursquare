@@ -185,7 +185,7 @@ class WatchGamePage extends StatelessWidget {
         size: boardSize,
         lastMoveFrom: state.lastMove?.from,
         lastMoveTo: state.lastMove?.to,
-        capturedPiecePosition: state.lastMove?.capturedPiece,
+        capturedPiecePositions: state.lastMove?.capturedPieces ?? const [],
         onPositionTapped: (position) {
           context.read<GameBloc>().add(PositionTappedEvent(position));
         },

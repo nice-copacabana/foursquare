@@ -328,8 +328,8 @@ class _OnlineGameViewState extends State<OnlineGameView> {
                         validMoves: _validMoves,
                         lastMoveFrom: lastMove?.from,
                         lastMoveTo: lastMove?.to,
-                        capturedPiecePosition:
-                            lastMove?.capturedPieces.firstOrNull,
+                        capturedPiecePositions:
+                            lastMove?.capturedPieces ?? const [],
                         flipBoard: state.localColor == OnlinePieceColor.white,
                         onPositionTapped: (position) =>
                             _onPositionTapped(context, state, position),
@@ -464,8 +464,4 @@ class _OnlineGameViewState extends State<OnlineGameView> {
       OnlineBattleFailure.protocolFailure || null => l10n.onlineFailureProtocol,
     };
   }
-}
-
-extension<T> on List<T> {
-  T? get firstOrNull => isEmpty ? null : first;
 }

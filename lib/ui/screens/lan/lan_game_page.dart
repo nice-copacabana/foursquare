@@ -164,8 +164,8 @@ class _LanGameViewBodyState extends State<_LanGameViewBody> {
                 validMoves: _validMoves,
                 lastMoveFrom: history.isNotEmpty ? history.last.from : null,
                 lastMoveTo: history.isNotEmpty ? history.last.to : null,
-                capturedPiecePosition:
-                    history.isNotEmpty ? history.last.capturedPiece : null,
+                capturedPiecePositions:
+                    history.isNotEmpty ? history.last.capturedPieces : const [],
                 flipBoard: localColor == PieceType.white,
                 onPositionTapped: (position) => _handlePositionTapped(
                   context,

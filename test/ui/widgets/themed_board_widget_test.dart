@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:foursquare/l10n/app_localizations.dart';
 import 'package:foursquare/models/board_state.dart';
+import 'package:foursquare/models/position.dart';
 import 'package:foursquare/theme/packs/modern_eastern_theme_pack.dart';
 import 'package:foursquare/ui/widgets/animated_board_widget.dart';
 import 'package:foursquare/ui/widgets/board_painter.dart';
@@ -32,5 +33,27 @@ void main() {
     expect(animatedBoard.particleEnabled, isFalse);
     final adapter = animatedBoard.theme! as ThemePackBoardThemeAdapter;
     expect(adapter.themePack, same(modernEasternThemePack));
+  });
+
+  testWidgets('主题棋盘会向动画棋盘传递全部被吃位置', (WidgetTester tester) async {
+    const capturedPieces = [Position(1, 1), Position(2, 2)];
+
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: ThemedBoardWidget(
+          boardState: BoardState.initial(),
+          capturedPiecePositions: capturedPieces,
+          size: 320,
+          onPositionTapped: (_) {},
+        ),
+      ),
+    );
+
+    final animatedBoard = tester.widget<AnimatedBoardWidget>(
+      find.byType(AnimatedBoardWidget),
+    );
+    expect(animatedBoard.capturedPiecePositions, capturedPieces);
   });
 }

@@ -5,9 +5,11 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:foursquare/l10n/app_localizations.dart';
 import 'package:foursquare/models/online_protocol.dart';
+import 'package:foursquare/models/position.dart';
 import 'package:foursquare/services/online_game_transport.dart';
 import 'package:foursquare/services/online_identity_service.dart';
 import 'package:foursquare/ui/screens/online_game_page.dart';
+import 'package:foursquare/ui/widgets/animated_board_widget.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -92,6 +94,40 @@ void main() {
     expect(find.textContaining('Opponent disconnected'), findsOneWidget);
     expect(find.textContaining('30 more seconds'), findsOneWidget);
     expect(find.byType(OnlineGameView), findsOneWidget);
+  });
+
+  testWidgets('authoritative double capture reaches the board animation',
+      (tester) async {
+    final transport = FakeOnlinePageTransport();
+    await tester.pumpWidget(
+      _app(
+        locale: const Locale('en'),
+        transport: transport,
+        identityService: FakeOnlinePageIdentity(),
+      ),
+    );
+    transport.add(
+      OnlineSnapshotReceived(
+        snapshot: _snapshot(),
+        source: OnlineSnapshotSource.matchFound,
+      ),
+    );
+    await tester.pump();
+    transport.add(
+      OnlineSnapshotReceived(
+        snapshot: _doubleCaptureSnapshot(),
+        source: OnlineSnapshotSource.authoritativeSnapshot,
+      ),
+    );
+    await tester.pump();
+
+    final board = tester.widget<AnimatedBoardWidget>(
+      find.byType(AnimatedBoardWidget),
+    );
+    expect(
+      board.capturedPiecePositions,
+      const [Position(1, 1), Position(2, 2)],
+    );
   });
 
   testWidgets('recovering a live match offers an explicit reconnect action',
@@ -220,6 +256,31 @@ OnlineStateSnapshot _snapshot({int turnDeadline = 1060000}) =>
       'turnDeadlineEpochMs': turnDeadline,
       'opponentConnected': true,
       'state': _playingStateJson(),
+    });
+
+OnlineStateSnapshot _doubleCaptureSnapshot() => OnlineStateSnapshot.fromJson({
+      'protocolVersion': 1,
+      'matchId': 'match-1',
+      'color': 'black',
+      'turnDeadlineEpochMs': 1120000,
+      'opponentConnected': true,
+      'state': {
+        ..._playingStateJson(),
+        'currentTurn': 'white',
+        'moveHistory': [
+          {
+            'matchId': 'match-1',
+            'from': {'x': 0, 'y': 0},
+            'to': {'x': 0, 'y': 1},
+            'player': 'black',
+            'capturedPieces': [
+              {'x': 1, 'y': 1},
+              {'x': 2, 'y': 2},
+            ],
+          },
+        ],
+        'revision': 1,
+      },
     });
 
 Map<String, dynamic> _playingStateJson() => {

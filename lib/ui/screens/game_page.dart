@@ -297,7 +297,7 @@ class _GamePageContentState extends State<_GamePageContent>
       validMoves: state.validMoves,
       lastMoveFrom: state.lastMove?.from,
       lastMoveTo: state.lastMove?.to,
-      capturedPiecePosition: state.lastCapturedPosition,
+      capturedPiecePositions: state.lastMove?.capturedPieces ?? const [],
       flipBoard: shouldFlipBoard,
       onPositionTapped: (position) =>
           _handlePositionTapped(context, state, position),

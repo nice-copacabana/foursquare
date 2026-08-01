@@ -91,8 +91,8 @@ class _GameReplayPageState extends State<GameReplayPage> {
                     validMoves: const [],
                     lastMoveFrom: _replayState.currentMove?.from,
                     lastMoveTo: _replayState.currentMove?.to,
-                    capturedPiecePosition:
-                        _replayState.currentMove?.capturedPiece,
+                    capturedPiecePositions:
+                        _replayState.currentMove?.capturedPieces ?? const [],
                     onPositionTapped: (_) {}, // 禁用交互
                   ),
                 ),

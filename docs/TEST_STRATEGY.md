@@ -99,7 +99,9 @@ flutter test integration_test
 flutter test --coverage
 Push-Location server
 npm test
+npm run build
 Pop-Location
+flutter test test/integration/online_game_transport_real_server_test.dart --dart-define=RUN_ONLINE_REAL_SERVER_E2E=true --timeout 60s
 ```
 
 规则和协议变更的合入门禁：
@@ -116,6 +118,6 @@ Pop-Location
 - 棋盘场景使用统一 builder/fixture，显式列出 4×4 内容和当前行棋方，避免通过初始棋盘叠加残留棋子造成误判。
 - 随机先手使用可注入、可固定的随机源；测试不得依赖概率。
 - 时间测试使用假时钟；测试不得 `sleep` 60 秒。
-- LAN 集成测试优先使用内存双向传输模拟重复、丢失和乱序；真机测试补充 mDNS、WebSocket 和生命周期行为。在线 Socket 层先使用假 IO 验证契约，再以本地真实双客户端和隔离 staging 补充传输、数据库及生命周期行为。
+- LAN 集成测试优先使用内存双向传输模拟重复、丢失和乱序；真机测试补充 mDNS、WebSocket 和生命周期行为。在线 Socket 层先使用假 IO 验证契约，再以本地真实 Node 双 Socket 测试和显式启用的双 Flutter `OnlineGameTransport` 测试补充传输行为，最后在隔离 staging 验证真实数据库、TLS、进程恢复和负载。
 - 断言应同时检查结果和状态不变量：棋盘、当前方、吃子列表、未吃计数、时间、修订号、历史和统计。
 - 不以覆盖率代替场景验收；关键规则分支必须有明确、可读的行为测试名称。

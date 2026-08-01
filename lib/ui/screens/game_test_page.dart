@@ -222,7 +222,7 @@ class _GameTestPageState extends State<GameTestPage> {
               validMoves: _validMoves,
               lastMoveFrom: _lastMove?.from,
               lastMoveTo: _lastMove?.to,
-              capturedPiecePosition: _lastMove?.capturedPiece,
+              capturedPiecePositions: _lastMove?.capturedPieces ?? const [],
               onPositionTapped: _handlePositionTapped,
             ),
           ),

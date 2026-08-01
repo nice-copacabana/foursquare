@@ -19,7 +19,7 @@ class ThemedBoardWidget extends StatefulWidget {
     this.validMoves = const [],
     this.lastMoveFrom,
     this.lastMoveTo,
-    this.capturedPiecePosition,
+    this.capturedPiecePositions = const [],
     this.size,
     this.flipBoard = false,
     this.themePack,
@@ -30,7 +30,7 @@ class ThemedBoardWidget extends StatefulWidget {
   final List<Position> validMoves;
   final Position? lastMoveFrom;
   final Position? lastMoveTo;
-  final Position? capturedPiecePosition;
+  final List<Position> capturedPiecePositions;
   final ValueChanged<Position> onPositionTapped;
   final double? size;
   final bool flipBoard;
@@ -90,7 +90,7 @@ class _ThemedBoardWidgetState extends State<ThemedBoardWidget> {
                 validMoves: widget.validMoves,
                 lastMoveFrom: widget.lastMoveFrom,
                 lastMoveTo: widget.lastMoveTo,
-                capturedPiecePosition: widget.capturedPiecePosition,
+                capturedPiecePositions: widget.capturedPiecePositions,
                 onPositionTapped: widget.onPositionTapped,
                 size: boardSize,
                 vibrationEnabled: _vibrationEnabled,
