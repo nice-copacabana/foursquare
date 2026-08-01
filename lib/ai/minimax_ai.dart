@@ -31,7 +31,7 @@ class _TranspositionEntry {
 class MinimaxAI extends AIPlayer {
   final GameEngine _engine = GameEngine();
   final int _baseDepth;
-  final Random _random = Random();
+  final Random _random;
 
   // 置换表（缓存已评估的局面）
   final Map<String, _TranspositionEntry> _transpositionTable = {};
@@ -43,7 +43,9 @@ class MinimaxAI extends AIPlayer {
   // AI思考进度回调
   Function(double progress, String status)? _progressCallback;
 
-  MinimaxAI(super.difficulty) : _baseDepth = _getDepthForDifficulty(difficulty);
+  MinimaxAI(super.difficulty, {Random? random})
+      : _baseDepth = _getDepthForDifficulty(difficulty),
+        _random = random ?? Random();
 
   /// 设置进度回调
   void setProgressCallback(Function(double progress, String status)? callback) {
@@ -182,6 +184,7 @@ class MinimaxAI extends AIPlayer {
     // 简单难度：10%概率随机移动（从30%降低）
     if (difficulty == AIDifficulty.easy && _random.nextDouble() < 0.1) {
       final randomMove = moveList[_random.nextInt(moveList.length)];
+      _progressCallback?.call(1.0, '完成，随机选择了 1 个候选移动');
       return AIMoveResult(
         from: randomMove.from,
         to: randomMove.to,

@@ -139,6 +139,8 @@
 - `lib/meditation/meditation_session.dart`
 - `lib/meditation/meditation_session_controller.dart`
 - `lib/meditation/meditation_intent_handler.dart`
+- `lib/meditation/meditation_session_snapshot.dart`
+- `lib/meditation/meditation_session_persistence.dart`
 
 **验证结果**：
 - 默认关闭且不会在隐藏阶段初始化 TTS；识别原文不进入日志、普通状态字符串、存档或网络。
@@ -146,15 +148,16 @@
 - 权限、识别和播报均通过可替换端口；单次监听状态机覆盖 completion、中断、迟到回调和播报失败恢复。
 - 内存权威冥想 session/controller 维护棋盘、执色/先手、完整历史、未吃计数、时钟、选择、结果和修订号；所有落子复用 `GameEngine`。
 - 开场播报完成后才启动 60 秒时钟；intent handler 提供 AI 先手/失败重试、查询、暂停/恢复和退出确认的类型化闭环。
-- 假端口已完成开场及一轮人类/AI 无屏行棋；开局到终局的完整无屏脚本、生产 Adapter、正式 UI 和真机验收仍未完成。
+- 假端口已完成查询、重复、选子取消、暂停恢复、退出取消、AI 失败重试到 15 ply 自然终局的完整无屏对局。
+- 冥想存档使用独立版本化格式与 Hive 适配器，严格拒绝损坏数据并通过历史重放恢复权威状态；生产自动存档编排尚未接入。
 - 旧 `MeditationModeBloc`、事件/状态和不可达页面已经删除，不能再作为“功能完整”的证据。
 
 ---
 
 ### F. 当前测试证据（2026-08-01 修订）
 
-- `test/` 与 `integration_test/` 当前共有 66 个 `_test.dart` 文件。
-- 本次全量 `flutter test`：644 项通过、1 项显式跳过。
+- `test/` 与 `integration_test/` 当前共有 67 个 `_test.dart` 文件。
+- 本次全量 `flutter test`：658 项通过、1 项显式跳过。
 - 当前覆盖引擎、模型、Game/LAN/Online BLoC、在线协议/会话/传输、语音状态机、权威冥想核心、页面契约和发布契约。
 - `test/integration/` 已包含真实在线传输和假端口冥想语音核心流程；它们仍不能替代 staging、真实数据库、双真机和平台音频验收。
 - 本次没有重新运行覆盖率统计，因此不保留历史 95.7% 或其他主观百分比。

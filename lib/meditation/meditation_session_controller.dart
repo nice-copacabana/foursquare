@@ -499,6 +499,14 @@ final class MeditationSessionController {
   }
 
   static void _validateRestoredSession(MeditationSession session) {
+    var previousMoveAt = session.startedAt;
+    for (final move in session.moveHistory) {
+      final moveAt = move.timestamp.toUtc();
+      if (moveAt.isBefore(previousMoveAt)) {
+        throw StateError('Meditation history timestamps are inconsistent');
+      }
+      previousMoveAt = moveAt;
+    }
     if (session.moveHistory.isEmpty) {
       final initial = BoardState.initial(currentPlayer: session.firstPlayer);
       if (session.boardState != initial || session.noCapturePlyCount != 0) {
@@ -565,8 +573,10 @@ final class MeditationSessionController {
     }
     final terminal = session.gameResult;
     if (terminal != null) {
+      final minimumDuration = previousMoveAt.difference(session.startedAt);
       if (terminal.status == GameStatus.ongoing ||
-          terminal.duration.isNegative) {
+          terminal.duration.isNegative ||
+          terminal.duration < minimumDuration) {
         throw StateError('Meditation terminal result is invalid');
       }
       switch (terminal.endReason) {

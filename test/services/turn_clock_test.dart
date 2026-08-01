@@ -37,4 +37,19 @@ void main() {
       const Duration(seconds: 30),
     );
   });
+
+  test('持久化工厂保留暂停剩余时间', () {
+    final now = DateTime.utc(2026, 8, 1, 12);
+    final paused = TurnClock.paused(const Duration(seconds: 23));
+
+    expect(paused.isPaused, isTrue);
+    expect(paused.remainingAt(now), const Duration(seconds: 23));
+  });
+
+  test('持久化工厂拒绝负数暂停时长', () {
+    expect(
+      () => TurnClock.paused(const Duration(milliseconds: -1)),
+      throwsArgumentError,
+    );
+  });
 }

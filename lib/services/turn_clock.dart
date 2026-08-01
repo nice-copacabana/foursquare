@@ -19,6 +19,18 @@ class TurnClock extends Equatable {
     return TurnClock._(deadlineUtc: now.toUtc().add(turnDuration));
   }
 
+  /// Rebuilds a clock that was explicitly paused by the player.
+  factory TurnClock.paused(Duration remaining) {
+    if (remaining.isNegative) {
+      throw ArgumentError.value(
+        remaining,
+        'remaining',
+        'Paused clock remaining time cannot be negative',
+      );
+    }
+    return TurnClock._(pausedRemaining: remaining);
+  }
+
   bool get isPaused => deadlineUtc == null;
 
   Duration remainingAt(DateTime now) {

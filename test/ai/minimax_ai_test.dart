@@ -6,6 +6,8 @@
 /// - AI优化效果验证
 library;
 
+import 'dart:math';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:foursquare/ai/minimax_ai.dart';
 import 'package:foursquare/ai/ai_player.dart';
@@ -148,6 +150,25 @@ void main() {
 
       await ai.selectMove(board);
       expect(callCount, equals(0));
+    });
+
+    test('简单难度随机早退也报告完成进度', () async {
+      final ai = MinimaxAI(
+        AIDifficulty.easy,
+        random: _AlwaysRandomBranch(),
+      );
+      final progressUpdates = <double>[];
+      final statusUpdates = <String>[];
+      ai.setProgressCallback((progress, status) {
+        progressUpdates.add(progress);
+        statusUpdates.add(status);
+      });
+
+      final result = await ai.selectMove(BoardState.initial().switchPlayer());
+
+      expect(result?.nodesEvaluated, 1);
+      expect(progressUpdates, [1.0]);
+      expect(statusUpdates.single, contains('完成'));
     });
   });
 
@@ -296,4 +317,15 @@ void main() {
       }
     });
   });
+}
+
+final class _AlwaysRandomBranch implements Random {
+  @override
+  bool nextBool() => false;
+
+  @override
+  double nextDouble() => 0;
+
+  @override
+  int nextInt(int max) => 0;
 }
