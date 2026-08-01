@@ -2,6 +2,8 @@
 
 > 审计日期：2026-05-07
 > 审计方法：基于源码逐模块交叉验证，不信任文档/commit message 的自述
+>
+> 2026-08-01 修订：本报告主体保留历史审计背景；语音/冥想模块已按当前代码重新核对并在下文修正。项目当前总状态以 `README.md`、`TEST_STRATEGY.md` 和 `RELEASE_CHECKLIST.md` 为准。
 
 ---
 
@@ -12,11 +14,11 @@
 | 核心引擎（move/capture/engine） | ✅ 完成，60+ 测试 | `executeMove/checkGameOver/simulateMove/undoLastMove` 均有实逻辑，无 stub | **一致 ✅** |
 | AI（三难度 + α-β + 置换表） | ✅ 完成 | 剪枝、`_transpositionTable`、历史启发、动态深度、迭代加深均真实存在 | **一致 ✅** |
 | LAN 对战（含 move sync） | ✅ 已完成（cf43bea） | mDNS 注册+发现、WS 服务端、`_onLocalMove/_onOpponentMove` 真实收发 | **基本一致 ✅** |
-| 在线对战后端 | ✅ 权威同步完成 | Socket.io + 房间管理 + 服务端规则校验 + 30s 超时齐备 | **一致 ✅** |
-| 在线对战前端 | 文档未明说 | `online_game_page.dart:483` 存在 `// TODO: 实现完整的棋子选中和移动逻辑` — 落子交互未完成 | **⚠️ 文档遗漏** |
-| 语音控制 + 冥想模式 | ✅ 完成 | speech_to_text / flutter_tts 真接入；voice_command_parser 四种解析模式；meditation_mode_bloc 662 行实逻辑 | **一致 ✅** |
+| 在线对战后端 | ✅ 权威同步完成 | Socket.io + 房间管理 + 服务端规则校验 + 60 秒行棋超时 + 30 秒重连宽限 | **当前纯核心一致，发布门禁未完成 ⚠️** |
+| 在线对战前端 | 历史审计曾判定落子未完成 | 当前已有权威会话、BLoC、页面落子链与传输测试；生产导航和真机联调仍未完成 | **历史问题已修正 ⚠️** |
+| 语音控制 + 冥想模式 | 历史文档曾宣称完成 | 隐藏的 Phase 4 纯核心已实现；旧 Bloc/页面原型已移除；生产 Adapter、正式 UI、无屏整局和真机门禁未完成 | **历史宣称已纠正 ⚠️** |
 | 回放 / 存储 / i18n / 主题 | ✅ 完成 | 三语 ARB 齐全、Hive 存档真实、3 套主题 presets 齐 | **一致 ✅** |
-| **测试覆盖** | CHANGELOG："135+ 单元测试，95.7% 覆盖率" | **实测仅 19 个测试文件** | **❌ 与事实严重不符** |
+| **测试证据** | CHANGELOG 曾宣称未复测的覆盖率 | 当前共 66 个 `_test.dart` 文件；本次全量 `flutter test` 为 644 通过、1 跳过；未重新测量覆盖率 | **只采用当前命令证据 ⚠️** |
 
 ---
 
@@ -87,13 +89,13 @@
 - `_onOpponentMove()` → 接收解析 + 棋盘更新
 - 走法序列化：`{'from': {x,y}, 'to': {x,y}, 'player': ...}`
 
-**未完成项**（与文档一致）：
-- 计时器同步
-- 断线重连处理
+**当前边界**：
+- 主机权威 60 秒时钟、30 秒重连宽限、断线/恢复和状态同步已有代码与测试。
+- 双完整客户端/真机网络切换、后台和复杂路由环境仍需发布级联调。
 
 ---
 
-### D. 在线对战 ⚠️ 后端完整，前端未完工
+### D. 在线对战 🚧 权威核心已形成，发布闭环未完成
 
 #### 后端（server/src/）✅
 
@@ -107,10 +109,10 @@
 - `request_match` → 排队、创建房间、emit match_found
 - `submit_move` → 服务端规则验证 + 广播
 - 非法走法拒绝
-- 30 秒超时机制
+- 60 秒行棋超时与 30 秒断线重连宽限
 - 重复排队检测
 
-#### 前端 ⚠️ ~70% 完成
+#### 前端：权威落子链已形成，生产接入待完成
 
 **文件**：
 - `lib/services/websocket_service.dart` (267 行)
@@ -118,72 +120,44 @@
 - `lib/ui/screens/matching_page.dart`
 - `lib/ui/screens/online_game_page.dart`
 
-**问题**：
-- `online_game_page.dart:483` 存在 TODO：`// TODO: 实现完整的棋子选中和移动逻辑`
-- `websocket_service.dart` 使用裸 `print()` 而非 `LoggerService`
-- 匹配/ELO/排行榜 UI 未实现
+**当前边界**：
+- 权威页面落子链、匿名身份、快照同步和传输测试已经存在。
+- 生产导航、两台完整 Flutter 应用/真机联调、真实 PostgreSQL、staging 和运维门禁仍未完成。
+- ELO、排行榜不属于当前正式路线承诺。
 
 ---
 
-### E. 语音控制 + 冥想模式 ✅ 功能完整
+### E. 语音控制 + 冥想模式 🚧 隐藏核心已实现
 
 **文件**：
-- `lib/services/voice_recognition_service.dart` (284 行)
-- `lib/services/voice_synthesis_service.dart` (276 行)
-- `lib/ai/voice_command_parser.dart` (224 行)
-- `lib/bloc/meditation_mode_bloc.dart` (662 行)
-- `lib/ui/screens/meditation_game_page.dart`
+- `lib/services/voice_recognition_service.dart`
+- `lib/services/voice_synthesis_service.dart`
+- `lib/ai/voice_command_parser.dart`
+- `lib/ai/voice_game_intent.dart`
+- `lib/services/voice/voice_ports.dart`
+- `lib/services/voice/voice_interaction_controller.dart`
+- `lib/meditation/meditation_session.dart`
+- `lib/meditation/meditation_session_controller.dart`
+- `lib/meditation/meditation_intent_handler.dart`
 
 **验证结果**：
-- 真实集成 `speech_to_text` 和 `flutter_tts`
-- 四种解析模式：方向、传统中文坐标（横X竖Y）、国际（A1）、自然语言
-- 中文数字映射（零-四）
-- 字母映射（A-D → 0-3）
-- 冥想 BLoC 处理 10+ 事件，含语音引导、状态播报、查询响应
+- 默认关闭且不会在隐藏阶段初始化 TTS；识别原文不进入日志、普通状态字符串、存档或网络。
+- 类型化位置、移动和控制动作采用整句白名单；用户坐标 1–4 与引擎 0–3 可逆，歧义中心、否定、多坐标和尾随内容不执行。
+- 权限、识别和播报均通过可替换端口；单次监听状态机覆盖 completion、中断、迟到回调和播报失败恢复。
+- 内存权威冥想 session/controller 维护棋盘、执色/先手、完整历史、未吃计数、时钟、选择、结果和修订号；所有落子复用 `GameEngine`。
+- 开场播报完成后才启动 60 秒时钟；intent handler 提供 AI 先手/失败重试、查询、暂停/恢复和退出确认的类型化闭环。
+- 假端口已完成开场及一轮人类/AI 无屏行棋；开局到终局的完整无屏脚本、生产 Adapter、正式 UI 和真机验收仍未完成。
+- 旧 `MeditationModeBloc`、事件/状态和不可达页面已经删除，不能再作为“功能完整”的证据。
 
 ---
 
-### F. 测试覆盖 ❌ 文档严重虚高
+### F. 当前测试证据（2026-08-01 修订）
 
-**文档宣称**：135+ 单元测试，95.7% 覆盖率
-
-**实际情况**：19 个测试文件
-
-```
-test/
-├── ai/
-│   ├── minimax_ai_test.dart
-│   └── voice_command_parser_test.dart
-├── bloc/
-│   ├── game_bloc_test.dart
-│   └── lan_game_bloc_test.dart
-├── engine/
-│   ├── capture_detector_test.dart
-│   ├── game_engine_test.dart
-│   └── move_validator_test.dart
-├── models/
-│   ├── board_state_test.dart
-│   ├── game_result_test.dart
-│   ├── move_test.dart
-│   ├── piece_type_test.dart
-│   └── position_test.dart
-├── services/
-│   ├── audio_service_test.dart
-│   ├── game_replay_service_test.dart
-│   ├── music_service_test.dart
-│   └── storage_service_test.dart
-├── ui/widgets/
-│   ├── board_widget_test.dart
-│   └── game_over_dialog_test.dart
-└── widget_test.dart
-```
-
-**评估**：
-- 核心引擎和模型层覆盖较好
-- BLoC 层仅 game_bloc 和 lan_game_bloc 有测试
-- 在线对战、冥想模式、语音服务无测试
-- UI 测试极少（仅 2 个 widget）
-- 无集成测试（integration_test/ 目录存在但未确认内容）
+- `test/` 与 `integration_test/` 当前共有 66 个 `_test.dart` 文件。
+- 本次全量 `flutter test`：644 项通过、1 项显式跳过。
+- 当前覆盖引擎、模型、Game/LAN/Online BLoC、在线协议/会话/传输、语音状态机、权威冥想核心、页面契约和发布契约。
+- `test/integration/` 已包含真实在线传输和假端口冥想语音核心流程；它们仍不能替代 staging、真实数据库、双真机和平台音频验收。
+- 本次没有重新运行覆盖率统计，因此不保留历史 95.7% 或其他主观百分比。
 
 ---
 
@@ -194,69 +168,39 @@ test/
 | 游戏回放 | ✅ | `game_replay_service.dart` (259 行)，前进/后退/跳转/进度条完整 |
 | 本地存储 (Hive) | ✅ | `storage_service.dart` (407 行)，GameSettings toJson/fromJson |
 | 国际化 (zh/en/ja) | ✅ | 三语 ARB 文件齐全，含真实翻译 |
-| 主题系统 | ✅ | 3 套预设（经典木纹/现代简约/深夜），含棋子风格 |
+| 主题系统 | ✅ Phase 1 | 正式 registry 只暴露现代东方棋艺；主题包接口为后续扩展保留 |
 | 背景音乐 | ✅ | `music_service.dart` (208 行)，5 种主题 |
 | Wear OS | ⏸ 搁置 | `.dart.disabled` 文件存在，README 已说明原因 |
 
 ---
 
-## 主要问题清单
+## 当前主要未完成项
 
-### 严重（需修正）
-
-1. **CHANGELOG 测试数据虚假** — "135+ 单元测试，95.7% 覆盖率" 与实际 19 个测试文件严重不符，属 AI 生成幻觉
-2. **在线对战前端 TODO** — `online_game_page.dart:483` 棋子选中/移动逻辑未实现，是上线阻塞项
-
-### 中等（建议修复）
-
-3. **WebSocket 服务裸 print()** — 项目有 `LoggerService` 却未统一使用
-4. **LAN 计时器同步缺失** — 文档已标注，但对实际对战体验有影响
-5. **Watch 文件混乱** — 同时存在 `.dart` 和 `.dart.disabled` 副本，编译时可能引入问题
-
-### 轻微（可后续处理）
-
-6. **IMPLEMENTATION_PLAN.md 状态过时** — 根文件和 docs/design/ 下各有一份，内容不同步
-7. **缺少在线对战相关测试** — online_game_bloc、websocket_service 无测试覆盖
+1. **Phase 2 外部门禁**：macOS/Xcode、iOS 真机、TestFlight 和商店资料尚未完成。
+2. **Phase 3 发布闭环**：生产导航、两台完整客户端/真机联调、真实 PostgreSQL、staging、持久化恢复、TLS、限流、负载与运维演练尚未完成。
+3. **Phase 4 产品化**：生产 ASR/TTS Adapter、用途说明、平台权限、页面注入、持久化、完整无屏整局和真机音频/隐私验收尚未完成。
+4. **正式发布资料**：包名、签名、Google Play 身份和素材按项目决定继续暂缓，不阻塞当前代码开发。
 
 ---
 
-## 修正后的真实完成度
+## 当前阶段判定
 
-| 阶段 | 真实完成度 |
+| 正式阶段 | 当前判定 |
 |---|---|
-| P1 核心游戏（引擎 + 双人） | **100%** |
-| P2 人机对战（AI 三难度） | **100%** |
-| P3 局域网对战 | **90%**（缺计时器同步、断线处理） |
-| P4 在线对战 | **后端 100%，前端 ~70%**（落子 UI 是瓶颈） |
-| P5 打包发布 | **0%** |
-| 扩展：语音 + 冥想 | **95%**（功能完整，缺测试） |
-| 扩展：Wear OS | **搁置**（基建保留） |
-| 测试覆盖 | **~30%**（核心模块有，外围缺失） |
+| Phase 1 Android 本地/AI/LAN | 代码与自动化基础已形成；正式签名、商店身份、素材和真机发布矩阵仍待补齐 |
+| Phase 2 iOS 与三语 | 代码与 Windows 可执行契约已形成；Xcode、真机和 TestFlight 外部门禁未完成 |
+| Phase 3 在线 | 权威服务端、客户端和本地真实传输证据已形成；staging 与生产运维门禁未完成 |
+| Phase 4 语音与冥想 | 隐藏纯核心与一轮无屏证据已形成；生产 Adapter、正式 UI、完整整局和真机门禁未完成 |
 
-**总体项目完成度：约 75%**
+不再使用未经测量的“总体完成度”或覆盖率百分比。
 
 ---
 
 ## 后续优化方向
 
-### 近期（收尾当前阶段）
+- Phase 1/2：完成 Android/iOS 正式身份、签名、商店素材、Xcode、TestFlight 和真机发布矩阵。
+- Phase 3：完成生产导航、双完整客户端/真机联调、staging、真实 PostgreSQL、持久化恢复、TLS、限流、负载和运维演练。
+- Phase 4：继续完成生产 ASR/TTS Adapter、页面注入、用途说明、平台权限、持久化、完整无屏整局和真机音频/隐私验收。
+- 在线与冥想现有集成测试继续下钻到双完整客户端、进程重启、真实数据库和平台设备层级。
 
-- 补完 `online_game_page.dart` 的棋子选中和移动逻辑
-- LAN 计时器同步 + 断线重连
-- 统一日志（替换裸 print 为 LoggerService）
-- 修正 CHANGELOG 中虚假的测试数据
-
-### 中期（质量与发布）
-
-- 补充在线对战、冥想模式的单元测试
-- 端到端集成测试（LAN / Online 流程）
-- 真机 profile（AI 置换表内存、低端机渲染）
-- P5 打包发布流程（APK/AAB/iOS/Web + 商店素材）
-
-### 远期（体验与商业化）
-
-- 语音识别离线化（弱网场景）
-- 匹配系统完善（ELO、排行榜、好友房）
-- 社交分享 + 观战模式
-- 参考《盈利模式与运营部署规划.md》落地付费点
-- Wear OS 待 Flutter watch 生态稳定后重启
+离线语音、ELO/排行榜/好友房、社交分享/观战、付费点和 Wear OS 仅为历史想法，不属于当前正式路线承诺。

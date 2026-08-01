@@ -11,6 +11,7 @@ enum VoiceInteractionPhase {
   listening,
   processing,
   speaking,
+  awaitingReplay,
   permissionDenied,
   permissionPermanentlyDenied,
   restricted,
@@ -39,22 +40,27 @@ final class VoiceInteractionController {
   final VoiceRecognitionPort _recognition;
   final VoiceSynthesisPort _synthesis;
   final VoiceGameIntent? Function(String) _interpret;
-  final void Function(VoiceGameIntent) _onIntent;
+  final FutureOr<VoiceInteractionReply?> Function(VoiceGameIntent) _onIntent;
   final StreamController<VoiceInteractionState> _states =
-      StreamController<VoiceInteractionState>.broadcast(sync: true);
+      StreamController<VoiceInteractionState>.broadcast();
 
   VoiceInteractionState _state =
       const VoiceInteractionState(VoiceInteractionPhase.disabled);
   int _generation = 0;
   bool _disposed = false;
   bool _portsReady = false;
+  bool _interruptRequested = false;
+  bool _interruptInFlight = false;
+  bool _resumeRequested = false;
+  VoiceInteractionReply? _pendingReply;
 
   VoiceInteractionController({
     required MicrophonePermissionPort permission,
     required VoiceRecognitionPort recognition,
     required VoiceSynthesisPort synthesis,
     required VoiceGameIntent? Function(String) interpret,
-    required void Function(VoiceGameIntent) onIntent,
+    required FutureOr<VoiceInteractionReply?> Function(VoiceGameIntent)
+        onIntent,
   })  : _permission = permission,
         _recognition = recognition,
         _synthesis = synthesis,
@@ -64,6 +70,8 @@ final class VoiceInteractionController {
   VoiceInteractionState get state => _state;
 
   Stream<VoiceInteractionState> get states => _states.stream;
+
+  bool get hasPendingReply => _pendingReply != null;
 
   Future<void> enableAfterDisclosure() async {
     if (_disposed || _state.phase != VoiceInteractionPhase.disabled) {
@@ -129,7 +137,7 @@ final class VoiceInteractionController {
   }
 
   Future<void> listenOnce() async {
-    if (_disposed || !_state.canListen) {
+    if (_disposed || !_state.canListen || _pendingReply != null) {
       return;
     }
 
@@ -162,76 +170,118 @@ final class VoiceInteractionController {
       }
     } catch (_) {
       if (_isCurrent(generation)) {
-        ++_generation;
-        _emit(
-          const VoiceInteractionState(
-            VoiceInteractionPhase.failed,
-            failure: VoicePortFailure.recognitionFailed,
-          ),
+        await _handleRecognitionFailure(
+          VoicePortFailure.recognitionFailed,
+          generation,
         );
-        await _ignorePortFailure(_recognition.stop());
       }
     }
   }
 
-  Future<void> announce(String text) async {
+  Future<bool> announce(String text) async {
     if (_disposed ||
         (_state.phase != VoiceInteractionPhase.ready &&
             _state.phase != VoiceInteractionPhase.listening)) {
-      return;
+      return false;
     }
 
     final wasListening = _state.phase == VoiceInteractionPhase.listening;
     final generation = ++_generation;
+    final reply = VoiceInteractionReply(text);
+    _pendingReply = reply;
     _emit(const VoiceInteractionState(VoiceInteractionPhase.speaking));
+    if (!_isCurrent(generation)) {
+      return false;
+    }
     try {
       if (wasListening) {
         final recognitionStopped =
             await _portOperationSucceeded(_recognition.stop());
         if (!_isCurrent(generation)) {
-          return;
+          return false;
         }
         if (!recognitionStopped) {
+          _pendingReply = null;
           _emit(
             const VoiceInteractionState(
               VoiceInteractionPhase.failed,
               failure: VoicePortFailure.interrupted,
             ),
           );
-          return;
+          return false;
         }
       }
-      await _synthesis.speak(text);
-      if (_isCurrent(generation)) {
-        _emit(const VoiceInteractionState(VoiceInteractionPhase.ready));
-      }
+      return _speakPendingReply(reply, generation);
     } catch (_) {
       if (_isCurrent(generation)) {
         _emit(
           const VoiceInteractionState(
-            VoiceInteractionPhase.failed,
+            VoiceInteractionPhase.awaitingReplay,
             failure: VoicePortFailure.synthesisFailed,
           ),
         );
       }
+      return false;
     }
   }
 
-  Future<void> interrupt() async {
-    if (_disposed || !_isInterruptible(_state.phase)) {
-      return;
+  /// Replays an already-authorized reply without interpreting or executing
+  /// the original command again.
+  Future<bool> replayPendingReply() async {
+    final reply = _pendingReply;
+    if (_disposed ||
+        !_portsReady ||
+        _state.phase != VoiceInteractionPhase.awaitingReplay ||
+        reply == null) {
+      return false;
     }
 
     final generation = ++_generation;
+    _emit(const VoiceInteractionState(VoiceInteractionPhase.speaking));
+    if (!_isCurrent(generation)) {
+      return false;
+    }
+    return _speakPendingReply(reply, generation);
+  }
+
+  Future<void> interrupt() async {
+    if (_disposed) {
+      return;
+    }
+    if (_state.phase == VoiceInteractionPhase.processing) {
+      _interruptRequested = true;
+      return;
+    }
+    if (!_isInterruptible(_state.phase)) {
+      return;
+    }
+
+    final hadPendingReply = _pendingReply != null;
+    _interruptInFlight = true;
+    _resumeRequested = false;
+    final generation = ++_generation;
     _emit(const VoiceInteractionState(VoiceInteractionPhase.interrupted));
     final stopped = await _stopBothPorts();
+    _interruptInFlight = false;
     if (_isCurrent(generation) && !stopped) {
+      _resumeRequested = false;
       _emit(
         const VoiceInteractionState(
           VoiceInteractionPhase.failed,
           failure: VoicePortFailure.interrupted,
         ),
       );
+    } else if (_isCurrent(generation) && hadPendingReply) {
+      _resumeRequested = false;
+      _emit(
+        const VoiceInteractionState(
+          VoiceInteractionPhase.awaitingReplay,
+          failure: VoicePortFailure.interrupted,
+        ),
+      );
+    } else if (_isCurrent(generation) && _resumeRequested) {
+      _resumeRequested = false;
+      _emit(const VoiceInteractionState(VoiceInteractionPhase.ready));
     }
   }
 
@@ -239,6 +289,10 @@ final class VoiceInteractionController {
     if (!_disposed &&
         _portsReady &&
         _state.phase == VoiceInteractionPhase.interrupted) {
+      if (_interruptInFlight) {
+        _resumeRequested = true;
+        return;
+      }
       _emit(const VoiceInteractionState(VoiceInteractionPhase.ready));
     }
   }
@@ -250,6 +304,10 @@ final class VoiceInteractionController {
 
     _disposed = true;
     _portsReady = false;
+    _interruptRequested = false;
+    _interruptInFlight = false;
+    _resumeRequested = false;
+    _pendingReply = null;
     ++_generation;
     _state = const VoiceInteractionState(VoiceInteractionPhase.disposed);
     if (!_states.isClosed) {
@@ -274,31 +332,94 @@ final class VoiceInteractionController {
     _emit(const VoiceInteractionState(VoiceInteractionPhase.processing));
     try {
       await _recognition.stop();
-      if (!_isCurrent(generation)) {
+    } catch (_) {
+      if (_isCurrent(generation)) {
+        _interruptRequested = false;
+        _fail(VoicePortFailure.recognitionFailed);
+      }
+      return;
+    }
+    if (!_isCurrent(generation)) {
+      return;
+    }
+
+    final VoiceGameIntent? intent;
+    try {
+      intent = _interpret(sample.text);
+    } catch (_) {
+      if (!_finishDeferredInterrupt()) {
+        _fail(VoicePortFailure.commandFailed);
+      }
+      return;
+    }
+    if (intent == null) {
+      if (_finishDeferredInterrupt()) {
         return;
       }
+      _emit(
+        const VoiceInteractionState(
+          VoiceInteractionPhase.ready,
+          failure: VoicePortFailure.unrecognized,
+        ),
+      );
+      return;
+    }
 
-      final intent = _interpret(sample.text);
-      if (intent != null) {
-        _onIntent(intent);
-      }
+    final VoiceInteractionReply? reply;
+    try {
+      reply = await _onIntent(intent);
+    } catch (_) {
       if (_isCurrent(generation)) {
-        _emit(
-          VoiceInteractionState(
-            VoiceInteractionPhase.ready,
-            failure: intent == null ? VoicePortFailure.unrecognized : null,
-          ),
-        );
+        if (!_finishDeferredInterrupt()) {
+          _fail(VoicePortFailure.commandFailed);
+        }
       }
+      return;
+    }
+    if (!_isCurrent(generation)) {
+      return;
+    }
+    if (_finishDeferredInterrupt(reply)) {
+      return;
+    }
+    if (reply == null) {
+      _pendingReply = null;
+      _emit(const VoiceInteractionState(VoiceInteractionPhase.ready));
+      return;
+    }
+
+    _pendingReply = reply;
+    _emit(const VoiceInteractionState(VoiceInteractionPhase.speaking));
+    if (!_isCurrent(generation)) {
+      return;
+    }
+    await _speakPendingReply(reply, generation);
+  }
+
+  Future<bool> _speakPendingReply(
+    VoiceInteractionReply reply,
+    int generation,
+  ) async {
+    try {
+      await _synthesis.speak(reply.text);
+      if (_isCurrent(generation)) {
+        if (identical(_pendingReply, reply)) {
+          _pendingReply = null;
+        }
+        _emit(const VoiceInteractionState(VoiceInteractionPhase.ready));
+        return true;
+      }
+      return false;
     } catch (_) {
       if (_isCurrent(generation)) {
         _emit(
           const VoiceInteractionState(
-            VoiceInteractionPhase.failed,
-            failure: VoicePortFailure.recognitionFailed,
+            VoiceInteractionPhase.awaitingReplay,
+            failure: VoicePortFailure.synthesisFailed,
           ),
         );
       }
+      return false;
     }
   }
 
@@ -311,14 +432,42 @@ final class VoiceInteractionController {
       return;
     }
 
-    ++_generation;
+    final recoveryGeneration = ++_generation;
     _emit(
       VoiceInteractionState(
         VoiceInteractionPhase.failed,
         failure: failure,
       ),
     );
-    await _ignorePortFailure(_recognition.stop());
+    final stopped = await _portOperationSucceeded(_recognition.stop());
+    if (_isCurrent(recoveryGeneration) && stopped) {
+      _emit(
+        VoiceInteractionState(
+          VoiceInteractionPhase.ready,
+          failure: failure,
+        ),
+      );
+    }
+  }
+
+  bool _finishDeferredInterrupt([VoiceInteractionReply? reply]) {
+    if (!_interruptRequested) {
+      return false;
+    }
+    _interruptRequested = false;
+    if (reply == null) {
+      _pendingReply = null;
+      _emit(const VoiceInteractionState(VoiceInteractionPhase.interrupted));
+    } else {
+      _pendingReply = reply;
+      _emit(
+        const VoiceInteractionState(
+          VoiceInteractionPhase.awaitingReplay,
+          failure: VoicePortFailure.interrupted,
+        ),
+      );
+    }
+    return true;
   }
 
   bool _acceptPermission(VoicePermissionStatus permission) {
@@ -356,7 +505,6 @@ final class VoiceInteractionController {
   static bool _isInterruptible(VoiceInteractionPhase phase) {
     return phase == VoiceInteractionPhase.ready ||
         phase == VoiceInteractionPhase.listening ||
-        phase == VoiceInteractionPhase.processing ||
         phase == VoiceInteractionPhase.speaking;
   }
 
@@ -379,6 +527,15 @@ final class VoiceInteractionController {
 
   static Future<void> _ignorePortFailure(Future<void> operation) async {
     await _portOperationSucceeded(operation);
+  }
+
+  void _fail(VoicePortFailure failure) {
+    _emit(
+      VoiceInteractionState(
+        VoiceInteractionPhase.failed,
+        failure: failure,
+      ),
+    );
   }
 
   void _emit(VoiceInteractionState state) {

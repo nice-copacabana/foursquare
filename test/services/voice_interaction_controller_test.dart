@@ -23,7 +23,10 @@ void main() {
       recognition: recognition,
       synthesis: synthesis,
       interpret: VoiceGameIntentParser.parse,
-      onIntent: intents.add,
+      onIntent: (intent) {
+        intents.add(intent);
+        return null;
+      },
     );
   });
 
@@ -169,6 +172,212 @@ void main() {
     expect(recognition.listenCalls, 2);
   });
 
+  test('an async intent reply is spoken before returning to ready', () async {
+    await controller.dispose();
+    synthesis = _FakeSynthesisPort()..holdNextSpeak();
+    controller = VoiceInteractionController(
+      permission: permission,
+      recognition: recognition,
+      synthesis: synthesis,
+      interpret: VoiceGameIntentParser.parse,
+      onIntent: (intent) async {
+        intents.add(intent);
+        return const VoiceInteractionReply('权威处理完成');
+      },
+    );
+    await controller.enableAfterDisclosure();
+    await controller.listenOnce();
+
+    recognition.emitFinal('A1');
+    await Future<void>.delayed(Duration.zero);
+    expect(controller.state.phase, VoiceInteractionPhase.speaking);
+
+    synthesis.completeSpeak();
+    await Future<void>.delayed(Duration.zero);
+    expect(controller.state.phase, VoiceInteractionPhase.ready);
+    expect(intents, hasLength(1));
+  });
+
+  test('failed reply speech is recoverable without re-executing the intent',
+      () async {
+    await controller.dispose();
+    synthesis = _FakeSynthesisPort()..throwOnNextSpeak = true;
+    controller = VoiceInteractionController(
+      permission: permission,
+      recognition: recognition,
+      synthesis: synthesis,
+      interpret: VoiceGameIntentParser.parse,
+      onIntent: (intent) {
+        intents.add(intent);
+        return const VoiceInteractionReply('权威处理完成');
+      },
+    );
+    await controller.enableAfterDisclosure();
+    await controller.listenOnce();
+
+    recognition.emitFinal('A1');
+    await Future<void>.delayed(Duration.zero);
+
+    expect(intents, hasLength(1));
+    expect(controller.state.phase, VoiceInteractionPhase.awaitingReplay);
+    expect(controller.state.failure, VoicePortFailure.synthesisFailed);
+    expect(controller.hasPendingReply, isTrue);
+
+    await controller.listenOnce();
+    expect(recognition.listenCalls, 1);
+
+    expect(await controller.replayPendingReply(), isTrue);
+
+    expect(intents, hasLength(1));
+    expect(synthesis.spokenTexts, ['权威处理完成', '权威处理完成']);
+    expect(controller.state.phase, VoiceInteractionPhase.ready);
+    expect(controller.state.failure, isNull);
+    expect(controller.hasPendingReply, isFalse);
+
+    await controller.listenOnce();
+    expect(recognition.listenCalls, 2);
+  });
+
+  test('processing interruption defers speech and prevents another command',
+      () async {
+    await controller.dispose();
+    final firstReply = Completer<VoiceInteractionReply?>();
+    controller = VoiceInteractionController(
+      permission: permission,
+      recognition: recognition,
+      synthesis: synthesis,
+      interpret: VoiceGameIntentParser.parse,
+      onIntent: (intent) {
+        intents.add(intent);
+        return firstReply.future;
+      },
+    );
+    await controller.enableAfterDisclosure();
+    await controller.listenOnce();
+    recognition.emitFinal('A1');
+    await Future<void>.delayed(Duration.zero);
+    expect(controller.state.phase, VoiceInteractionPhase.processing);
+
+    await controller.interrupt();
+    controller.resume();
+    await controller.listenOnce();
+    recognition.emitFinal('A2');
+    await Future<void>.delayed(Duration.zero);
+
+    expect(intents, hasLength(1));
+    expect(recognition.listenCalls, 1);
+    firstReply.complete(const VoiceInteractionReply('已完成'));
+    await Future<void>.delayed(Duration.zero);
+
+    expect(synthesis.spokenTexts, isEmpty);
+    expect(controller.state.phase, VoiceInteractionPhase.awaitingReplay);
+    expect(controller.hasPendingReply, isTrue);
+    expect(await controller.replayPendingReply(), isTrue);
+    expect(controller.state.phase, VoiceInteractionPhase.ready);
+  });
+
+  test('synchronous speaking interruption cannot start synthesis afterwards',
+      () async {
+    synthesis.holdNextSpeak();
+    await controller.enableAfterDisclosure();
+    final subscription = controller.states.listen((state) {
+      if (state.phase == VoiceInteractionPhase.speaking) {
+        unawaited(controller.interrupt());
+      }
+    });
+    addTearDown(subscription.cancel);
+
+    final speaking = controller.announce('可被观察者中断');
+    await Future<void>.delayed(Duration.zero);
+
+    expect(synthesis.spokenTexts, ['可被观察者中断']);
+    expect(controller.state.phase, VoiceInteractionPhase.awaitingReplay);
+    synthesis.completeSpeak();
+    expect(await speaking, isFalse);
+  });
+
+  test('resume waits until interrupt has stopped every audio port', () async {
+    await controller.enableAfterDisclosure();
+    await controller.listenOnce();
+    recognition.holdNextStop();
+
+    final interrupting = controller.interrupt();
+    controller.resume();
+    await controller.listenOnce();
+
+    expect(controller.state.phase, VoiceInteractionPhase.interrupted);
+    expect(recognition.listenCalls, 1);
+    recognition.completeStop();
+    await interrupting;
+    expect(controller.state.phase, VoiceInteractionPhase.ready);
+
+    await controller.listenOnce();
+    expect(recognition.listenCalls, 2);
+  });
+
+  test('deferred interruption is cleared after an unrecognized command',
+      () async {
+    await controller.dispose();
+    controller = VoiceInteractionController(
+      permission: permission,
+      recognition: recognition,
+      synthesis: synthesis,
+      interpret: VoiceGameIntentParser.parse,
+      onIntent: (_) => const VoiceInteractionReply('有效回复'),
+    );
+    await controller.enableAfterDisclosure();
+    await controller.listenOnce();
+    recognition.holdNextStop();
+    recognition.emitFinal('无法解析的内容');
+    await Future<void>.delayed(Duration.zero);
+    await controller.interrupt();
+    recognition.completeStop();
+    await Future<void>.delayed(Duration.zero);
+
+    expect(controller.state.phase, VoiceInteractionPhase.interrupted);
+    controller.resume();
+    await controller.listenOnce();
+    recognition.emitFinal('A1');
+    await Future<void>.delayed(Duration.zero);
+
+    expect(synthesis.spokenTexts, contains('有效回复'));
+    expect(controller.state.phase, VoiceInteractionPhase.ready);
+  });
+
+  test('failed announcement can be replayed before listening', () async {
+    synthesis.throwOnNextSpeak = true;
+    await controller.enableAfterDisclosure();
+
+    expect(await controller.announce('开场引导'), isFalse);
+    expect(controller.state.phase, VoiceInteractionPhase.awaitingReplay);
+    expect(controller.hasPendingReply, isTrue);
+
+    await controller.listenOnce();
+    expect(recognition.listenCalls, 0);
+    expect(await controller.replayPendingReply(), isTrue);
+    expect(controller.state.phase, VoiceInteractionPhase.ready);
+    expect(synthesis.spokenTexts, ['开场引导', '开场引导']);
+  });
+
+  test('interrupted reply remains replayable instead of unlocking input',
+      () async {
+    synthesis.holdNextSpeak();
+    await controller.enableAfterDisclosure();
+
+    final speaking = controller.announce('权威回复');
+    await Future<void>.delayed(Duration.zero);
+    await controller.interrupt();
+
+    expect(controller.state.phase, VoiceInteractionPhase.awaitingReplay);
+    await controller.listenOnce();
+    expect(recognition.listenCalls, 0);
+
+    synthesis.completeSpeak();
+    expect(await speaking, isFalse);
+    expect(await controller.replayPendingReply(), isTrue);
+    expect(controller.state.phase, VoiceInteractionPhase.ready);
+  });
+
   test('announce invalidates a final result while recognition is stopping',
       () async {
     await controller.enableAfterDisclosure();
@@ -211,7 +420,7 @@ void main() {
     await Future<void>.delayed(Duration.zero);
 
     expect(recognition.stopCalls, 1);
-    expect(controller.state.phase, VoiceInteractionPhase.failed);
+    expect(controller.state.phase, VoiceInteractionPhase.ready);
     expect(
       controller.state.failure,
       VoicePortFailure.recognitionFailed,
@@ -368,10 +577,12 @@ class _FakeRecognitionPort implements VoiceRecognitionPort {
 
 class _FakeSynthesisPort implements VoiceSynthesisPort {
   bool initializeResult = true;
+  bool throwOnNextSpeak = false;
   int initializeCalls = 0;
   int stopCalls = 0;
   int disposeCalls = 0;
   Completer<void>? _speakCompleter;
+  final List<String> spokenTexts = [];
 
   @override
   Future<bool> initialize() async {
@@ -389,6 +600,11 @@ class _FakeSynthesisPort implements VoiceSynthesisPort {
 
   @override
   Future<void> speak(String text) async {
+    spokenTexts.add(text);
+    if (throwOnNextSpeak) {
+      throwOnNextSpeak = false;
+      throw StateError('platform detail must not escape');
+    }
     await _speakCompleter?.future;
     _speakCompleter = null;
   }

@@ -41,7 +41,15 @@ void main() {
     ('重复一遍', VoiceGameAction.repeat),
     ('暂停', VoiceGameAction.pause),
     ('继续', VoiceGameAction.resume),
+    ('继续对局', VoiceGameAction.resume),
     ('退出语音模式', VoiceGameAction.exit),
+    ('确认退出', VoiceGameAction.confirmExit),
+    ('取消退出', VoiceGameAction.cancelExit),
+    ('重试', VoiceGameAction.retry),
+    ('我的棋子在哪', VoiceGameAction.myPieces),
+    ('对方棋子在哪', VoiceGameAction.opponentPieces),
+    ('还剩几个', VoiceGameAction.pieceCount),
+    ('可以走哪', VoiceGameAction.availableMoves),
   ]) {
     test('parses ${testCase.$1} as a typed action', () {
       final intent = VoiceGameIntentParser.parse(testCase.$1);
@@ -67,6 +75,8 @@ void main() {
     'A1到A2',
     '从A1移动到A2再到A3',
     'A1然后退出',
+    '确认，退出',
+    '继续，对局',
   ]) {
     test('rejects non-whitelisted sentence: $unsafeText', () {
       expect(VoiceGameIntentParser.parse(unsafeText), isNull);

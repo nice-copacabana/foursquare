@@ -293,7 +293,7 @@ flutter analyze
 - **执行操作**: 运行 `dart fix --apply` 并手动修复 Critical 错误。
 - **修复结果**:
     - 自动修复了 ~66 个 Lint 问题 (require_trailing_commas, prefer_const_constructors, etc)。
-    - 手动修复了 `lib/bloc/meditation_mode_bloc.dart` 中的 avoid_print。
+    - 手动修复了 `lib/bloc/meditation_mode_bloc.dart` 中的 avoid_print（历史记录；该旧原型已于 2026-08-01 移除）。
     - 修复了 `test/bloc/game_bloc_test.dart` 中的编译错误 (refactor: use AudioCoordinator)。
     - 修复了 `test/widget_test.dart` 中的编译错误 (MyApp -> FourSquareGameApp)。
 - **剩余状态**:

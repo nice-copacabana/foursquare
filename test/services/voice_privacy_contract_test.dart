@@ -1,8 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:foursquare/bloc/meditation_mode_event.dart';
-import 'package:foursquare/bloc/meditation_mode_state.dart';
-import 'package:foursquare/models/board_state.dart';
-import 'package:foursquare/models/piece_type.dart';
+import 'package:foursquare/meditation/meditation_intent_handler.dart';
+import 'package:foursquare/services/voice/voice_interaction_controller.dart';
 import 'package:foursquare/services/voice/voice_ports.dart';
 import 'package:foursquare/services/voice_recognition_service.dart';
 
@@ -30,20 +28,21 @@ void main() {
     expect(sample.toString(), isNot(contains(secret)));
   });
 
-  test('meditation event and processing state strings hide recognized text',
-      () {
-    const event = VoiceInputReceived(
-      recognizedText: secret,
-      confidence: 0.9,
+  test('voice and meditation response strings hide spoken text', () {
+    const reply = VoiceInteractionReply(secret);
+    const prompt = MeditationPrompt(secret);
+    const response = MeditationTurnResponse(
+      prompt: prompt,
+      exitConfirmationRequested: true,
     );
-    final state = ProcessingVoiceCommand(
-      recognizedText: secret,
-      confidence: 0.9,
-      board: BoardState.initial(),
-      currentPlayer: PieceType.black,
+    const state = VoiceInteractionState(
+      VoiceInteractionPhase.ready,
+      failure: VoicePortFailure.synthesisFailed,
     );
 
-    expect(event.toString(), isNot(contains(secret)));
+    expect(reply.toString(), isNot(contains(secret)));
+    expect(prompt.toString(), isNot(contains(secret)));
+    expect(response.toString(), isNot(contains(secret)));
     expect(state.toString(), isNot(contains(secret)));
   });
 }

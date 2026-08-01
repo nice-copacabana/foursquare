@@ -7,7 +7,7 @@ Phase 4 分两步交付：
 1. 普通对局的可选中文语音控制与播报。
 2. 基于同一权威规则链的中文无屏冥想对局。
 
-当前仅完成隐藏的纯核心基础，尚未达到用户可用或商店可发布状态。首期不承诺英文、日文、手表或手环适配，也不在外部引擎确定前开放麦克风入口。
+当前已完成隐藏的普通语音纯核心和权威冥想 session，并用假端口跑通一轮人类/AI 无屏行棋；尚未达到完整整局、用户可用或商店可发布状态。首期不承诺英文、日文、手表或手环适配，也不在外部引擎确定前开放麦克风入口。
 
 ## 2. 不变量
 
@@ -16,8 +16,8 @@ Phase 4 分两步交付：
 - 任意时刻麦克风与 TTS 不得重叠。
 - 原始识别文本不进入游戏状态、日志、遥测、存档或网络。
 - 语音只产生类型化意图，不能裁决合法移动、超时、吃子或终局。
-- 触屏和语音最终都经过 `GameBloc -> MoveValidator -> GameEngine`。
-- AI 授权移动只能由现有 AI 事件链产生，语音永远不能设置 `isAIMove: true`。
+- 普通对局的触屏和语音最终都经过 `GameBloc -> MoveValidator -> GameEngine`；冥想对局经过 `MeditationIntentHandler -> MeditationSessionController -> MoveValidator/GameEngine`。
+- 普通对局的 AI 授权移动只能由现有 AI 事件链产生，语音永远不能设置 `isAIMove: true`；冥想 AI 只通过注入的 `AIPlayer` 产生候选步，并由同一 session controller 提交。
 - 4×4 棋盘的歧义中心不自动映射；不完整、否定或多候选指令不执行。
 
 ## 3. 已实现的普通语音核心
@@ -41,7 +41,7 @@ game_bloc.dart
   └─ ActivateBoardPositionEvent -> 选中/重选/取消/权威移动
 ```
 
-`VoiceInteractionController` 的状态不保存识别文本，只保存阶段和稳定失败枚举。异步操作使用代次隔离；播报抢占监听、页面销毁或音频中断后，旧回调不能提交意图或恢复旧状态。
+`VoiceInteractionController` 的状态不保存识别文本，只保存阶段和稳定失败枚举。异步操作使用代次隔离；播报抢占监听、页面销毁或音频中断后，旧回调不能提交意图或恢复旧状态。权威指令已经提交但 TTS 失败时，仅在内存缓存生成后的待播回复并允许重播；其 `toString()` 不暴露正文，也不会重新解释或执行原指令。
 
 ## 4. 普通对局后续设计
 
@@ -57,9 +57,9 @@ game_bloc.dart
 
 ## 5. 冥想模式重建设计
 
-仓库中的旧 `MeditationModeBloc` 和页面是不可发布原型：它们直接协调识别/TTS、未完整保留权威对局字段，暂停/恢复和超时不完整，也没有无屏整局测试。后续不能在旧原型上继续堆平台回调。
+旧 `MeditationModeBloc`、事件/状态和不可达页面原型已移除；这些原型曾直接协调识别/TTS、未完整保留权威对局字段，暂停/恢复和超时也不完整。后续只在新的权威 session 上推进。
 
-冥想模式应围绕一份完整权威 session 重建：
+冥想模式当前围绕一份完整权威 session 重建：
 
 ```text
 MeditationSession
@@ -72,9 +72,10 @@ MeditationSession
 
 VoiceInteractionController
   -> MeditationIntentHandler
+  -> MeditationSessionController
   -> GameEngine / MoveValidator / TurnClock
   -> committed MeditationSession
-  -> VoicePrompt
+  -> MeditationPrompt
 ```
 
 核心要求：
@@ -85,6 +86,8 @@ VoiceInteractionController
 - 查询棋盘、重复播报、取消、退出等控制动作与移动意图分离。
 - 双吃、50 ply 和棋、无路可走、棋子数终局、60 秒超时与普通引擎完全一致。
 - 退出前确认并按产品定义保存或明确放弃，不丢失对局身份和历史。
+
+当前核心已经实现上述 session、统一引擎提交、开场完成后启动时钟、AI 先手与失败重试、查询/暂停/恢复/退出确认和假端口一轮闭环。仍需完成整局脚本、持久化接入、生产语音 Adapter、正式 UI 和真机验收。
 
 ## 6. 无屏验收脚本
 

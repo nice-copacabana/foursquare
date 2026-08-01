@@ -12,7 +12,17 @@ enum VoicePortFailure {
   interrupted,
   recognitionFailed,
   synthesisFailed,
+  commandFailed,
   unrecognized,
+}
+
+final class VoiceInteractionReply {
+  final String text;
+
+  const VoiceInteractionReply(this.text);
+
+  @override
+  String toString() => 'VoiceInteractionReply(textLength: ${text.length})';
 }
 
 final class VoiceRecognitionSample {

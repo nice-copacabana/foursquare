@@ -33,6 +33,13 @@ enum VoiceGameAction {
   pause,
   resume,
   exit,
+  confirmExit,
+  cancelExit,
+  retry,
+  myPieces,
+  opponentPieces,
+  pieceCount,
+  availableMoves,
 }
 
 final class VoiceActionIntent extends VoiceGameIntent {
@@ -72,10 +79,32 @@ class VoiceGameIntentParser {
     '退出': VoiceGameAction.exit,
     '退出语音': VoiceGameAction.exit,
     '退出语音模式': VoiceGameAction.exit,
+    '确认': VoiceGameAction.confirmExit,
+    '确认退出': VoiceGameAction.confirmExit,
+    '确定退出': VoiceGameAction.confirmExit,
+    '取消退出': VoiceGameAction.cancelExit,
+    '继续对局': VoiceGameAction.resume,
+    '重试': VoiceGameAction.retry,
+    '请重试': VoiceGameAction.retry,
+    '我的棋子在哪': VoiceGameAction.myPieces,
+    '我的棋子在哪里': VoiceGameAction.myPieces,
+    '对方棋子在哪': VoiceGameAction.opponentPieces,
+    '对方棋子在哪里': VoiceGameAction.opponentPieces,
+    '还剩几个': VoiceGameAction.pieceCount,
+    '剩几个棋子': VoiceGameAction.pieceCount,
+    '可以走哪': VoiceGameAction.availableMoves,
+    '可以走哪里': VoiceGameAction.availableMoves,
   };
 
   static VoiceGameIntent? parse(String text) {
-    final cleaned = text.replaceAll(RegExp(r'[\s，,。.!！?？]'), '').toLowerCase();
+    var cleaned = text.trim().toLowerCase();
+    cleaned = cleaned
+        .replaceFirst(RegExp(r'^[，,。.!！?？]+'), '')
+        .replaceFirst(RegExp(r'[，,。.!！?？]+$'), '');
+    if (RegExp(r'[，,。.!！?？]').hasMatch(cleaned)) {
+      return null;
+    }
+    cleaned = cleaned.replaceAll(RegExp(r'\s'), '');
     if (cleaned.isEmpty) {
       return null;
     }
