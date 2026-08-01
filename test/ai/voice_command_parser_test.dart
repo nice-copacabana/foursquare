@@ -9,32 +9,32 @@ void main() {
   group('VoiceCommandParser - 传统坐标格式解析', () {
     test('应该解析"横1竖2"格式', () {
       final result = VoiceCommandParser.parse('横1竖2');
-      expect(result, equals(const Position(1, 2)));
+      expect(result, equals(const Position(0, 1)));
     });
 
     test('应该解析"横一竖二"中文数字格式', () {
       final result = VoiceCommandParser.parse('横一竖二');
-      expect(result, equals(const Position(1, 2)));
+      expect(result, equals(const Position(0, 1)));
     });
 
-    test('超出4×4内部坐标的"横三竖四"应拒绝', () {
+    test('应该解析用户坐标"横三竖四"', () {
       final result = VoiceCommandParser.parse('横三竖四');
-      expect(result, isNull);
+      expect(result, equals(const Position(2, 3)));
     });
 
     test('应该解析"行2列3"格式', () {
       final result = VoiceCommandParser.parse('行2列3');
-      expect(result, equals(const Position(2, 3)));
+      expect(result, equals(const Position(2, 1)));
     });
 
     test('应该解析带空格的"横 1 竖 2"', () {
       final result = VoiceCommandParser.parse('横 1 竖 2');
-      expect(result, equals(const Position(1, 2)));
+      expect(result, equals(const Position(0, 1)));
     });
 
     test('应该解析带标点的"横1，竖2"', () {
       final result = VoiceCommandParser.parse('横1，竖2');
-      expect(result, equals(const Position(1, 2)));
+      expect(result, equals(const Position(0, 1)));
     });
   });
 
@@ -91,26 +91,26 @@ void main() {
       expect(result, equals(const Position(3, 3)));
     });
 
-    test('应该解析"中间"', () {
+    test('4×4棋盘的"中间"有歧义应拒绝', () {
       final result = VoiceCommandParser.parse('中间');
-      expect(result, equals(const Position(1, 1)));
+      expect(result, isNull);
     });
 
-    test('应该解析"中心"', () {
+    test('4×4棋盘的"中心"有歧义应拒绝', () {
       final result = VoiceCommandParser.parse('中心');
-      expect(result, equals(const Position(1, 1)));
+      expect(result, isNull);
     });
 
-    test('应该解析"正中"', () {
+    test('4×4棋盘的"正中"有歧义应拒绝', () {
       final result = VoiceCommandParser.parse('正中');
-      expect(result, equals(const Position(2, 2)));
+      expect(result, isNull);
     });
   });
 
   group('VoiceCommandParser - 自然语言解析', () {
     test('应该解析"移动到横2竖3"', () {
       final result = VoiceCommandParser.parse('移动到横2竖3');
-      expect(result, equals(const Position(2, 3)));
+      expect(result, equals(const Position(1, 2)));
     });
 
     test('应该解析"移到A1"', () {
@@ -120,7 +120,7 @@ void main() {
 
     test('应该解析"走到横一竖二"', () {
       final result = VoiceCommandParser.parse('走到横一竖二');
-      expect(result, equals(const Position(1, 2)));
+      expect(result, equals(const Position(0, 1)));
     });
 
     test('应该解析"放在B2"', () {
@@ -128,9 +128,9 @@ void main() {
       expect(result, equals(const Position(1, 1)));
     });
 
-    test('自然语言中的越界坐标也应拒绝', () {
+    test('自然语言中的边界坐标应有效', () {
       final result = VoiceCommandParser.parse('下在横三竖四');
-      expect(result, isNull);
+      expect(result, equals(const Position(2, 3)));
     });
   });
 
@@ -165,7 +165,7 @@ void main() {
     test('应该返回包含数字1和2的候选位置', () {
       final candidates = VoiceCommandParser.fuzzyMatch('横1竖2');
       expect(candidates, isNotEmpty);
-      expect(candidates, contains(const Position(1, 2)));
+      expect(candidates, contains(const Position(0, 1)));
     });
 
     test('模糊匹配应该返回多个候选', () {
@@ -182,13 +182,12 @@ void main() {
   group('VoiceCommandParser - 位置格式化', () {
     test('应该格式化Position为中文坐标', () {
       final formatted = VoiceCommandParser.formatPosition(const Position(1, 2));
-      expect(formatted, equals('横一竖二'));
+      expect(formatted, equals('横二竖三'));
     });
 
     test('应该格式化Position(0,0)为中文坐标', () {
       final formatted = VoiceCommandParser.formatPosition(const Position(0, 0));
-      // 注意：0可能映射为"零"或"〇"
-      expect(formatted, anyOf(equals('横零竖零'), equals('横〇竖〇')));
+      expect(formatted, equals('横一竖一'));
     });
 
     test('应该格式化Position为国际坐标', () {
@@ -221,19 +220,32 @@ void main() {
 
     test('应该处理包含多余文字的指令', () {
       final result = VoiceCommandParser.parse('我想移动到横2竖3这个位置');
-      expect(result, equals(const Position(2, 3)));
+      expect(result, equals(const Position(1, 2)));
     });
 
-    test('应该处理方向+坐标混合', () {
-      // 方向优先级更高
+    test('应拒绝相互冲突的方向和坐标', () {
       final result = VoiceCommandParser.parse('左上横1竖2');
-      expect(result, equals(const Position(0, 0)));
+      expect(result, isNull);
     });
 
     test('应该处理带噪音的"横，，1，，竖，，2"', () {
       final result = VoiceCommandParser.parse('横，，1，，竖，，2');
-      expect(result, equals(const Position(1, 2)));
+      expect(result, equals(const Position(0, 1)));
     });
+  });
+
+  test('全部16个位置的中文坐标均可逆', () {
+    for (var x = 0; x < 4; x++) {
+      for (var y = 0; y < 4; y++) {
+        final position = Position(x, y);
+        expect(
+          VoiceCommandParser.parse(
+            VoiceCommandParser.formatPosition(position),
+          ),
+          position,
+        );
+      }
+    }
   });
 
   group('VoiceCommandParser - 性能测试', () {

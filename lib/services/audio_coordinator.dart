@@ -70,11 +70,22 @@ enum GameScene {
 class AudioCoordinator {
   static final AudioCoordinator _instance = AudioCoordinator._internal();
   factory AudioCoordinator() => _instance;
-  AudioCoordinator._internal();
+  AudioCoordinator._internal()
+      : _audioService = AudioService(),
+        _musicService = MusicService(),
+        _voiceService = VoiceSynthesisService();
 
-  final AudioService _audioService = AudioService();
-  final MusicService _musicService = MusicService();
-  final VoiceSynthesisService _voiceService = VoiceSynthesisService();
+  AudioCoordinator.forTesting({
+    required AudioService audioService,
+    required MusicService musicService,
+    required VoiceSynthesisService voiceService,
+  })  : _audioService = audioService,
+        _musicService = musicService,
+        _voiceService = voiceService;
+
+  final AudioService _audioService;
+  final MusicService _musicService;
+  final VoiceSynthesisService _voiceService;
   SharedPreferences? _prefs;
 
   AudioSettings _settings = AudioSettings.defaultSettings;
@@ -84,8 +95,10 @@ class AudioCoordinator {
   double _originalMusicVolume = 0.4;
   final List<_VoiceAnnouncement> _voiceQueue = [];
   DateTime? _lastAiThinkingAt;
+  bool _voiceInitialized = false;
 
   static const String _keyAudioSettings = 'audio_settings';
+  static const bool _voiceFeatureAvailable = false;
 
   /// 获取当前设置
   AudioSettings get settings => _settings;
@@ -102,8 +115,6 @@ class AudioCoordinator {
       // 初始化各服务
       await _audioService.initialize();
       await _musicService.initialize();
-      await _voiceService.initialize();
-
       // 应用设置
       await _applySettings();
 
@@ -119,7 +130,7 @@ class AudioCoordinator {
       final jsonStr = _prefs?.getString(_keyAudioSettings);
       if (jsonStr != null) {
         final map = jsonDecode(jsonStr) as Map<String, dynamic>;
-        _settings = AudioSettings.fromMap(map);
+        _settings = _withAvailableFeatures(AudioSettings.fromMap(map));
         logger.info('已加载音频设置', 'AudioCoordinator');
       }
     } catch (e) {
@@ -150,17 +161,31 @@ class AudioCoordinator {
     await _musicService.setVolume(_settings.musicVolume);
     _originalMusicVolume = _settings.musicVolume;
 
-    // 语音设置
-    await _voiceService.setVolume(_settings.voiceVolume);
-    await _voiceService.setSpeechRate(_settings.voiceSpeechRate);
-    await _voiceService.setPitch(_settings.voicePitch);
+    if (_settings.voiceEnabled) {
+      if (!_voiceInitialized) {
+        await _voiceService.initialize();
+        _voiceInitialized = true;
+      }
+      await _voiceService.setVolume(_settings.voiceVolume);
+      await _voiceService.setSpeechRate(_settings.voiceSpeechRate);
+      await _voiceService.setPitch(_settings.voicePitch);
+    } else if (_voiceInitialized) {
+      await _voiceService.stop();
+    }
   }
 
   /// 更新音频设置
   Future<void> updateSettings(AudioSettings newSettings) async {
-    _settings = newSettings;
+    _settings = _withAvailableFeatures(newSettings);
     await _applySettings();
     await _saveSettings();
+  }
+
+  AudioSettings _withAvailableFeatures(AudioSettings settings) {
+    if (_voiceFeatureAvailable || !settings.voiceEnabled) {
+      return settings;
+    }
+    return settings.copyWith(voiceEnabled: false);
   }
 
   /// 响应游戏事件
@@ -349,13 +374,17 @@ class AudioCoordinator {
   /// 停止所有音频
   Future<void> stopAll() async {
     await _musicService.stopMusic();
-    await _voiceService.stop();
+    if (_voiceInitialized) {
+      await _voiceService.stop();
+    }
   }
 
   /// 暂停所有音频
   Future<void> pauseAll() async {
     await _musicService.pauseMusic();
-    await _voiceService.pause();
+    if (_voiceInitialized) {
+      await _voiceService.pause();
+    }
   }
 
   /// 恢复所有音频
@@ -369,7 +398,9 @@ class AudioCoordinator {
   Future<void> dispose() async {
     await _audioService.dispose();
     await _musicService.dispose();
-    await _voiceService.dispose();
+    if (_voiceInitialized) {
+      await _voiceService.dispose();
+    }
   }
 }
 

@@ -275,8 +275,8 @@ class VoiceCommandReceivedEvent extends GameEvent {
   List<Object?> get props => [command, confidence];
 
   @override
-  String toString() =>
-      'VoiceCommandReceivedEvent(command: $command, confidence: $confidence)';
+  String toString() => 'VoiceCommandReceivedEvent(confidence: $confidence, '
+      'commandLength: ${command.length})';
 }
 
 /// 语音播报请求事件

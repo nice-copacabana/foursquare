@@ -67,7 +67,8 @@ class VoiceRecognitionResult {
 
   @override
   String toString() {
-    return 'VoiceRecognitionResult(text: $text, confidence: $confidence, isFinal: $isFinal)';
+    return 'VoiceRecognitionResult(confidence: $confidence, '
+        'isFinal: $isFinal, textLength: ${text.length})';
   }
 }
 
@@ -111,27 +112,22 @@ class VoiceRecognitionService {
       // 初始化语音识别引擎
       bool available = await _speech.initialize(
         onError: (SpeechRecognitionError error) {
-          print('[VoiceRecognitionService] 识别错误: ${error.errorMsg}');
           _onError?.call(error.errorMsg);
           _status = VoiceRecognitionStatus.error;
         },
         onStatus: (String status) {
-          print('[VoiceRecognitionService] 状态变化: $status');
           _handleStatus(status);
         },
       );
 
       if (available) {
         _status = VoiceRecognitionStatus.ready;
-        print('[VoiceRecognitionService] 初始化成功');
         return true;
       } else {
-        print('[VoiceRecognitionService] 语音识别不可用');
         _status = VoiceRecognitionStatus.error;
         return false;
       }
-    } catch (e) {
-      print('[VoiceRecognitionService] 初始化失败: $e');
+    } catch (_) {
       _status = VoiceRecognitionStatus.error;
       return false;
     }
@@ -164,9 +160,6 @@ class VoiceRecognitionService {
             timestamp: DateTime.now(),
           );
 
-          print(
-            '[VoiceRecognitionService] 识别结果: ${result.recognizedWords} (置信度: ${result.confidence})',
-          );
           _onResult?.call(voiceResult);
 
           // 如果是最终结果，自动停止监听
@@ -183,7 +176,6 @@ class VoiceRecognitionService {
       );
 
       _status = VoiceRecognitionStatus.listening;
-      print('[VoiceRecognitionService] 开始监听（语言: $_locale）');
     } catch (e) {
       _status = VoiceRecognitionStatus.error;
       _onError?.call('开始监听失败: $e');
@@ -201,7 +193,6 @@ class VoiceRecognitionService {
       await _speech.stop();
 
       _status = VoiceRecognitionStatus.ready;
-      print('[VoiceRecognitionService] 停止监听');
     } catch (e) {
       _onError?.call('停止监听失败: $e');
     }
@@ -218,7 +209,6 @@ class VoiceRecognitionService {
       await _speech.cancel();
 
       _status = VoiceRecognitionStatus.ready;
-      print('[VoiceRecognitionService] 取消监听');
     } catch (e) {
       _onError?.call('取消监听失败: $e');
     }
@@ -226,9 +216,7 @@ class VoiceRecognitionService {
 
   /// 检查权限
   Future<bool> hasPermission() async {
-    bool hasPermission = await _speech.hasPermission;
-    print('[VoiceRecognitionService] 权限检查: $hasPermission');
-    return hasPermission;
+    return _speech.hasPermission;
   }
 
   /// 设置语言
@@ -239,20 +227,16 @@ class VoiceRecognitionService {
   /// - ja-JP: 日文
   void setLocale(String locale) {
     if (_status == VoiceRecognitionStatus.listening) {
-      print('[VoiceRecognitionService] 警告：监听中不能切换语言');
       return;
     }
 
     _locale = locale;
-    print('[VoiceRecognitionService] 切换语言: $locale');
   }
 
   /// 获取支持的语言列表
   Future<List<String>> getAvailableLocales() async {
     List<LocaleName> locales = await _speech.locales();
-    List<String> localeIds = locales.map((locale) => locale.localeId).toList();
-    print('[VoiceRecognitionService] 支持的语言: ${localeIds.length} 种');
-    return localeIds;
+    return locales.map((locale) => locale.localeId).toList();
   }
 
   /// 处理状态变化
@@ -270,7 +254,7 @@ class VoiceRecognitionService {
         _status = VoiceRecognitionStatus.ready;
         break;
       default:
-        print('[VoiceRecognitionService] 未知状态: $status');
+        break;
     }
   }
 
@@ -279,6 +263,5 @@ class VoiceRecognitionService {
     await stopListening();
     _onResult = null;
     _onError = null;
-    print('[VoiceRecognitionService] 资源已释放');
   }
 }

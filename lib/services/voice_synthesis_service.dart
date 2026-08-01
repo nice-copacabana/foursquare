@@ -84,39 +84,31 @@ class VoiceSynthesisService {
       // 设置回调
       _tts.setStartHandler(() {
         _status = VoiceSynthesisStatus.playing;
-        print('[VoiceSynthesisService] 开始播报');
       });
 
       _tts.setCompletionHandler(() {
         _status = VoiceSynthesisStatus.ready;
-        print('[VoiceSynthesisService] 播报完成');
         _processNextInQueue();
       });
 
       _tts.setErrorHandler((msg) {
         _status = VoiceSynthesisStatus.error;
-        print('[VoiceSynthesisService] 错误: $msg');
       });
 
       _tts.setCancelHandler(() {
         _status = VoiceSynthesisStatus.ready;
-        print('[VoiceSynthesisService] 取消播报');
       });
 
       _tts.setPauseHandler(() {
         _status = VoiceSynthesisStatus.paused;
-        print('[VoiceSynthesisService] 暂停播报');
       });
 
       _tts.setContinueHandler(() {
         _status = VoiceSynthesisStatus.playing;
-        print('[VoiceSynthesisService] 继续播报');
       });
 
-      print('[VoiceSynthesisService] 初始化成功');
       _status = VoiceSynthesisStatus.ready;
-    } catch (e) {
-      print('[VoiceSynthesisService] 初始化失败: $e');
+    } catch (_) {
       _status = VoiceSynthesisStatus.error;
     }
   }
@@ -149,13 +141,7 @@ class VoiceSynthesisService {
 
       // 播报文本
       await _tts.speak(text);
-
-      print('[VoiceSynthesisService] 播报: $text');
-      print(
-        '[VoiceSynthesisService] 参数: volume=$_volume, pitch=$_pitch, rate=$_rate',
-      );
-    } catch (e) {
-      print('[VoiceSynthesisService] 播报失败: $e');
+    } catch (_) {
       _status = VoiceSynthesisStatus.error;
     }
   }
@@ -173,10 +159,7 @@ class VoiceSynthesisService {
       _status = VoiceSynthesisStatus.ready;
       _queue.clear();
       _isProcessingQueue = false;
-      print('[VoiceSynthesisService] 停止播报');
-    } catch (e) {
-      print('[VoiceSynthesisService] 停止失败: $e');
-    }
+    } catch (_) {}
   }
 
   /// 暂停播报
@@ -190,10 +173,7 @@ class VoiceSynthesisService {
       await _tts.pause();
 
       _status = VoiceSynthesisStatus.paused;
-      print('[VoiceSynthesisService] 暂停播报');
-    } catch (e) {
-      print('[VoiceSynthesisService] 暂停失败: $e');
-    }
+    } catch (_) {}
   }
 
   /// 队列播报
@@ -233,8 +213,6 @@ class VoiceSynthesisService {
 
     // 设置语言
     await _tts.setLanguage(language);
-
-    print('[VoiceSynthesisService] 切换语言: $language');
   }
 
   /// 设置音量
@@ -271,6 +249,5 @@ class VoiceSynthesisService {
   Future<void> dispose() async {
     await stop();
     _queue.clear();
-    print('[VoiceSynthesisService] 资源已释放');
   }
 }

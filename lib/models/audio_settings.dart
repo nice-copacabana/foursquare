@@ -34,7 +34,7 @@ class AudioSettings extends Equatable {
   const AudioSettings({
     this.soundEnabled = true,
     this.musicEnabled = true,
-    this.voiceEnabled = true,
+    this.voiceEnabled = false,
     this.soundVolume = 0.7,
     this.musicVolume = 0.4,
     this.voiceVolume = 0.8,
@@ -50,7 +50,7 @@ class AudioSettings extends Equatable {
     return AudioSettings(
       soundEnabled: map['soundEnabled'] as bool? ?? true,
       musicEnabled: map['musicEnabled'] as bool? ?? true,
-      voiceEnabled: map['voiceEnabled'] as bool? ?? true,
+      voiceEnabled: map['voiceEnabled'] as bool? ?? false,
       soundVolume: (map['soundVolume'] as num?)?.toDouble() ?? 0.7,
       musicVolume: (map['musicVolume'] as num?)?.toDouble() ?? 0.4,
       voiceVolume: (map['voiceVolume'] as num?)?.toDouble() ?? 0.8,

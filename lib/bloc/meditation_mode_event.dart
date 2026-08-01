@@ -48,6 +48,10 @@ class VoiceInputReceived extends MeditationModeEvent {
 
   @override
   List<Object?> get props => [recognizedText, confidence];
+
+  @override
+  String toString() => 'VoiceInputReceived(confidence: $confidence, '
+      'textLength: ${recognizedText.length})';
 }
 
 /// 语音命令解析完成

@@ -10,13 +10,11 @@ import '../models/position.dart';
 /// 支持的格式：
 /// 1. 传统坐标: "横1竖2"、"横三竖四"
 /// 2. 国际式: "A1"、"B2"、"C3"
-/// 3. 方向式: "左上"、"右下"、"中间"
+/// 3. 方向式: "左上"、"右下"（不自动解释有歧义的中心格）
 /// 4. 自然语言: "移动到横2竖3"
 class VoiceCommandParser {
-  // 中文数字映射
-  static const Map<String, int> _chineseNumbers = {
-    '零': 0,
-    '〇': 0,
+  // 用户语音坐标使用1-4，进入引擎前统一转为0-3。
+  static const Map<String, int> _spokenNumbers = {
     '一': 1,
     '1': 1,
     '二': 2,
@@ -26,6 +24,8 @@ class VoiceCommandParser {
     '四': 4,
     '4': 4,
   };
+
+  static const List<String> _chineseNumerals = ['一', '二', '三', '四'];
 
   // 英文字母映射（A-D对应0-3）
   static const Map<String, int> _letterCoords = {
@@ -45,9 +45,6 @@ class VoiceCommandParser {
     '右上': Position(3, 0),
     '左下': Position(0, 3),
     '右下': Position(3, 3),
-    '中间': Position(1, 1),
-    '中心': Position(1, 1),
-    '正中': Position(2, 2),
   };
 
   /// 解析语音指令为Position
@@ -67,26 +64,14 @@ class VoiceCommandParser {
         .replaceAll('.', '')
         .toLowerCase();
 
-    // 尝试各种解析方式
-    Position? result;
+    final candidates = <Position>{
+      if (_parseDirection(cleaned) case final position?) position,
+      if (_parseTraditional(cleaned) case final position?) position,
+      if (_parseInternational(cleaned) case final position?) position,
+    };
 
-    // 1. 尝试方向解析
-    result = _parseDirection(cleaned);
-    if (result != null) return result;
-
-    // 2. 尝试传统坐标解析（横X竖Y）
-    result = _parseTraditional(cleaned);
-    if (result != null) return result;
-
-    // 3. 尝试国际坐标解析（A1, B2等）
-    result = _parseInternational(cleaned);
-    if (result != null) return result;
-
-    // 4. 尝试自然语言解析
-    result = _parseNaturalLanguage(cleaned);
-    if (result != null) return result;
-
-    return null;
+    // 同一句话给出互相冲突的位置时要求用户重说，不猜测。
+    return candidates.length == 1 ? candidates.single : null;
   }
 
   /// 解析方向式命令
@@ -102,23 +87,22 @@ class VoiceCommandParser {
   /// 解析传统坐标（横X竖Y）
   static Position? _parseTraditional(String command) {
     // 匹配"横X竖Y"格式
-    final patterns = [
-      RegExp(r'横([零〇一二三四1234])竖([零〇一二三四1234])'),
-      RegExp(r'行([零〇一二三四1234])列([零〇一二三四1234])'),
-    ];
+    final horizontalVertical = RegExp(
+      r'横([一二三四1234])竖([一二三四1234])',
+    ).firstMatch(command);
+    if (horizontalVertical != null) {
+      final x = _toEngineCoord(horizontalVertical.group(1));
+      final y = _toEngineCoord(horizontalVertical.group(2));
+      if (x != null && y != null) return Position(x, y);
+    }
 
-    for (final pattern in patterns) {
-      final match = pattern.firstMatch(command);
-      if (match != null) {
-        final x =
-            _chineseNumbers[match.group(1)] ?? int.tryParse(match.group(1)!);
-        final y =
-            _chineseNumbers[match.group(2)] ?? int.tryParse(match.group(2)!);
-
-        if (x != null && y != null && _isValidCoord(x) && _isValidCoord(y)) {
-          return Position(x, y);
-        }
-      }
+    final rowColumn = RegExp(
+      r'行([一二三四1234])列([一二三四1234])',
+    ).firstMatch(command);
+    if (rowColumn != null) {
+      final y = _toEngineCoord(rowColumn.group(1));
+      final x = _toEngineCoord(rowColumn.group(2));
+      if (x != null && y != null) return Position(x, y);
     }
 
     return null;
@@ -135,7 +119,7 @@ class VoiceCommandParser {
           ? int.parse(match.group(2)!) - 1 // 用户输入1-4，转为0-3
           : null;
 
-      if (x != null && y != null && _isValidCoord(x) && _isValidCoord(y)) {
+      if (x != null && y != null) {
         return Position(x, y);
       }
     }
@@ -143,66 +127,38 @@ class VoiceCommandParser {
     return null;
   }
 
-  /// 解析自然语言
-  static Position? _parseNaturalLanguage(String command) {
-    // 提取包含坐标的自然语言
-    // 例如："移动到横2竖3" -> 提取"横2竖3"
-    final keywords = ['移动到', '移到', '走到', '放在', '下在'];
-
-    for (final keyword in keywords) {
-      if (command.contains(keyword)) {
-        final index = command.indexOf(keyword);
-        final coordPart = command.substring(index + keyword.length);
-
-        // 尝试解析提取的部分
-        return _parseTraditional(coordPart) ?? _parseInternational(coordPart);
-      }
-    }
-
-    return null;
-  }
-
-  /// 检查坐标是否有效
-  static bool _isValidCoord(int coord) {
-    return coord >= 0 && coord <= 3;
+  static int? _toEngineCoord(String? value) {
+    final userCoord = _spokenNumbers[value];
+    return userCoord == null ? null : userCoord - 1;
   }
 
   /// 模糊匹配
   ///
   /// 当精确解析失败时，返回可能的候选位置列表
   static List<Position> fuzzyMatch(String command) {
-    final candidates = <Position>[];
-    final cleaned = command.replaceAll(RegExp(r'[\s，,。.]'), '');
+    final exact = parse(command);
+    if (exact != null) return [exact];
 
-    // 尝试提取所有可能的数字
-    for (int x = 0; x < 4; x++) {
-      for (int y = 0; y < 4; y++) {
-        if (_containsNumber(cleaned, x) && _containsNumber(cleaned, y)) {
-          candidates.add(Position(x, y));
-        }
+    final cleaned = command.replaceAll(RegExp(r'[\s，,。.]'), '');
+    final coordinates = RegExp(r'[一二三四1234]')
+        .allMatches(cleaned)
+        .map((match) => _toEngineCoord(match.group(0)))
+        .whereType<int>()
+        .toSet();
+    final candidates = <Position>[];
+    for (final x in coordinates) {
+      for (final y in coordinates) {
+        candidates.add(Position(x, y));
       }
     }
 
     return candidates;
   }
 
-  static bool _containsNumber(String command, int number) {
-    final forms = _chineseNumbers.entries
-        .where((entry) => entry.value == number)
-        .map((entry) => entry.key);
-    return forms.any(command.contains);
-  }
-
   /// 格式化位置为语音文本（用于播报）
   static String formatPosition(Position position) {
-    final x = position.x;
-    final y = position.y;
-
-    // 转换为中文数字
-    final xChinese =
-        _chineseNumbers.entries.firstWhere((e) => e.value == x).key;
-    final yChinese =
-        _chineseNumbers.entries.firstWhere((e) => e.value == y).key;
+    final xChinese = _chineseNumerals[position.x];
+    final yChinese = _chineseNumerals[position.y];
 
     return '横$xChinese竖$yChinese';
   }

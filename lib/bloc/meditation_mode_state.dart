@@ -87,6 +87,10 @@ class ProcessingVoiceCommand extends MeditationModeState {
 
   @override
   List<Object?> get props => [recognizedText, confidence, board, currentPlayer];
+
+  @override
+  String toString() => 'ProcessingVoiceCommand(confidence: $confidence, '
+      'textLength: ${recognizedText.length}, currentPlayer: $currentPlayer)';
 }
 
 /// 播报棋盘状态
