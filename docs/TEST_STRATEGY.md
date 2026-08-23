@@ -117,6 +117,17 @@ Pop-Location
 flutter test test/integration/online_game_transport_real_server_test.dart --dart-define=RUN_ONLINE_REAL_SERVER_E2E=true --timeout 60s
 ```
 
+Windows 开发机启用 `HTTP_PROXY`/`HTTPS_PROXY` 时，Flutter 测试启动器仍需直接访问本机随机回环端口。只在当前 PowerShell 进程补充回环地址后再运行测试，避免代理截断测试连接：
+
+```powershell
+$env:NO_PROXY = (@($env:NO_PROXY, 'localhost', '127.0.0.1', '::1') |
+  Where-Object { $_ } |
+  ForEach-Object { $_.Trim(',') }) -join ','
+flutter test
+```
+
+该设置只影响当前进程，不修改系统代理。若测试文件全部在加载阶段报 `127.0.0.1` 连接关闭，应先核对回环代理绕过，再判断为代码测试失败。
+
 规则和协议变更的合入门禁：
 
 - 所有相关单元、BLoC、契约和集成测试通过。
