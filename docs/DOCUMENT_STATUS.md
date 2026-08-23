@@ -1,7 +1,7 @@
 # 文档状态与权威来源索引
 
 > 状态：当前权威索引
-> 最后核查日期：2026-08-13
+> 最后核查日期：2026-08-23
 > 目的：区分当前要求、当前代码事实、历史快照和未来方案，避免旧文档中的完成度、规则或发布结论重新进入实现。
 
 ## 1. 如何判断冲突
@@ -30,7 +30,7 @@ README 是项目入口和摘要。README 与上述权威文档冲突时，应修
 | [PRIVACY_DATA_MAP.md](PRIVACY_DATA_MAP.md) | 本地、LAN、Sentry、在线和语音数据流及隐私变更控制 | 法律意见 |
 | [PENDING_CONFIRMATIONS.md](PENDING_CONFIRMATIONS.md) | 项目方已确认、暂缓或需在发布前集中补齐的外部输入 | 产品规则或代码完成度 |
 | [VISUAL_DESIGN_SYSTEM.md](VISUAL_DESIGN_SYSTEM.md) | 现代东方棋艺、响应式布局、无障碍和主题包架构 | 具体页面已经实现的声明 |
-| [POST_LAUNCH_OPERATIONS_PLAN.md](POST_LAUNCH_OPERATIONS_PLAN.md) | 商店推广、聚合信息收集、优化闭环、容量演进、支持、安全与知识产权保护框架 | 产品范围变更、完成度证明、付费授权或法律意见 |
+| [POST_LAUNCH_OPERATIONS_PLAN.md](POST_LAUNCH_OPERATIONS_PLAN.md) | 商店推广、聚合信息收集、优化闭环、容量演进、国内发行合规流程、支持、安全与知识产权保护框架 | 产品范围变更、完成度证明、付费授权或法律意见 |
 | [DOCUMENT_STATUS.md](DOCUMENT_STATUS.md) | 文档分类、冲突处理和维护规则 | 游戏或产品规则本身 |
 | [../README.md](../README.md) | 项目入口、当前阶段摘要、开发命令和权威文档导航 | 独立权威来源 |
 
