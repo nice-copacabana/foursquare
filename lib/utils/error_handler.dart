@@ -256,11 +256,15 @@ class ErrorHandler {
   }) async {
     try {
       final result = await operation();
-      if (successMessage != null) {
+      if (successMessage != null && context.mounted) {
         showSuccessToast(context, successMessage);
       }
       return result;
     } catch (e) {
+      if (!context.mounted) {
+        onError?.call();
+        return null;
+      }
       if (showErrorDialog) {
         await ErrorHandler.showErrorDialog(
           context,

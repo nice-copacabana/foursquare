@@ -12,6 +12,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
 import '../models/board_theme.dart';
 import '../constants/theme_presets.dart';
+import '../services/logger_service.dart';
 
 /// 主题类型枚举
 enum AppThemeType {
@@ -112,7 +113,7 @@ class ThemeManager {
         }
       }
     } catch (e) {
-      print('加载棋盘主题失败: $e');
+      logger.error('加载棋盘主题失败', 'ThemeManager', e);
     }
   }
 
