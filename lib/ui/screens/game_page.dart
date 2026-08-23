@@ -483,22 +483,38 @@ class _GamePageViewState extends State<GamePageView>
               ),
             ] else ...[
               const SizedBox(height: 14),
-              SizedBox(
-                key: const Key('game-voice-listen'),
-                width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed: canStart && !_voiceBusy && _voiceState.canListen
-                      ? _listenOnce
-                      : null,
-                  icon: const Icon(Icons.graphic_eq_rounded),
-                  label: Text(l10n.gameVoiceListen),
-                  style: FilledButton.styleFrom(
-                    minimumSize: const Size.fromHeight(50),
-                    backgroundColor: colors.jade,
-                    foregroundColor: colors.paperBase,
+              if (_voiceState.phase == VoiceInteractionPhase.awaitingReplay)
+                SizedBox(
+                  key: const Key('game-voice-replay'),
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: !_voiceBusy ? _replayVoiceReply : null,
+                    icon: const Icon(Icons.replay_rounded),
+                    label: Text(l10n.meditationRepeat),
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size.fromHeight(50),
+                      backgroundColor: colors.jade,
+                      foregroundColor: colors.paperBase,
+                    ),
+                  ),
+                )
+              else
+                SizedBox(
+                  key: const Key('game-voice-listen'),
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: canStart && !_voiceBusy && _voiceState.canListen
+                        ? _listenOnce
+                        : null,
+                    icon: const Icon(Icons.graphic_eq_rounded),
+                    label: Text(l10n.gameVoiceListen),
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size.fromHeight(50),
+                      backgroundColor: colors.jade,
+                      foregroundColor: colors.paperBase,
+                    ),
                   ),
                 ),
-              ),
             ],
           ],
         ),
@@ -553,6 +569,19 @@ class _GamePageViewState extends State<GamePageView>
     }
   }
 
+  Future<void> _replayVoiceReply() async {
+    final session = _voiceSession;
+    if (session == null || _voiceBusy) return;
+    setState(() => _voiceBusy = true);
+    try {
+      await session.replayPendingReply();
+    } catch (_) {
+      // The session maps replay failures to stable non-sensitive states.
+    } finally {
+      if (mounted) setState(() => _voiceBusy = false);
+    }
+  }
+
   void _onVoiceStateChanged(VoiceInteractionState state) {
     if (mounted) setState(() => _voiceState = state);
   }
@@ -562,7 +591,7 @@ class _GamePageViewState extends State<GamePageView>
     if (session == null) return;
     unawaited(
       session.updateAvailability(
-        appIsActive: _appIsActive && _supportsVoice(state),
+        appIsActive: _appIsActive,
       ),
     );
   }
