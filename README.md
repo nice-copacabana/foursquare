@@ -206,6 +206,7 @@ Model层 (Models)
 - [隐私数据地图](docs/PRIVACY_DATA_MAP.md)：本地、LAN、诊断、在线和语音数据边界。
 - [视觉设计系统](docs/VISUAL_DESIGN_SYSTEM.md)：现代东方棋艺与主题包架构。
 - [待确认事项](docs/PENDING_CONFIRMATIONS.md)：集中记录正式发布前由项目方后补的外部输入与暂缓事项。
+- [发布后增长、运营、容量与保护规划](docs/POST_LAUNCH_OPERATIONS_PLAN.md)：应用商店推广、聚合数据优化、服务器扩容、支持、安全与知识产权保护框架。
 
 #### 历史与参考材料
 
